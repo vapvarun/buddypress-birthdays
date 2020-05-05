@@ -15,6 +15,7 @@ Add Plugin Front-End CSS here
     -ms-flex: 1;
     flex: 1;
     min-width: 100%;
+    list-style: none;
 }
 
 .widget_bp_birthdays > li:last-child {
