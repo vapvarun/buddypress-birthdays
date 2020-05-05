@@ -58,7 +58,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						endif;
 						echo '<span class="birthday-item-content">';
 						echo '<strong>' . $name_to_display . '</strong>';
-						if ( $instance['display_age'] == 'yes') {
+						if ( isset($instance['display_age']) && $instance['display_age'] == 'yes') {
 							echo ' <i>(' . $age . ')</i>';
 						}
 						echo ' ', _x('on', 'happy birthday ON 25-06', 'bbirthdays');
@@ -255,7 +255,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'display_age' ) ); ?>">
 				<?php esc_html_e( 'Show the age of the person', 'bbirthdays' ); ?>
-				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'display_age' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'display_age' ) ); ?>" type="checkbox" value="<?php echo esc_attr( 'yes' ); ?>"/>
+				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'display_age' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'display_age' ) ); ?>" type="checkbox" value="<?php echo esc_attr( 'yes' ); ?>" <?php echo checked( 'yes', $instance[ 'display_age' ])?>/>
 			</label>
 		</p>
 		<p>
@@ -265,9 +265,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'birthdays_range_limit' ) ); ?>"><?php esc_html_e( 'Birthday range limit', 'bbirthdays' ); ?></label>
 			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthdays_range_limit' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthdays_range_limit' ) ); ?>">
-				<option value="no_limit" <?php echo checked( 'no_limit', $instance[ 'birthdays_range_limit' ])?>><?php esc_html_e( 'No Limit', 'bbirthdays' ); ?></option>
-				<option value="weekly" <?php echo checked( 'weekly', $instance[ 'birthdays_range_limit' ])?>><?php esc_html_e( 'Weekly', 'bbirthdays' ); ?></option>
-				<option value="monthly" <?php echo checked( 'monthly', $instance[ 'birthdays_range_limit' ])?>><?php esc_html_e( 'Monthly', 'bbirthdays' ); ?></option>
+				<option value="no_limit" <?php echo selected( 'no_limit', $instance[ 'birthdays_range_limit' ])?>><?php esc_html_e( 'No Limit', 'bbirthdays' ); ?></option>
+				<option value="weekly" <?php echo selected( 'weekly', $instance[ 'birthdays_range_limit' ])?>><?php esc_html_e( 'Weekly', 'bbirthdays' ); ?></option>
+				<option value="monthly" <?php echo selected( 'monthly', $instance[ 'birthdays_range_limit' ])?>><?php esc_html_e( 'Monthly', 'bbirthdays' ); ?></option>
 			</select>
 		</p>
 		
@@ -275,7 +275,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>"><?php esc_html_e( 'Field\'s name', 'bbirthdays' ); ?></label>			
 			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthday_field_name' ) ); ?>">	
 				<?php foreach( $fields as $field):?>
-					<option value="<?php echo esc_attr($field)?>" <?php echo checked($instance[ 'birthday_field_name' ], $field);?>><?php echo esc_attr($field)?></option>
+					<option value="<?php echo esc_attr($field)?>" <?php echo selected($instance[ 'birthday_field_name' ], $field);?>><?php echo esc_attr($field)?></option>
 				<?php endforeach;?>
 			</select>
 		</p>
