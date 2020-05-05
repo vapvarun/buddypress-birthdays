@@ -61,10 +61,10 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						if ( isset($instance['display_age']) && $instance['display_age'] == 'yes') {
 							echo ' <i>(' . $age . ')</i>';
 						}
-						echo ' ', _x('on', 'happy birthday ON 25-06', 'bbirthdays');
+						echo '<span class="badge-wrap"> ', _x('on', 'happy birthday ON 25-06', 'bbirthdays');
 						$date_format = $instance['birthday_date_format'];
 						$date_format = (!empty($date_format)) ? $date_format : 'F d';
-						echo ' <span class="badge badge-primary badge-pill">' . date($date_format, $birthday["datetime"]->getTimestamp()) . '</span>';
+						echo ' <span class="badge badge-primary badge-pill">' . date($date_format, $birthday["datetime"]->getTimestamp()) . '</span></span>';
 						$happy_birthday_label = '';
 						if($birthday["next_celebration_comparable_string"] == $date_ymd)
 							$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'bbirthdays') . '</span>';
