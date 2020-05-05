@@ -1,41 +1,49 @@
 
-/*--------------------------- 
-Add Plugin Front-End CSS here 
----------------------------*/
 /*---------------------------
-CSS Gradients
+Add Plugin Front-End CSS here
 ---------------------------*/
-.gr-bloody-mary {
-background: #FF512F;  /* fallback for old browsers */
-background: -webkit-linear-gradient(to right, #DD2476, #FF512F);  /* Chrome 10-25, Safari 5.1-6 */
-background: linear-gradient(to right, #DD2476, #FF512F); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-}
-.gr-rose-water {
-background: #E55D87;  /* fallback for old browsers */
-background: -webkit-linear-gradient(to right, #5FC3E4, #E55D87);  /* Chrome 10-25, Safari 5.1-6 */
-background: linear-gradient(to right, #5FC3E4, #E55D87); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-}
-.gr-horizon {
-background: #003973;  /* fallback for old browsers */
-background: -webkit-linear-gradient(to right, #E5E5BE, #003973);  /* Chrome 10-25, Safari 5.1-6 */
-background: linear-gradient(to right, #E5E5BE, #003973); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-}
-.gr-intuitive-purple {
-background: #DA22FF;  /* fallback for old browsers */
-background: -webkit-linear-gradient(to right, #9733EE, #DA22FF);  /* Chrome 10-25, Safari 5.1-6 */
-background: linear-gradient(to right, #9733EE, #DA22FF); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-}
-.gr-sport-red {
-background: #e52d27;  /* fallback for old browsers */
-background: -webkit-linear-gradient(to right, #b31217, #e52d27);  /* Chrome 10-25, Safari 5.1-6 */
-background: linear-gradient(to right, #b31217, #e52d27); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-}
-.gr-ocean-beach {
-background: #108dc7;  /* fallback for old browsers */
-background: -webkit-linear-gradient(to right, #ef8e38, #108dc7);  /* Chrome 10-25, Safari 5.1-6 */
-background: linear-gradient(to right, #ef8e38, #108dc7); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+.widget_bp_birthdays > li {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 3px 0;
+    -webkit-box-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+    min-width: 100%;
 }
 
+.widget_bp_birthdays > li:last-child {
+    margin-bottom: 0;
+}
+
+.widget_bp_birthdays .avatar {
+    max-width: 50px;
+}
+
+.widget_bp_birthdays .badge-wrap {
+    display: block;
+    font-size: 12px;
+}
+
+.widget_bp_birthdays .birthday-item-content {
+    margin-left: 12px;
+}
+
+.widget_bp_birthdays .birthday-item-content > .badge {
+    color: #fff;
+    background: #228B22;
+    padding: 2px 5px;
+    line-height: 1.4;
+    border-radius: 100px;
+    margin-top: 5px;
+    display: inline-block;
+    font-size: 12px;
+}
 /*---------------------------
 CSS Filters
 ---------------------------*/
@@ -92,60 +100,60 @@ CSS Filters
 Transition Classes
 ---------------------------*/
 /*---------------------------
-Animation Classes 
+Animation Classes
 ---------------------------*/
-/*--------------------------- 
-Responsive CSS here 
+/*---------------------------
+Responsive CSS here
 *
 *   Remember these queries are a good start
 *   but media queries go much deeper than this.
 *
 ---------------------------*/
 /*
-Medium/Large Screens 
+Medium/Large Screens
 */
 @media only screen and (max-width: 1430px) {
-    
+
 }
 /*
-Medium Screens 
+Medium Screens
 */
 @media only screen and (max-width: 1280px) {
-    
+
 }
 /*
-Large Tablet Screens 
+Large Tablet Screens
 */
 @media only screen and (max-width: 980px) {
-    
+
 }
 /*
-Medium Tablet Screens 
+Medium Tablet Screens
 */
 @media only screen and (max-width: 768px) {
 
 }
 /*
-Small Tablet/Largest Phone Screens 
+Small Tablet/Largest Phone Screens
 */
 @media only screen and (max-width: 600px) {
-    
+
 }
 /*
-Large Phone Screens 
+Large Phone Screens
 */
 @media only screen and (max-width: 420px) {
-    
+
 }
 /*
-Medium Phone Screens 
+Medium Phone Screens
 */
 @media only screen and (max-width: 380px) {
-    
+
 }
 /*
-Small Phone / Apple Watch Screens 
+Small Phone / Apple Watch Screens
 */
 @media only screen and (max-width: 320px) {
-    
+
 }
