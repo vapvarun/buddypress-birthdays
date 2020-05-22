@@ -89,7 +89,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						}
 
 						if ( 'yes' == $instance['birthday_send_message'] ) {
-							echo '<a href=" ' . $this->bbirthday_get_send_private_message_to_user_url( $user_id ) . '"/><span class="fas fa-envelope-o"></span></a>';
+							echo '<a href=" ' . $this->bbirthday_get_send_private_message_to_user_url( $user_id ) . '"/><i class="fas fa-envelope"></i></a>';
 						}
 						echo '</div>';
 						/**
