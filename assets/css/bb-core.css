@@ -1,102 +1,117 @@
-
 /*---------------------------
 Add Plugin Front-End CSS here
 ---------------------------*/
-.widget_bp_birthdays > li {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
-    align-items: center;
-    margin-bottom: 10px;
-    padding: 3px 0;
-    -webkit-box-flex: 1;
-    -ms-flex: 1;
-    flex: 1;
-    min-width: 100%;
-    list-style: none;
+.widget_bp_birthdays>li {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 3px 0;
+  -webkit-box-flex: 1;
+  -ms-flex: 1;
+  flex: 1;
+  min-width: 100%;
+  list-style: none;
 }
 
-.widget_bp_birthdays > li:last-child {
-    margin-bottom: 0;
+.widget_bp_birthdays>li:last-child {
+  margin-bottom: 0;
 }
 
 .widget_bp_birthdays .avatar {
-    max-width: 50px;
+  max-width: 50px;
 }
 
 .widget_bp_birthdays .badge-wrap {
-    display: block;
-    font-size: 12px;
+  display: block;
+  font-size: 12px;
 }
 
 .widget_bp_birthdays .birthday-item-content {
-    margin-left: 12px;
+  margin-left: 12px;
 }
 
-.widget_bp_birthdays .birthday-item-content > .badge {
-    color: #fff;
-    background: #228B22;
-    padding: 2px 5px;
-    line-height: 1.4;
-    border-radius: 100px;
-    margin-top: 5px;
-    display: inline-block;
-    font-size: 12px;
+.widget_bp_birthdays .birthday-item-content>.badge {
+  color: #fff;
+  background: #228B22;
+  padding: 2px 5px;
+  line-height: 1.4;
+  border-radius: 100px;
+  margin-top: 5px;
+  display: inline-block;
+  font-size: 12px;
 }
+
 /*---------------------------
 CSS Filters
 ---------------------------*/
 .blur {
-    -webkit-filter: blur(4px);
-    filter: blur(4px);
+  -webkit-filter: blur(4px);
+  filter: blur(4px);
 }
 
 .brightness {
-    -webkit-filter: brightness(0.30);
-    filter: brightness(0.30);
+  -webkit-filter: brightness(0.30);
+  filter: brightness(0.30);
 }
 
 .contrast {
-    -webkit-filter: contrast(180%);
-    filter: contrast(180%);
+  -webkit-filter: contrast(180%);
+  filter: contrast(180%);
 }
 
 .grayscale {
-    -webkit-filter: grayscale(100%);
-    filter: grayscale(100%);
+  -webkit-filter: grayscale(100%);
+  filter: grayscale(100%);
 }
 
 .huerotate {
-    -webkit-filter: hue-rotate(180deg);
-    filter: hue-rotate(180deg);
+  -webkit-filter: hue-rotate(180deg);
+  filter: hue-rotate(180deg);
 }
 
 .invert {
-    -webkit-filter: invert(100%);
-    filter: invert(100%);
+  -webkit-filter: invert(100%);
+  filter: invert(100%);
 }
 
 .opacity {
-    -webkit-filter: opacity(50%);
-    filter: opacity(50%);
+  -webkit-filter: opacity(50%);
+  filter: opacity(50%);
 }
 
 .saturate {
-    -webkit-filter: saturate(7);
-    filter: saturate(7);
+  -webkit-filter: saturate(7);
+  filter: saturate(7);
 }
 
 .sepia {
-    -webkit-filter: sepia(100%);
-    filter: sepia(100%);
+  -webkit-filter: sepia(100%);
+  filter: sepia(100%);
 }
 
 .shadow {
-    -webkit-filter: drop-shadow(8px 8px 10px green);
-    filter: drop-shadow(8px 8px 10px green);
+  -webkit-filter: drop-shadow(8px 8px 10px green);
+  filter: drop-shadow(8px 8px 10px green);
 }
+
+.bbirthday_action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.bbirthday_action span {
+  margin-right: 5px;
+}
+
+.birthday-item-content i {
+  margin-right: 5px;
+}
+
 /*---------------------------
 Transition Classes
 ---------------------------*/
@@ -113,48 +128,39 @@ Responsive CSS here
 /*
 Medium/Large Screens
 */
-@media only screen and (max-width: 1430px) {
+@media only screen and (max-width: 1430px) {}
 
-}
 /*
 Medium Screens
 */
-@media only screen and (max-width: 1280px) {
+@media only screen and (max-width: 1280px) {}
 
-}
 /*
 Large Tablet Screens
 */
-@media only screen and (max-width: 980px) {
+@media only screen and (max-width: 980px) {}
 
-}
 /*
 Medium Tablet Screens
 */
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 768px) {}
 
-}
 /*
 Small Tablet/Largest Phone Screens
 */
-@media only screen and (max-width: 600px) {
+@media only screen and (max-width: 600px) {}
 
-}
 /*
 Large Phone Screens
 */
-@media only screen and (max-width: 420px) {
+@media only screen and (max-width: 420px) {}
 
-}
 /*
 Medium Phone Screens
 */
-@media only screen and (max-width: 380px) {
+@media only screen and (max-width: 380px) {}
 
-}
 /*
 Small Phone / Apple Watch Screens
 */
-@media only screen and (max-width: 320px) {
-
-}
+@media only screen and (max-width: 320px) {}
