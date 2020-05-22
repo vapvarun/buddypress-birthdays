@@ -273,7 +273,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$instance = wp_parse_args(
 			(array) $instance,
 			array(
-				'title'                 => __( 'Upcomming Birthdays', 'bbirthdays' ),
+				'title'                 => __( 'Upcoming Birthdays', 'bbirthdays' ),
 				'birthday_date_format'  => 'F d',
 				'birthdays_range_limit' => 'no_limit',
 				'birthdays_to_display'  => 5,
