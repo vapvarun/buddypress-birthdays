@@ -12,13 +12,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		/* Set up optional widget args. */
 		$widget_ops = array(
 			'classname'   => 'widget_bp_birthdays widget buddypress',
-			'description' => __( 'BuddyPress Birthdays widget to display the birthdays of the member in an elegant way.', 'bbirthdays' ),
+			'description' => __( 'BuddyPress Birthdays widget to display the birthdays of the member in an elegant way.', 'bb' ),
 		);
 
 		/* Set up the widget. */
 		parent::__construct(
 			false,
-			__( '(BuddyPress) Birthdays', 'bbirthdays' ),
+			__( '(BuddyPress) Birthdays', 'bb' ),
 			$widget_ops
 		);
 	}
@@ -79,13 +79,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 								echo '<span>&#x1F388;</span>';
 						}
 						echo '<div class="bbirthday_action">';
-						echo '<span class="badge-wrap"> ', _x( 'on', 'happy birthday ON 25-06', 'bbirthdays' );
+						echo '<span class="badge-wrap"> ', _x( 'on', 'happy birthday ON 25-06', 'bb' );
 						$date_format = $instance['birthday_date_format'];
 						$date_format = ( ! empty( $date_format ) ) ? $date_format : 'F d';
 						echo ' <span class="badge badge-primary badge-pill">' . date( $date_format, $birthday['datetime']->getTimestamp() ) . '</span></span>';
 						$happy_birthday_label = '';
 						if ( $birthday['next_celebration_comparable_string'] == $date_ymd ) {
-							$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'bbirthdays' ) . '</span>';
+							$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'bb' ) . '</span>';
 						}
 
 						if ( 'yes' == $instance['birthday_send_message'] ) {
@@ -273,7 +273,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$instance = wp_parse_args(
 			(array) $instance,
 			array(
-				'title'                 => __( 'Upcoming Birthdays', 'bbirthdays' ),
+				'title'                 => __( 'Upcoming Birthdays', 'bb' ),
 				'birthday_date_format'  => 'F d',
 				'birthdays_range_limit' => 'no_limit',
 				'birthdays_to_display'  => 5,
@@ -304,33 +304,33 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		?>
 		<p>
-			<label for="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"><?php esc_html_e( 'Title:', 'bbirthdays' ); ?></label>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"><?php esc_html_e( 'Title:', 'bb' ); ?></label>
 			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'title' ) ); ?>" type="text" value="<?php echo esc_attr( $instance['title'] ); ?>"/>
 		</p>
 
 		<p>
 			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'display_age' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'display_age' ) ); ?>" type="checkbox" value="<?php echo esc_attr( 'yes' ); ?>" <?php echo checked( 'yes', $instance['display_age'] ); ?>/>
-			<label for="<?php echo esc_attr( $this->get_field_id( 'display_age' ) ); ?>"><?php esc_html_e( 'Show the age of the person', 'bbirthdays' ); ?></label>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'display_age' ) ); ?>"><?php esc_html_e( 'Show the age of the person', 'bb' ); ?></label>
 		</p>
 		<p>
 			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthday_send_message' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthday_send_message' ) ); ?>" type="checkbox" value="<?php echo esc_attr( 'yes' ); ?>" <?php echo checked( 'yes', $instance['birthday_send_message'] ); ?>/>
-			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_send_message' ) ); ?>"><?php esc_html_e( 'Enable option to wish them', 'bbirthdays' ); ?></label>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_send_message' ) ); ?>"><?php esc_html_e( 'Enable option to wish them', 'bb' ); ?></label>
 		</p>
 		<p>
-			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_date_format' ) ); ?>"><?php esc_html_e( 'Date Format', 'bbirthdays' ); ?></label>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_date_format' ) ); ?>"><?php esc_html_e( 'Date Format', 'bb' ); ?></label>
 			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthday_date_format' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthday_date_format' ) ); ?>" type="text" value="<?php echo esc_attr( $instance['birthday_date_format'] ); ?>"/>
 		</p>
 		<p>
-			<label for="<?php echo esc_attr( $this->get_field_id( 'birthdays_range_limit' ) ); ?>"><?php esc_html_e( 'Birthday range limit', 'bbirthdays' ); ?></label>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'birthdays_range_limit' ) ); ?>"><?php esc_html_e( 'Birthday range limit', 'bb' ); ?></label>
 			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthdays_range_limit' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthdays_range_limit' ) ); ?>">
-				<option value="no_limit" <?php echo selected( 'no_limit', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'No Limit', 'bbirthdays' ); ?></option>
-				<option value="weekly" <?php echo selected( 'weekly', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'Weekly', 'bbirthdays' ); ?></option>
-				<option value="monthly" <?php echo selected( 'monthly', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'Monthly', 'bbirthdays' ); ?></option>
+				<option value="no_limit" <?php echo selected( 'no_limit', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'No Limit', 'bb' ); ?></option>
+				<option value="weekly" <?php echo selected( 'weekly', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'Weekly', 'bb' ); ?></option>
+				<option value="monthly" <?php echo selected( 'monthly', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'Monthly', 'bb' ); ?></option>
 			</select>
 		</p>
 
 		<p>
-			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>"><?php esc_html_e( 'Field\'s name', 'bbirthdays' ); ?></label>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>"><?php esc_html_e( 'Field\'s name', 'bb' ); ?></label>
 			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthday_field_name' ) ); ?>">
 				<?php foreach ( $fields as $field ) : ?>
 					<option value="<?php echo esc_attr( $field ); ?>" <?php echo selected( $instance['birthday_field_name'], $field ); ?>><?php echo esc_attr( $field ); ?></option>
@@ -338,14 +338,14 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			</select>
 		</p>
 		<p>
-			<label for="<?php echo esc_attr( $this->get_field_id( 'birthdays_to_display' ) ); ?>"><?php esc_html_e( 'Number of birthdays to show', 'bbirthdays' ); ?></label>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'birthdays_to_display' ) ); ?>"><?php esc_html_e( 'Number of birthdays to show', 'bb' ); ?></label>
 			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthdays_to_display' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthdays_to_display' ) ); ?>" type="text" value="<?php echo esc_attr( $instance['birthdays_to_display'] ); ?>"/>
 		</p>
-		<label><?php esc_html_e( 'Select Emoji', 'bbirthdays' ); ?></label>
+		<label><?php esc_html_e( 'Select Emoji', 'bb' ); ?></label>
 		<div class="bbirthday_emojis">
 			<p style="display: inline-block; padding: 0 5px;">
 				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="none" <?php checked( $instance['emoji'], 'none' ); ?>/>
-				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>"><?php esc_html_e( 'None', 'bbirthdays' ); ?></label>
+				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>"><?php esc_html_e( 'None', 'bb' ); ?></label>
 			</p>
 			<p style="display: inline-block; padding: 0 5px;">
 				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="cake" <?php checked( $instance['emoji'], 'cake' ); ?>/>
