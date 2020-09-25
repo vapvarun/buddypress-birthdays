@@ -15,6 +15,9 @@ BuddyPress Birthdays another BuddyPress add-on by Wbcom Designs to add little bu
 Know the upcoming birthdays of the site’s members. Wish them and make their day special. A little effort to greet the members of the site on their special day to keep up the saying “community that celebrates together stays together”. The plugin will also provide an essential ability to the admin whether he wants to show the member’s age or not.
 
 == Changelog ==
+= 1.2.0 =
+* Fix: Fixed language issue.
+
 = 1.1.0 =
 * Fix: Default option and widget Title fixed
 

@@ -3,7 +3,7 @@
 Plugin Name: BuddyPress Birthdays
 Plugin URI: https://wbcomdesigns.com/downloads/buddypress-birthdays/
 Description: Display upcoming birthdays
-Version: 1.1.0
+Version: 1.2.0
 Author: Wbcom Designs
 Author URI: https://wbcomdesigns.com/
 Text Domain: bb
