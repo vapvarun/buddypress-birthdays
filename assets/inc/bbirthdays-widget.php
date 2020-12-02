@@ -28,12 +28,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 */
 	function widget( $args, $instance ) {
 
-		echo $args['before_widget'];
-
-		echo $args['before_title'] . $instance['title'] . $args['after_title'];
 		$birthdays = $this->bbirthdays_get_array( $instance );
 
 		if ( ! empty( $birthdays ) ) {
+
+			echo $args['before_widget'];
+
+			echo $args['before_title'] . $instance['title'] . $args['after_title'];
 			$max_items = (int) $instance['birthdays_to_display'];
 			$c         = 0;
 			$date_ymd  = date( 'Ymd' );
