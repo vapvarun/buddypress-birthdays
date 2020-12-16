@@ -1,4 +1,4 @@
-<?php 
+<?php
 /*
 Plugin Name: BuddyPress Birthdays
 Plugin URI: https://wbcomdesigns.com/downloads/buddypress-birthdays/
@@ -17,3 +17,10 @@ if ( ! defined( 'WPINC' ) ) {die;} // end if
 if ( file_exists( plugin_dir_path( __FILE__ ) . 'core-init.php' ) ) {
 require_once( plugin_dir_path( __FILE__ ) . 'core-init.php' );
 }
+
+require( plugin_dir_path( __FILE__ ) . 'plugin-update-checker/plugin-update-checker.php' );
+$myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
+	'https://demos.wbcomdesigns.com/exporter/free-plugins/buddypress-birthdays.json',
+	__FILE__, //Full path to the main plugin file or functions.php.
+	'buddypress-birthdays'
+);
