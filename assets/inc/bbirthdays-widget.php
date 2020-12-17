@@ -275,10 +275,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			(array) $instance,
 			array(
 				'title'                 => __( 'Upcoming Birthdays', 'bb' ),
+				'display_age'           => 'yes',
+				'birthday_send_message' => 'yes',
 				'birthday_date_format'  => 'F d',
 				'birthdays_range_limit' => 'no_limit',
 				'birthdays_to_display'  => 5,
 				'emoji'                 => 'balloon',
+				'birthday_field_name'   => 'datebox',
 
 			)
 		);
@@ -292,7 +295,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		$fields = array();
 		foreach ( $profile_groups as $single_group_details ) {
-
 			if ( empty( $single_group_details->fields ) ) {
 				continue;
 			}
