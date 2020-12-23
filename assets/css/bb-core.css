@@ -48,52 +48,52 @@ Add Plugin Front-End CSS here
 /*---------------------------
 CSS Filters
 ---------------------------*/
-.blur {
+.bp-birthday-blur {
   -webkit-filter: blur(4px);
   filter: blur(4px);
 }
 
-.brightness {
+.bp-birthday-brightness {
   -webkit-filter: brightness(0.30);
   filter: brightness(0.30);
 }
 
-.contrast {
+.bp-birthday-contrast {
   -webkit-filter: contrast(180%);
   filter: contrast(180%);
 }
 
-.grayscale {
+.bp-birthday-grayscale {
   -webkit-filter: grayscale(100%);
   filter: grayscale(100%);
 }
 
-.huerotate {
+.bp-birthday-huerotate {
   -webkit-filter: hue-rotate(180deg);
   filter: hue-rotate(180deg);
 }
 
-.invert {
+.bp-birthday-invert {
   -webkit-filter: invert(100%);
   filter: invert(100%);
 }
 
-.opacity {
+.bp-birthday-opacity {
   -webkit-filter: opacity(50%);
   filter: opacity(50%);
 }
 
-.saturate {
+.bp-birthday-saturate {
   -webkit-filter: saturate(7);
   filter: saturate(7);
 }
 
-.sepia {
+.bp-birthday-sepia {
   -webkit-filter: sepia(100%);
   filter: sepia(100%);
 }
 
-.shadow {
+.bp-birthday-shadow {
   -webkit-filter: drop-shadow(8px 8px 10px green);
   filter: drop-shadow(8px 8px 10px green);
 }
