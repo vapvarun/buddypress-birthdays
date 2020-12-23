@@ -131,7 +131,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$members_birthdays   = array();
 
 		// Get the Birthday field name
-		$field_name = $data['birthday_field_name'];
+		$field_name = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
 
 		$field_name = str_replace( "'", "\'", $field_name );
 
@@ -139,7 +139,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$field_id = xprofile_get_field_id_from_name( $field_name );
 
 		// Set all data for the date limit check
-		$birthdays_limit = $data['birthdays_range_limit'];
+		$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
 		if ( $birthdays_limit == 'monthly' ) {
 			$int_date_time = strtotime( '+30 day', time() );
 			$max_date      = date( 'md', $int_date_time );
