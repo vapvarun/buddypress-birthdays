@@ -299,7 +299,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				continue;
 			}
 			foreach ( $single_group_details->fields as $group_single_field ) {
-				if ( $group_single_field->type == 'datebox' ) {
+				if ( $group_single_field->type == 'datebox' || 'birthdate' === $group_single_field->type ) {
 					$fields[] = $group_single_field->name;
 				}
 			}
