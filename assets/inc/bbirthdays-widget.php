@@ -32,9 +32,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		if ( ! empty( $birthdays ) ) {
 
-			echo $args['before_widget'];
+			echo $args['before_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
-			echo $args['before_title'] . $instance['title'] . $args['after_title'];
+			echo $args['before_title'] . $instance['title'] . $args['after_title']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			$max_items = (int) $instance['birthdays_to_display'];
 			$c         = 0;
 			$date_ymd  = date( 'Ymd' );
@@ -55,16 +55,16 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					if ( $age > 0 ) {
 						echo '<li class="clearfix">';
 						if ( function_exists( 'bp_is_active' ) ) :
-							echo '<a href="' . bp_core_get_user_domain( $user_id ) . '">';
+							echo '<a href="' . esc_url( bp_core_get_user_domain( $user_id ) ) . '">';
 							echo get_avatar( $user_id );
 							echo '</a>';
 						else :
 							echo get_avatar( $user_id );
 						endif;
 						echo '<span class="birthday-item-content">';
-						echo '<strong>' . $name_to_display . '</strong>';
+						echo '<strong>' . esc_html( $name_to_display ) . '</strong>';
 						if ( isset( $instance['display_age'] ) && $instance['display_age'] == 'yes' ) {
-							echo '<i>(' . $age . ')</i>';
+							echo '<i>(' . esc_html( $age ) . ')</i>';
 						}
 						switch ( $emoji ) {
 							case 'none':
@@ -80,17 +80,17 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 								echo '<span>&#x1F388;</span>';
 						}
 						echo '<div class="bbirthday_action">';
-						echo '<span class="badge-wrap"> ', _x( 'on', 'happy birthday ON 25-06', 'bb' );
+						echo '<span class="badge-wrap"> ', esc_html_x( 'on', 'happy birthday ON 25-06', 'bb' );
 						$date_format = $instance['birthday_date_format'];
 						$date_format = ( ! empty( $date_format ) ) ? $date_format : 'F d';
-						echo ' <span class="badge badge-primary badge-pill">' . date( $date_format, $birthday['datetime']->getTimestamp() ) . '</span></span>';
+						echo ' <span class="badge badge-primary badge-pill">' . esc_html( date( $date_format, $birthday['datetime']->getTimestamp() ) ) . '</span></span>';
 						$happy_birthday_label = '';
 						if ( $birthday['next_celebration_comparable_string'] == $date_ymd ) {
 							$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'bb' ) . '</span>';
 						}
 
 						if ( 'yes' == $instance['birthday_send_message'] ) {
-							echo '<a href=" ' . $this->bbirthday_get_send_private_message_to_user_url( $user_id ) . '"/><i class="fas fa-envelope"></i></a>';
+							echo '<a href=" ' . esc_url( $this->bbirthday_get_send_private_message_to_user_url( $user_id ) ) . '"/><i class="fas fa-envelope"></i></a>';
 						}
 						echo '</div>';
 						/**
@@ -99,7 +99,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						 * @param string $happy_birthday_label The text of the label (contains some HTML)
 						 * @param int $user_id
 						 */
-						echo apply_filters( 'bbirthdays_today_happy_birthday_label', $happy_birthday_label, $user_id );
+						echo apply_filters( 'bbirthdays_today_happy_birthday_label', $happy_birthday_label, $user_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 						echo '</span>';
 						echo '</li>';
@@ -109,7 +109,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				}
 			}
 		}
-		echo $args['after_widget'];
+		echo $args['after_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 	}
 
