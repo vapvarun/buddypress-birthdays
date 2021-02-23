@@ -16,6 +16,7 @@ Know the upcoming birthdays of the site’s members. Wish them and make their da
 
 == Changelog ==
 = 1.3.0 =
+* Fix: PHPCS fixes
 * Fix:  (#12) Added buddypress xprofile custom field types support
 * Fix:  (#11) Fixed php notices with one community theme
 * Fix:  (#1) Fixed not compatible with varuna theme
