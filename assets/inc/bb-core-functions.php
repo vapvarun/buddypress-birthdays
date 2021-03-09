@@ -1,19 +1,18 @@
 <?php
-/*
-*
-*	***** BuddyPress Birthdays *****
-*
-*	Core Functions
-*
-*/
-// If this file is called directly, abort. //
+/**
+ * BuddyPress Birthdays
+ * Core Functions
+ *
+ * @package BP_Birthdays/assets/inc
+ */
+
+// If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
-	die;} // end if
-/*
-*
-* Custom Front End Ajax Scripts / Loads In WP Footer
-*
-*/
+	die;} // end if.
+
+/**
+ * Custom Front End Ajax Scripts / Loads In WP Footer
+ */
 function bb_frontend_ajax_form_scripts() {
 	?>
 <script type="text/javascript">
@@ -29,7 +28,6 @@ jQuery(document).ready(function($){
 			'action': 'bb_custom_plugin_frontend_ajax',
 			'myInputFieldValue':   myInputFieldValue,
 		};
-		
 		// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
 		var ajaxurl = "<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>";
 		$.post(ajaxurl, data, function(response) {

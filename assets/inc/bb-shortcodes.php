@@ -1,21 +1,21 @@
 <?php
-/*
-*
-*	***** BuddyPress Birthdays *****
-*
-*	Shortcodes
-*
-*/
-// If this file is called directly, abort. //
+/**
+ * BuddyPress Birthdays
+ * Shortcodes
+ *
+ * @package BP_Birthdays/assets/inc
+ */
+
+// If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
-	die;} // end if
-/*
-*
-*  Build The Custom Plugin Form
-*
-*  Display Anywhere Using Shortcode: [bb_custom_plugin_form]
-*
-*/
+	die;} // end if.
+
+/**
+ * Build The Custom Plugin Form
+ * Display Anywhere Using Shortcode: [bb_custom_plugin_form]
+ *
+ * @param string $atts Shortcode atts.
+ */
 function bb_custom_plugin_form_display( $atts, $content = null ) {
 		extract(
 			shortcode_atts(
@@ -33,18 +33,18 @@ function bb_custom_plugin_form_display( $atts, $content = null ) {
 		$out .= '<form id="bb_custom_plugin_form">';
 		$out .= '<p><input type="text" name="myInputField" id="myInputField" placeholder="Test Field: Test Ajax Responses"></p>';
 
-		// Final Submit Button
+		// Final Submit Button.
 		$out .= '<p><input type="submit" id="submit_btn" value="Submit My Form"></p>';
 		$out .= '</form>';
-		 // Form Ends
+		// Form Ends.
 		$out .= '</div><!-- bb_custom_plugin_form_wrap -->';
 		return $out;
 }
-/*
-Register All Shorcodes At Once
-*/
-add_action( 'init', 'bb_register_shortcodes' );
+/**
+ * Register All Shorcodes At Once
+ */
 function bb_register_shortcodes() {
-	// Registered Shortcodes
+	// Registered Shortcodes.
 	add_shortcode( 'bb_custom_plugin_form', 'bb_custom_plugin_form_display' );
-};
+}
+add_action( 'init', 'bb_register_shortcodes' );

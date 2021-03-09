@@ -1,15 +1,23 @@
 <?php
+/**
+ * BuddyPress Birthdays widgets.
+ *
+ * @package  BP_Birthdays/assets/inc
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
 	die( 'Direct access forbidden.' );
 }
 
+/**
+ * BuddyPress Birthdays widget class.
+ */
 class Widget_Buddypress_Birthdays extends WP_Widget {
 
 	/**
-	 * @internal
+	 * Set up optional widget args.
 	 */
-	function __construct() {
-		/* Set up optional widget args. */
+	public function __construct() {
 		$widget_ops = array(
 			'classname'   => 'widget_bp_birthdays widget buddypress',
 			'description' => __( 'BuddyPress Birthdays widget to display the birthdays of the member in an elegant way.', 'bb' ),
@@ -23,10 +31,12 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		);
 	}
 	/**
-	 * @param array $args
-	 * @param array $instance
+	 * Display the widget fields.
+	 *
+	 * @param array $args Arguments.
+	 * @param array $instance Instance.
 	 */
-	function widget( $args, $instance ) {
+	public function widget( $args, $instance ) {
 
 		$birthdays = $this->bbirthdays_get_array( $instance );
 
@@ -37,7 +47,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			echo $args['before_title'] . $instance['title'] . $args['after_title']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			$max_items = (int) $instance['birthdays_to_display'];
 			$c         = 0;
-			$date_ymd  = date( 'Ymd' );
+			$date_ymd  = gmdate( 'Ymd' );
 			foreach ( $birthdays as $user_id => $birthday ) {
 				if ( $c === $max_items ) {
 					break;
@@ -51,7 +61,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 					$emoji = isset( $instance['emoji'] ) ? $instance['emoji'] : '';
 
-					// We don't display negative ages
+					// We don't display negative ages.
 					if ( $age > 0 ) {
 						echo '<li class="clearfix">';
 						if ( function_exists( 'bp_is_active' ) ) :
@@ -63,7 +73,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						endif;
 						echo '<span class="birthday-item-content">';
 						echo '<strong>' . esc_html( $name_to_display ) . '</strong>';
-						if ( isset( $instance['display_age'] ) && $instance['display_age'] == 'yes' ) {
+						if ( isset( $instance['display_age'] ) && 'yes' === $instance['display_age'] ) {
 							echo '<i>(' . esc_html( $age ) . ')</i>';
 						}
 						switch ( $emoji ) {
@@ -83,13 +93,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						echo '<span class="badge-wrap"> ', esc_html_x( 'on', 'happy birthday ON 25-06', 'bb' );
 						$date_format = $instance['birthday_date_format'];
 						$date_format = ( ! empty( $date_format ) ) ? $date_format : 'F d';
-						echo ' <span class="badge badge-primary badge-pill">' . esc_html( date( $date_format, $birthday['datetime']->getTimestamp() ) ) . '</span></span>';
+						echo ' <span class="badge badge-primary badge-pill">' . esc_html( gmdate( $date_format, $birthday['datetime']->getTimestamp() ) ) . '</span></span>';
 						$happy_birthday_label = '';
-						if ( $birthday['next_celebration_comparable_string'] == $date_ymd ) {
+						if ( $birthday['next_celebration_comparable_string'] === $date_ymd ) {
 							$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'bb' ) . '</span>';
 						}
 
-						if ( 'yes' == $instance['birthday_send_message'] ) {
+						if ( 'yes' === $instance['birthday_send_message'] ) {
 							echo '<a href=" ' . esc_url( $this->bbirthday_get_send_private_message_to_user_url( $user_id ) ) . '"/><i class="fas fa-envelope"></i></a>';
 						}
 						echo '</div>';
@@ -121,36 +131,41 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 *
 	 * @return string
 	 */
-	function bbirthday_get_send_private_message_to_user_url( $user_id ) {
+	public function bbirthday_get_send_private_message_to_user_url( $user_id ) {
 		return wp_nonce_url( bp_loggedin_user_domain() . bp_get_messages_slug() . '/compose/?r=' . bp_core_get_username( $user_id ) );
 	}
 
-	function bbirthdays_get_array( $data ) {
+	/**
+	 * Action performed for get BuddyPress Birthdays users fields data.
+	 *
+	 * @param string $data Get a Birthday field name.
+	 */
+	public function bbirthdays_get_array( $data ) {
 
 		$buddypress_wp_users = get_users( array( 'fields' => array( 'ID' ) ) );
 		$members_birthdays   = array();
 
-		// Get the Birthday field name
+		// Get the Birthday field name.
 		$field_name = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
 
 		$field_name = str_replace( "'", "\'", $field_name );
 
-		// Get the Birthday field ID
+		// Get the Birthday field ID.
 		$field_id = xprofile_get_field_id_from_name( $field_name );
 
-		// Set all data for the date limit check
+		// Set all data for the date limit check.
 		$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
-		if ( $birthdays_limit == 'monthly' ) {
+		if ( 'monthly' === $birthdays_limit ) {
 			$int_date_time = strtotime( '+30 day', time() );
-			$max_date      = date( 'md', $int_date_time );
-		} elseif ( $birthdays_limit == 'weekly' ) {
+			$max_date      = gmdate( 'md', $int_date_time );
+		} elseif ( 'weekly' === $birthdays_limit ) {
 			$int_date_time = strtotime( '+7 day', time() );
-			$max_date      = date( 'md', $int_date_time );
+			$max_date      = gmdate( 'md', $int_date_time );
 		} else {
 			$max_date = 'all';
 		}
 
-		// We check if the member has a birthday set
+		// We check if the member has a birthday set.
 		foreach ( $buddypress_wp_users as $buddypress_wp_user ) {
 
 			$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $buddypress_wp_user->ID ) );
@@ -159,7 +174,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				continue;
 			}
 
-			// We transform the string in a date
+			// We transform the string in a date.
 			$birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string );
 
 			/**
@@ -171,20 +186,21 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			 */
 			$display_this_birthday = apply_filters( 'bbirthdays_display_this_birthday', true, $buddypress_wp_user->ID, $birthday );
 
-			if ( $birthday !== false && $display_this_birthday ) {
+			if ( false !== $birthday && $display_this_birthday ) {
 
-				// Skip if birth date is not in the selected limit range
+				// Skip if birth date is not in the selected limit range..
 				if ( ! $this->bbirthday_is_in_range_limit( $birthday, $max_date ) ) {
 					continue;
 				}
 
-				$celebration_year = ( date( 'md', $birthday->getTimestamp() ) >= date( 'md' ) ) ? date( 'Y' ) : date( 'Y', strtotime( '+1 years' ) );
+				$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( '+1 years' ) );
 
-				$years_old = (int) $celebration_year - (int) date( 'Y', $birthday->getTimestamp() );
+				$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
 
-				// If gone for this year already, we remove one year
-				if ( date( 'md', $birthday->getTimestamp() ) >= date( 'md' ) ) {
-					$years_old = $years_old - 1;
+				// If gone for this year already, we remove one year.
+				if ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) {
+					--$years_old;
+					// $years_old = $years_old - 1;
 				}
 
 				/**
@@ -199,7 +215,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				 */
 				$format = apply_filters( 'bbirthdays_date_format', 'md' );
 
-				$celebration_string = $celebration_year . date( $format, $birthday->getTimestamp() );
+				$celebration_string = $celebration_year . gmdate( $format, $birthday->getTimestamp() );
 
 				$members_birthdays[ $buddypress_wp_user->ID ] = array(
 					'datetime'                           => $birthday,
@@ -214,7 +230,12 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		return $members_birthdays;
 	}
 
-	function get_name_to_display( $user = null ) {
+	/**
+	 * Display the user name.
+	 *
+	 * @param string $user Get a user info.
+	 */
+	public function get_name_to_display( $user = null ) {
 
 		if ( is_object( $user ) ) {
 			$user_info = $user;
@@ -236,25 +257,43 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		return esc_html( apply_filters( 'bbirthdays_get_name_to_display', $display, $user_info ) );
 	}
-	function date_comparison( $a, $b ) {
+	/**
+	 * Action performed for Date comparison.
+	 *
+	 * @param string $a Next celebration comparable string.
+	 * @param string $b Next celebration comparable string.
+	 */
+	public function date_comparison( $a, $b ) {
 		return ( $a['next_celebration_comparable_string'] > $b['next_celebration_comparable_string'] );
 	}
-	function bbirthday_is_in_range_limit( $birth_date, $max_date ) {
-		if ( $max_date == 'all' ) {
+	/**
+	 * BuddyPress Birthdays user birthday date range.
+	 *
+	 * @param string $birth_date Birthday date.
+	 * @param  string $max_date Birthday max dates.
+	 */
+	public function bbirthday_is_in_range_limit( $birth_date, $max_date ) {
+		if ( 'all' === $max_date ) {
 			return true;
 		}
 
-		$target_date = date( 'md', $birth_date->getTimestamp() );
-		$now_date    = date( 'md' );
+		$target_date = gmdate( 'md', $birth_date->getTimestamp() );
+		$now_date    = gmdate( 'md' );
 
 		return $max_date >= $target_date && $target_date >= $now_date;
 	}
 
-	function update( $new_instance, $old_instance ) {
+	/**
+	 * Update the user birthday data.
+	 *
+	 * @param  mixed $new_instance New instance.
+	 * @param  mixed $old_instance Old instance.
+	 */
+	public function update( $new_instance, $old_instance ) {
 
 		$instance = array();
 		// $instance = wp_parse_args( (array) $new_instance, $old_instance );
-		$instance['title']                 = ( ! empty( $new_instance['title'] ) ) ? strip_tags( $new_instance['title'] ) : '';
+		$instance['title']                 = ( ! empty( $new_instance['title'] ) ) ? wp_strip_all_tags( $new_instance['title'] ) : '';
 		$instance['birthday_date_format']  = ( ! empty( $new_instance['birthday_date_format'] ) ) ? $new_instance['birthday_date_format'] : '';
 		$instance['display_age']           = ( ! empty( $new_instance['display_age'] ) ) ? $new_instance['display_age'] : '';
 		$instance['birthdays_range_limit'] = ( ! empty( $new_instance['birthdays_range_limit'] ) ) ? $new_instance['birthdays_range_limit'] : '';
@@ -269,7 +308,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	/**
 	 * Widget settings form.
 	 */
-	function form( $instance ) {
+	public function form( $instance ) {
 
 		$instance = wp_parse_args(
 			(array) $instance,
@@ -299,7 +338,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				continue;
 			}
 			foreach ( $single_group_details->fields as $group_single_field ) {
-				if ( $group_single_field->type == 'datebox' || 'birthdate' === $group_single_field->type ) {
+				if ( 'datebox' === $group_single_field->type || 'birthdate' === $group_single_field->type ) {
 					$fields[] = $group_single_field->name;
 				}
 			}
@@ -369,6 +408,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 }
 
+/**
+ * Register BuddPress Birthdays widget.
+ */
 function buddypress_birthdays_register_widget() {
 	register_widget( 'Widget_Buddypress_Birthdays' );
 }
