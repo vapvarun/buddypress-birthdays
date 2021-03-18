@@ -60,7 +60,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					$age = $birthday['years_old'];
 
 					$emoji = isset( $instance['emoji'] ) ? $instance['emoji'] : '';
-
+					$display_name_type = empty( $instance['display_name_type'] ) ? '' : $instance['display_name_type'];
 					// We don't display negative ages.
 					if ( $age > 0 ) {
 						echo '<li class="clearfix">';
@@ -71,8 +71,19 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						else :
 							echo get_avatar( $user_id );
 						endif;
-						echo '<span class="birthday-item-content">';
-						echo '<strong>' . esc_html( $name_to_display ) . '</strong>';
+						echo '<span class="birthday-item-content">'; ?>
+						<strong>
+						<?php
+						if ( 'user_name' === $display_name_type ) {
+								echo esc_html( bp_core_get_username( $user_id ) );
+						} elseif ( 'nick_name' === $display_name_type ) {
+							echo esc_html( get_user_meta( $user_id, 'nickname', true ) );
+						} elseif ( 'first_name' === $display_name_type ) {
+							echo esc_html( get_user_meta( $user_id, 'first_name', true ) );
+						}
+						?>
+						</strong>
+						<?php
 						if ( isset( $instance['display_age'] ) && 'yes' === $instance['display_age'] ) {
 							echo '<i>(' . esc_html( $age ) . ')</i>';
 						}
@@ -144,7 +155,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		$buddypress_wp_users = get_users( array( 'fields' => array( 'ID' ) ) );
 		$members_birthdays   = array();
-
 		// Get the Birthday field name.
 		$field_name = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
 
@@ -301,6 +311,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$instance['birthday_field_name']   = ( ! empty( $new_instance['birthday_field_name'] ) ) ? $new_instance['birthday_field_name'] : '';
 		$instance['emoji']                 = ( ! empty( $new_instance['emoji'] ) ) ? $new_instance['emoji'] : '';
 		$instance['birthday_send_message'] = ( ! empty( $new_instance['birthday_send_message'] ) ) ? $new_instance['birthday_send_message'] : '';
+		$instance['display_name_type']     = ( ! empty( $new_instance['display_name_type'] ) ) ? $new_instance['display_name_type'] : '';
 
 		return $instance;
 	}
@@ -318,6 +329,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				'birthday_send_message' => 'yes',
 				'birthday_date_format'  => 'F d',
 				'birthdays_range_limit' => 'no_limit',
+				'display_name_type'     => 'user_name',
 				'birthdays_to_display'  => 5,
 				'emoji'                 => 'balloon',
 				'birthday_field_name'   => 'datebox',
@@ -370,7 +382,14 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				<option value="monthly" <?php echo selected( 'monthly', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'Monthly', 'bb' ); ?></option>
 			</select>
 		</p>
-
+		<p>
+		<label for="<?php echo esc_attr( $this->get_field_id( 'display_name_type' ) ); ?>"><?php esc_html_e( 'Display Name Type', 'bb' ); ?></label> 
+			<select class='widefat' id="<?php echo esc_attr( $this->get_field_id( 'display_name_type' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'display_name_type' ) ); ?>">
+				<option value="user_name" <?php echo selected( $instance['display_name_type'], 'user_name' ); ?>><?php esc_html_e( 'User name', 'bb' ); ?></option>
+				<option value="nick_name" <?php echo selected( $instance['display_name_type'], 'nick_name' ); ?>><?php esc_html_e( 'Nick name', 'bb' ); ?></option> 
+				<option value="first_name" <?php echo selected( $instance['display_name_type'], 'first_name' ); ?>><?php esc_html_e( 'First Name', 'bb' ); ?></option> 
+			</select>                
+		</p>
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>"><?php esc_html_e( 'Field\'s name', 'bb' ); ?></label>
 			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthday_field_name' ) ); ?>">
