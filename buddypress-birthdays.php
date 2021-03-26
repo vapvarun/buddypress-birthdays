@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: BuddyPress Birthdays
+ * Plugin Name: Birthday Widget for BuddyPress
  * Plugin URI: https://wbcomdesigns.com/downloads/buddypress-birthdays/
  * Description: Display upcoming birthdays
- * Version: 1.3.0
+ * Version: 1.4.0
  * Author: Wbcom Designs
  * Author URI: https://wbcomdesigns.com/
  * Text Domain: bb
