@@ -3,7 +3,7 @@ Contributors: vapvarun,wbcomdesigns
 Tags: buddypress
 Donate link: https://www.paypal.me/wbcomdesigns
 Requires at least: 4.5.0
-Tested up to: 5.6.2
+Tested up to: 5.7.0
 Requires PHP: 7.0.0
 Stable tag: trunk
 License: GPLv3
@@ -15,6 +15,10 @@ BuddyPress Birthdays another BuddyPress add-on by Wbcom Designs to add little bu
 Know the upcoming birthdays of the site’s members. Wish them and make their day special. A little effort to greet the members of the site on their special day to keep up the saying “community that celebrates together stays together”. The plugin will also provide an essential ability to the admin whether he wants to show the member’s age or not.
 
 == Changelog ==
+= 1.4.0 =
+* New Feature: (#13) Option added for display username,nicename and first name
+* Fix: (#14) Fixced PHPCS issue
+
 = 1.3.0 =
 * Fix: PHPCS fixes
 * Fix:  (#12) Added buddypress xprofile custom field types support
