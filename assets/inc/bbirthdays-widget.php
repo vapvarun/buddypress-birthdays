@@ -59,7 +59,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 					$age = $birthday['years_old'];
 
-					$emoji = isset( $instance['emoji'] ) ? $instance['emoji'] : '';
+					$emoji             = isset( $instance['emoji'] ) ? $instance['emoji'] : '';
 					$display_name_type = empty( $instance['display_name_type'] ) ? '' : $instance['display_name_type'];
 					// We don't display negative ages.
 					if ( $age > 0 ) {

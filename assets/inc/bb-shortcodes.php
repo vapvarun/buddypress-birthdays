@@ -15,6 +15,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Display Anywhere Using Shortcode: [bb_custom_plugin_form]
  *
  * @param string $atts Shortcode atts.
+ * @param string $content Content.
  */
 function bb_custom_plugin_form_display( $atts, $content = null ) {
 		extract(
