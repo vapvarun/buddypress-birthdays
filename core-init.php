@@ -4,7 +4,6 @@
  * ***** BuddyPress Birthdays *****
  *
  * This file initializes all BB Core components
- *
  */
 // If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
@@ -31,6 +30,18 @@ function bb_register_core_js() {
 	wp_enqueue_script( 'bb-core', BB_CORE_JS . 'bb-core.js', 'jquery', time(), true );
 };
 add_action( 'wp_enqueue_scripts', 'bb_register_core_js' );
+
+
+
+/**
+ * Load plugin textdomain.
+ */
+function bb_load_textdomain() {
+	load_plugin_textdomain( 'buddypress-birthdays', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+}
+add_action( 'init', 'bb_load_textdomain' );
+
+
 /**
 *  Includes
 */

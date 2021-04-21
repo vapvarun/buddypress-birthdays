@@ -1,14 +1,14 @@
-# Copyright (C) 2020
+# Copyright (C) 2021
 # This file is distributed under the same license as the  package.
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-11-12 06:41:26+00:00\n"
+"POT-Creation-Date: 2021-04-21 09:36:59+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2020-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2021-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Varun Dubey\n"
 "Language-Team: Wbcom Designs\n"
 "Language: en\n"
@@ -24,73 +24,89 @@ msgstr ""
 "X-Textdomain-Support: yes\n"
 "X-Generator: grunt-wp-i18n 1.0.3\n"
 
-#: assets/inc/bbirthdays-widget.php:15
+#: assets/inc/bbirthdays-widget.php:23
 msgid ""
 "BuddyPress Birthdays widget to display the birthdays of the member in an "
 "elegant way."
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:21
+#: assets/inc/bbirthdays-widget.php:29
 msgid "(BuddyPress) Birthdays"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:88
+#: assets/inc/bbirthdays-widget.php:110
 msgid "Happy Birthday!"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:276
+#: assets/inc/bbirthdays-widget.php:327
 msgid "Upcoming Birthdays"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:307
+#: assets/inc/bbirthdays-widget.php:361
 msgid "Title:"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:313
+#: assets/inc/bbirthdays-widget.php:367
 msgid "Show the age of the person"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:317
+#: assets/inc/bbirthdays-widget.php:371
 msgid "Enable option to wish them"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:320
+#: assets/inc/bbirthdays-widget.php:374
 msgid "Date Format"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:324
+#: assets/inc/bbirthdays-widget.php:378
 msgid "Birthday range limit"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:326
+#: assets/inc/bbirthdays-widget.php:380
 msgid "No Limit"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:327
+#: assets/inc/bbirthdays-widget.php:381
 msgid "Weekly"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:328
+#: assets/inc/bbirthdays-widget.php:382
 msgid "Monthly"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:333
+#: assets/inc/bbirthdays-widget.php:386
+msgid "Display Name Type"
+msgstr ""
+
+#: assets/inc/bbirthdays-widget.php:388
+msgid "User name"
+msgstr ""
+
+#: assets/inc/bbirthdays-widget.php:389
+msgid "Nick name"
+msgstr ""
+
+#: assets/inc/bbirthdays-widget.php:390
+msgid "First Name"
+msgstr ""
+
+#: assets/inc/bbirthdays-widget.php:394
 msgid "Field's name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:341
+#: assets/inc/bbirthdays-widget.php:402
 msgid "Number of birthdays to show"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:344
+#: assets/inc/bbirthdays-widget.php:405
 msgid "Select Emoji"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:348
+#: assets/inc/bbirthdays-widget.php:409
 msgid "None"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:82
+#: assets/inc/bbirthdays-widget.php:104
 msgctxt "happy birthday ON 25-06"
 msgid "on"
 msgstr ""
