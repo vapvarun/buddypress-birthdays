@@ -15,6 +15,11 @@
  */
 
 // If this file is called directly, abort.
+
+define( 'BIRTHDAY_WIDGET_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'BIRTHDAY_WIDGET_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
+
+
 if ( ! defined( 'WPINC' ) ) {
 	die;} // end if
 
