@@ -48,6 +48,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			$max_items = (int) $instance['birthdays_to_display'];
 			$c         = 0;
 			$date_ymd  = gmdate( 'Ymd' );
+                        echo '<ul class="bp-birthday-users-list">';
 			foreach ( $birthdays as $user_id => $birthday ) {
 				if ( $c === $max_items ) {
 					break;
@@ -63,7 +64,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					$display_name_type = empty( $instance['display_name_type'] ) ? '' : $instance['display_name_type'];
 					// We don't display negative ages.
 					if ( $age > 0 ) {
-						echo '<li class="clearfix">';
+						echo '<li class="bp-birthday-users">';
 						if ( function_exists( 'bp_is_active' ) ) :
 							echo '<a href="' . esc_url( bp_core_get_user_domain( $user_id ) ) . '">';
 							echo get_avatar( $user_id );
@@ -85,7 +86,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						</strong>
 						<?php
 						if ( isset( $instance['display_age'] ) && 'yes' === $instance['display_age'] ) {
-							echo '<i>(' . esc_html( $age ) . ')</i>';
+							echo '<i class="bp-user-age">(' . esc_html( $age ) . ')</i>';
 						}
 						switch ( $emoji ) {
 							case 'none':
@@ -111,7 +112,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						}
 
 						if ( 'yes' === $instance['birthday_send_message'] ) {
-							echo '<a href=" ' . esc_url( $this->bbirthday_get_send_private_message_to_user_url( $user_id ) ) . '"/><i class="fas fa-envelope"></i></a>';
+							echo '<a href=" ' . esc_url( $this->bbirthday_get_send_private_message_to_user_url( $user_id ) ) . '"/><span class="dashicons dashicons-email"></span></a>';
 						}
 						echo '</div>';
 						/**
@@ -129,6 +130,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					}
 				}
 			}
+                        echo '</ul>';
 		}
 		echo $args['after_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
