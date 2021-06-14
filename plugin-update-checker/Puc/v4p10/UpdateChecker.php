@@ -107,7 +107,7 @@ if ( !class_exists('Puc_v4p10_UpdateChecker', false) ):
 		public function loadTextDomain() {
 			//We're not using load_plugin_textdomain() or its siblings because figuring out where
 			//the library is located (plugin, mu-plugin, theme, custom wp-content paths) is messy.
-			$domain = 'bb';
+			$domain = 'plugin-update-checker';
 			$locale = apply_filters(
 				'plugin_locale',
 				(is_admin() && function_exists('get_user_locale')) ? get_user_locale() : get_locale(),
@@ -115,9 +115,9 @@ if ( !class_exists('Puc_v4p10_UpdateChecker', false) ):
 			);
 
 			$moFile = $domain . '-' . $locale . '.mo';
-			$path = BIRTHDAY_WIDGET_PLUGIN_PATH . 'languages';
-			
-			if ($path && file_exists($path)) {				
+			$path = realpath(dirname(__FILE__) . '/../../languages');
+
+			if ($path && file_exists($path)) {
 				load_textdomain($domain, $path . '/' . $moFile);
 			}
 		}
