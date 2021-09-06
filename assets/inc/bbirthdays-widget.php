@@ -48,7 +48,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			$max_items = (int) $instance['birthdays_to_display'];
 			$c         = 0;
 			$date_ymd  = gmdate( 'Ymd' );
-                        echo '<ul class="bp-birthday-users-list">';
+
+			echo '<ul class="bp-birthday-users-list">';
 			foreach ( $birthdays as $user_id => $birthday ) {
 				if ( $c === $max_items ) {
 					break;
@@ -105,7 +106,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						echo '<span class="badge-wrap"> ', esc_html_x( 'on', 'happy birthday ON 25-06', 'buddypress-birthdays' );
 						$date_format = $instance['birthday_date_format'];
 						$date_format = ( ! empty( $date_format ) ) ? $date_format : 'F d';
-						echo ' <span class="badge badge-primary badge-pill">' .  date_i18n(  $date_format,$birthday['datetime']->getTimestamp() , true ) . '</span></span>';
+						echo ' <span class="badge badge-primary badge-pill">' . date_i18n( $date_format, $birthday['datetime']->getTimestamp(), true ) . '</span></span>';
 						$happy_birthday_label = '';
 						if ( $birthday['next_celebration_comparable_string'] === $date_ymd ) {
 							$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</span>';
@@ -130,7 +131,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					}
 				}
 			}
-                        echo '</ul>';
+						echo '</ul>';
 		}
 		echo $args['after_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
@@ -276,7 +277,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 * @param string $b Next celebration comparable string.
 	 */
 	public function date_comparison( $a, $b ) {
-		return ( $a['next_celebration_comparable_string'] > $b['next_celebration_comparable_string'] );
+		return ( $a['next_celebration_comparable_string'] > $b['next_celebration_comparable_string'] ) ? 1 : -1;
 	}
 	/**
 	 * BuddyPress Birthdays user birthday date range.
@@ -385,12 +386,12 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			</select>
 		</p>
 		<p>
-		<label for="<?php echo esc_attr( $this->get_field_id( 'display_name_type' ) ); ?>"><?php esc_html_e( 'Display Name Type', 'buddypress-birthdays' ); ?></label> 
+		<label for="<?php echo esc_attr( $this->get_field_id( 'display_name_type' ) ); ?>"><?php esc_html_e( 'Display Name Type', 'buddypress-birthdays' ); ?></label>
 			<select class='widefat' id="<?php echo esc_attr( $this->get_field_id( 'display_name_type' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'display_name_type' ) ); ?>">
 				<option value="user_name" <?php echo selected( $instance['display_name_type'], 'user_name' ); ?>><?php esc_html_e( 'User name', 'buddypress-birthdays' ); ?></option>
-				<option value="nick_name" <?php echo selected( $instance['display_name_type'], 'nick_name' ); ?>><?php esc_html_e( 'Nick name', 'buddypress-birthdays' ); ?></option> 
-				<option value="first_name" <?php echo selected( $instance['display_name_type'], 'first_name' ); ?>><?php esc_html_e( 'First Name', 'buddypress-birthdays' ); ?></option> 
-			</select>                
+				<option value="nick_name" <?php echo selected( $instance['display_name_type'], 'nick_name' ); ?>><?php esc_html_e( 'Nick name', 'buddypress-birthdays' ); ?></option>
+				<option value="first_name" <?php echo selected( $instance['display_name_type'], 'first_name' ); ?>><?php esc_html_e( 'First Name', 'buddypress-birthdays' ); ?></option>
+			</select>
 		</p>
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>"><?php esc_html_e( 'Field\'s name', 'buddypress-birthdays' ); ?></label>
