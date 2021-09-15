@@ -275,8 +275,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 * @param string $a Next celebration comparable string.
 	 * @param string $b Next celebration comparable string.
 	 */
-	public function date_comparison( $a, $b ) {
-		return ( $a['next_celebration_comparable_string'] > $b['next_celebration_comparable_string'] );
+	public function date_comparison( $a, $b ) {		
+		return ( $a['next_celebration_comparable_string'] > $b['next_celebration_comparable_string'] ) ? 1: -1;
 	}
 	/**
 	 * BuddyPress Birthdays user birthday date range.
