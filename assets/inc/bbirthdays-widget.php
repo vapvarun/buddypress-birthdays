@@ -164,7 +164,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$field_name = str_replace( "'", "\'", $field_name );
 
 		// Get the Birthday field ID.
-		$field_id = xprofile_get_field_id_from_name( $field_name );
+		//$field_id = xprofile_get_field_id_from_name( $field_name );
+		$field_id = $field_name;
 
 		// Set all data for the date limit check.
 		$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
@@ -354,7 +355,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			}
 			foreach ( $single_group_details->fields as $group_single_field ) {
 				if ( 'datebox' === $group_single_field->type || 'birthdate' === $group_single_field->type ) {
-					$fields[] = $group_single_field->name;
+					$fields[$group_single_field->id] = $group_single_field->name;
 				}
 			}
 		}
@@ -396,8 +397,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>"><?php esc_html_e( 'Field\'s name', 'buddypress-birthdays' ); ?></label>
 			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthday_field_name' ) ); ?>">
-				<?php foreach ( $fields as $field ) : ?>
-					<option value="<?php echo esc_attr( $field ); ?>" <?php echo selected( $instance['birthday_field_name'], $field ); ?>><?php echo esc_attr( $field ); ?></option>
+				<?php foreach ( $fields as $key=>$field ) : ?>
+					<option value="<?php echo esc_attr( $key ); ?>" <?php echo selected( $instance['birthday_field_name'], $key ); ?>><?php echo esc_attr( $field ); ?></option>
 				<?php endforeach; ?>
 			</select>
 		</p>
