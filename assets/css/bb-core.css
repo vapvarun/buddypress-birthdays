@@ -126,6 +126,73 @@ CSS Filters
     filter: drop-shadow(8px 8px 10px green);
 }
 
+
+/*---------------------------
+Youzify Support Widget CSS
+---------------------------*/
+
+.youzify-sidebar .widget-content .bp-birthday-users-list {
+    padding: 0 25px 25px;
+}
+
+.youzify-sidebar .bp-birthday-users-list li {
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    overflow: hidden;
+    margin: 25px 0 0 0;
+    list-style-type: none;
+}
+
+.youzify-sidebar .bp-birthday-users-list li .avatar {
+    border-radius: 100%;
+}
+
+.youzify-sidebar .bp-birthday-users-list li strong {
+    color: #7c838a;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.youzify-sidebar .bp-birthday-users-list li .badge-wrap {
+    color: #8a8a8a;
+    display: block;
+    margin-top: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+}
+
+.youzify-sidebar .bp-birthday-users-list li i {
+    font-style: normal;
+    font-weight: 600;
+}
+
+.youzify-sidebar .bp-birthday-users-list .bbirthday_action span {
+    margin-right: 3px;
+    margin-top: 5px;
+}
+
+.youzify-sidebar .widget_bp_birthdays .widget-title:before {
+    content: "\f1fd";
+    font-family: "Font Awesome 5 Free" !important;
+    display: inline-block;
+    width: 35px;
+    height: 35px;
+    line-height: 35px;
+    margin-right: 10px;
+    text-align: center;
+    background-color: #f2f2f2;
+    -webkit-border-radius: 100%;
+    -moz-border-radius: 100%;
+    -ms-border-radius: 100%;
+    -o-border-radius: 100%;
+    border-radius: 100%;
+
+}
+
 /*---------------------------
 Transition Classes
 ---------------------------*/

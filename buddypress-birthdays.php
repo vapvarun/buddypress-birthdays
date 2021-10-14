@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Birthday Widget for BuddyPress
+ * Plugin Name: Wbcom Designs - Birthday Widget for BuddyPress
  * Plugin URI: https://wbcomdesigns.com/downloads/buddypress-birthdays/
  * Description: Display upcoming birthdays
- * Version: 1.4.0
+ * Version: 1.5.0
  * Author: Wbcom Designs
  * Author URI: https://wbcomdesigns.com/
  * Text Domain: buddypress-birthdays
@@ -15,6 +15,11 @@
  */
 
 // If this file is called directly, abort.
+
+define( 'BIRTHDAY_WIDGET_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'BIRTHDAY_WIDGET_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
+
+
 if ( ! defined( 'WPINC' ) ) {
 	die;} // end if
 
@@ -22,3 +27,10 @@ if ( ! defined( 'WPINC' ) ) {
 if ( file_exists( plugin_dir_path( __FILE__ ) . 'core-init.php' ) ) {
 	require_once plugin_dir_path( __FILE__ ) . 'core-init.php';
 }
+
+require plugin_dir_path( __FILE__ ) . 'plugin-update-checker/plugin-update-checker.php';
+$myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
+	'https://demos.wbcomdesigns.com/exporter/free-plugins/buddypress-birthdays.json',
+	__FILE__, // Full path to the main plugin file or functions.php.
+	'buddypress-birthdays'
+);
