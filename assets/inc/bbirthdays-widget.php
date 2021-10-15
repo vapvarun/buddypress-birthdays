@@ -17,7 +17,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	/**
 	 * Set up optional widget args.
 	 */
-	public function __construct() {
+	public function __construct() {		
 		$widget_ops = array(
 			'classname'   => 'widget_bp_birthdays widget buddypress',
 			'description' => __( 'BuddyPress Birthdays widget to display the birthdays of the member in an elegant way.', 'buddypress-birthdays' ),
