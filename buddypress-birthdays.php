@@ -21,16 +21,32 @@ define( 'BIRTHDAY_WIDGET_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
 
 if ( ! defined( 'WPINC' ) ) {
-	die;} // end if
+	die;
+} // end if
 
 // Let's Initialize Everything.
 if ( file_exists( plugin_dir_path( __FILE__ ) . 'core-init.php' ) ) {
 	require_once plugin_dir_path( __FILE__ ) . 'core-init.php';
 }
 
-require plugin_dir_path( __FILE__ ) . 'plugin-update-checker/plugin-update-checker.php';
-$myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
-	'https://demos.wbcomdesigns.com/exporter/free-plugins/buddypress-birthdays.json',
-	__FILE__, // Full path to the main plugin file or functions.php.
-	'buddypress-birthdays'
-);
+add_action( 'admin_init', 'bb_check_bp_active' );
+function bb_check_bp_active() {
+	if ( ! class_exists( 'BuddyPress' ) ) {
+		add_action( 'admin_notices', 'bb_dependent_plugin_notice' );
+		deactivate_plugins( plugin_basename( __FILE__ ) );
+	}
+}
+
+function bb_dependent_plugin_notice() {
+	$bb_plugin = esc_html( 'Wbcom Designs - Birthday Widget for BuddyPress' );
+	$bp_plugin = esc_html( 'BuddyPress' );
+
+	echo '<div class="error"><p>'
+	. sprintf( esc_attr( '%1$s is ineffective as it requires %2$s to be installed and active.', 'bp-checkins-pro' ), '<strong>' . esc_attr( $bb_plugin ) . '</strong>', '<strong>' . esc_attr( $bp_plugin ) . '</strong>' )
+	. '</p></div>';
+	if ( null !== filter_input( INPUT_GET, 'activate' ) ) {
+		$activate = filter_input( INPUT_GET, 'activate' );
+		unset( $activate );
+	}
+
+}

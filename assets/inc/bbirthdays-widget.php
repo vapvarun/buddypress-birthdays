@@ -112,7 +112,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 							$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</span>';
 						}
 
-						if ( 'yes' === $instance['birthday_send_message'] ) {
+						if ( 'yes' === $instance['birthday_send_message'] && bp_is_active( 'messages' ) ) {
 							echo '<a href=" ' . esc_url( $this->bbirthday_get_send_private_message_to_user_url( $user_id ) ) . '"/><span class="dashicons dashicons-email"></span></a>';
 						}
 						echo '</div>';
@@ -164,7 +164,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$field_name = str_replace( "'", "\'", $field_name );
 
 		// Get the Birthday field ID.
-		//$field_id = xprofile_get_field_id_from_name( $field_name );
+		// $field_id = xprofile_get_field_id_from_name( $field_name );
 		$field_id = $field_name;
 
 		// Set all data for the date limit check.
@@ -355,7 +355,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			}
 			foreach ( $single_group_details->fields as $group_single_field ) {
 				if ( 'datebox' === $group_single_field->type || 'birthdate' === $group_single_field->type ) {
-					$fields[$group_single_field->id] = $group_single_field->name;
+					$fields[ $group_single_field->id ] = $group_single_field->name;
 				}
 			}
 		}
@@ -397,7 +397,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>"><?php esc_html_e( 'Field\'s name', 'buddypress-birthdays' ); ?></label>
 			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthday_field_name' ) ); ?>">
-				<?php foreach ( $fields as $key=>$field ) : ?>
+				<?php foreach ( $fields as $key => $field ) : ?>
 					<option value="<?php echo esc_attr( $key ); ?>" <?php echo selected( $instance['birthday_field_name'], $key ); ?>><?php echo esc_attr( $field ); ?></option>
 				<?php endforeach; ?>
 			</select>
