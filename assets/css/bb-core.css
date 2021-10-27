@@ -74,6 +74,38 @@ Add Plugin Front-End CSS here
 }
 
 /*---------------------------
+Youzify Support
+---------------------------*/
+.youzify-sidebar .widget_bp_birthdays .widget-title:before {
+    content: "\f1fd";
+}
+
+.youzify-sidebar ul.bp-birthday-users-list {
+    padding: 0 25px !important;
+    padding-bottom: 25px !important;
+}
+
+.youzify-sidebar ul.bp-birthday-users-list > li {
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    overflow: hidden;
+    margin: 25px 0 0 0;
+    list-style-type: none;
+}
+
+.youzify-sidebar ul.bp-birthday-users-list li .birthday-item-content>strong {
+    border: none;
+    color: #7c838a;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.youzify-sidebar ul.bp-birthday-users-list li .avatar {
+    max-width: 50px;
+}
+
+/*---------------------------
 CSS Filters
 ---------------------------*/
 .bp-birthday-blur {
