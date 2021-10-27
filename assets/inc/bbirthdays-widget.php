@@ -156,7 +156,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 */
 	public function bbirthdays_get_array( $data ) {
 
-		$buddypress_wp_users = get_users( array( 'fields' => array( 'ID' ) ) );
+		$friends = friends_get_friend_user_ids(get_current_user_id());
+		
+		$buddypress_wp_users = get_users( array( 'fields' => array( 'ID' ),'include' => $friends ) );		
 		$members_birthdays   = array();
 		// Get the Birthday field name.
 		$field_name = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
