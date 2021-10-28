@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-04-21 09:36:59+00:00\n"
+"POT-Creation-Date: 2021-10-28 07:43:20+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -34,79 +34,114 @@ msgstr ""
 msgid "(BuddyPress) Birthdays"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:110
+#: assets/inc/bbirthdays-widget.php:112
 msgid "Happy Birthday!"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:327
+#: assets/inc/bbirthdays-widget.php:338
 msgid "Upcoming Birthdays"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:361
+#: assets/inc/bbirthdays-widget.php:372
 msgid "Title:"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:367
+#: assets/inc/bbirthdays-widget.php:378
 msgid "Show the age of the person"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:371
+#: assets/inc/bbirthdays-widget.php:382
 msgid "Enable option to wish them"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:374
+#: assets/inc/bbirthdays-widget.php:385
 msgid "Date Format"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:378
+#: assets/inc/bbirthdays-widget.php:389
 msgid "Birthday range limit"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:380
+#: assets/inc/bbirthdays-widget.php:391
 msgid "No Limit"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:381
+#: assets/inc/bbirthdays-widget.php:392
 msgid "Weekly"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:382
+#: assets/inc/bbirthdays-widget.php:393
 msgid "Monthly"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:386
+#: assets/inc/bbirthdays-widget.php:397
 msgid "Display Name Type"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:388
+#: assets/inc/bbirthdays-widget.php:399
 msgid "User name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:389
+#: assets/inc/bbirthdays-widget.php:400
 msgid "Nick name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:390
+#: assets/inc/bbirthdays-widget.php:401
 msgid "First Name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:394
+#: assets/inc/bbirthdays-widget.php:405
 msgid "Field's name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:402
+#: assets/inc/bbirthdays-widget.php:413
 msgid "Number of birthdays to show"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:405
+#: assets/inc/bbirthdays-widget.php:416
 msgid "Select Emoji"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:409
+#: assets/inc/bbirthdays-widget.php:420
 msgid "None"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:104
+#: plugin-update-checker/Puc/v4p10/Plugin/Ui.php:54
+msgid "View details"
+msgstr ""
+
+#: plugin-update-checker/Puc/v4p10/Plugin/Ui.php:77
+msgid "More information about %s"
+msgstr ""
+
+#: plugin-update-checker/Puc/v4p10/Plugin/Ui.php:128
+msgid "Check for updates"
+msgstr ""
+
+#: plugin-update-checker/Puc/v4p10/Plugin/Ui.php:223
+msgid "Unknown update checker status \"%s\""
+msgstr ""
+
+#: plugin-update-checker/Puc/v4p10/Vcs/PluginUpdateChecker.php:98
+msgid "There is no changelog available."
+msgstr ""
+
+#: assets/inc/bbirthdays-widget.php:106
 msgctxt "happy birthday ON 25-06"
 msgid "on"
+msgstr ""
+
+#: plugin-update-checker/Puc/v4p10/Plugin/Ui.php:213
+msgctxt "the plugin title"
+msgid "The %s plugin is up to date."
+msgstr ""
+
+#: plugin-update-checker/Puc/v4p10/Plugin/Ui.php:215
+msgctxt "the plugin title"
+msgid "A new version of the %s plugin is available."
+msgstr ""
+
+#: plugin-update-checker/Puc/v4p10/Plugin/Ui.php:217
+msgctxt "the plugin title"
+msgid "Could not determine if updates are available for %s."
 msgstr ""
