@@ -106,7 +106,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						echo '<span class="badge-wrap"> ', esc_html_x( 'on', 'happy birthday ON 25-06', 'buddypress-birthdays' );
 						$date_format = $instance['birthday_date_format'];
 						$date_format = ( ! empty( $date_format ) ) ? $date_format : 'F d';
-						echo ' <span class="badge badge-primary badge-pill">' . date_i18n( $date_format, $birthday['datetime']->getTimestamp(), true ) . '</span></span>';
+						echo ' <span class="badge badge-primary badge-pill">' . esc_html__( date_i18n( $date_format, $birthday['datetime']->getTimestamp(), true ) ) . '</span></span>';
 						$happy_birthday_label = '';
 						if ( $birthday['next_celebration_comparable_string'] === $date_ymd ) {
 							$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</span>';
