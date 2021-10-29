@@ -171,7 +171,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$field_name = str_replace( "'", "\'", $field_name );
 
 		// Get the Birthday field ID.
-		// $field_id = xprofile_get_field_id_from_name( $field_name );
 		$field_id = $field_name;
 
 		// Set all data for the date limit check.
@@ -329,6 +328,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 	/**
 	 * Widget settings form.
+	 *
+	 * @param array $instance Saved values from database.
 	 */
 	public function form( $instance ) {
 

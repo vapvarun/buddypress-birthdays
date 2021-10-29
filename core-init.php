@@ -1,10 +1,12 @@
 <?php
 /**
+ * This file initializes all BB Core components.
  *
- * ***** BuddyPress Birthdays *****
- *
- * This file initializes all BB Core components
+ * @link              https://wbcomdesigns.com/contact/
+ * @since             1.0.0
+ * @package           BP_Birthdays
  */
+
 // If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
 	die;} // end if
