@@ -40,11 +40,10 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		$birthdays = $this->bbirthdays_get_array( $instance );
 
+		echo $args['before_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
 		if ( ! empty( $birthdays ) ) {
-
-			echo wp_kses_post( $args['before_widget'] );
-
-			echo wp_kses_post( $args['before_title'] . $instance['title'] . $args['after_title'] );
+			echo $args['before_title'] . $instance['title'] . $args['after_title']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			$max_items = (int) $instance['birthdays_to_display'];
 			$c         = 0;
 			$date_ymd  = gmdate( 'Ymd' );
@@ -132,6 +131,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				}
 			}
 						echo '</ul>';
+		} else {
+			esc_html_e( 'You don\'t have any friends . Make Friends and wish them!', 'buddypress-birthdays' );
 		}
 		echo wp_kses_post( $args['after_widget'] );
 	}
@@ -157,13 +158,18 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		$friends = friends_get_friend_user_ids( get_current_user_id() );
 
+		if ( empty( $friends ) ) {
+			return;
+		}
+
 		$buddypress_wp_users = get_users(
 			array(
 				'fields'  => array( 'ID' ),
 				'include' => $friends,
 			)
 		);
-		$members_birthdays   = array();
+
+		$members_birthdays = array();
 		// Get the Birthday field name.
 		$field_name = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
 
@@ -184,63 +190,65 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			$max_date = 'all';
 		}
 
-		// We check if the member has a birthday set.
-		foreach ( $buddypress_wp_users as $buddypress_wp_user ) {
+		if ( ! empty( $buddypress_wp_users ) ) {
+			// We check if the member has a birthday set.
+			foreach ( $buddypress_wp_users as $buddypress_wp_user ) {
 
-			$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $buddypress_wp_user->ID ) );
+				$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $buddypress_wp_user->ID ) );
 
-			if ( empty( $birthday_string ) ) {
-				continue;
-			}
-
-			// We transform the string in a date.
-			$birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string );
-
-			/**
-			 * Filter if the current birthday (in the birthdays widget) can be displayed
-			 *
-			 * @param bool $is_displayed
-			 * @param int $user_id
-			 * @param DateTime $birthday
-			 */
-			$display_this_birthday = apply_filters( 'bbirthdays_display_this_birthday', true, $buddypress_wp_user->ID, $birthday );
-
-			if ( false !== $birthday && $display_this_birthday ) {
-
-				// Skip if birth date is not in the selected limit range..
-				if ( ! $this->bbirthday_is_in_range_limit( $birthday, $max_date ) ) {
+				if ( empty( $birthday_string ) ) {
 					continue;
 				}
 
-				$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( '+1 years' ) );
-
-				$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
-
-				// If gone for this year already, we remove one year.
-				if ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) {
-					--$years_old;
-					// $years_old = $years_old - 1;
-				}
+				// We transform the string in a date.
+				$birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string );
 
 				/**
-				 * Filter bbirthdays_date_format
+				 * Filter if the current birthday (in the birthdays widget) can be displayed
 				 *
-				 * Let you change the date format in which the birthday is displayed
-				 * See: http://php.net/manual/en/function.date.php
-				 *
-				 * @param string - the date format PHP value
-				 *
-				 * @return string
+				 * @param bool $is_displayed
+				 * @param int $user_id
+				 * @param DateTime $birthday
 				 */
-				$format = apply_filters( 'bbirthdays_date_format', 'md' );
+				$display_this_birthday = apply_filters( 'bbirthdays_display_this_birthday', true, $buddypress_wp_user->ID, $birthday );
 
-				$celebration_string = $celebration_year . gmdate( $format, $birthday->getTimestamp() );
+				if ( false !== $birthday && $display_this_birthday ) {
 
-				$members_birthdays[ $buddypress_wp_user->ID ] = array(
-					'datetime'                           => $birthday,
-					'next_celebration_comparable_string' => $celebration_string,
-					'years_old'                          => $years_old,
-				);
+					// Skip if birth date is not in the selected limit range..
+					if ( ! $this->bbirthday_is_in_range_limit( $birthday, $max_date ) ) {
+						continue;
+					}
+
+					$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( '+1 years' ) );
+
+					$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
+
+					// If gone for this year already, we remove one year.
+					if ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) {
+						--$years_old;
+						// $years_old = $years_old - 1;
+					}
+
+					/**
+					 * Filter bbirthdays_date_format
+					 *
+					 * Let you change the date format in which the birthday is displayed
+					 * See: http://php.net/manual/en/function.date.php
+					 *
+					 * @param string - the date format PHP value
+					 *
+					 * @return string
+					 */
+					$format = apply_filters( 'bbirthdays_date_format', 'md' );
+
+					$celebration_string = $celebration_year . gmdate( $format, $birthday->getTimestamp() );
+
+					$members_birthdays[ $buddypress_wp_user->ID ] = array(
+						'datetime'  => $birthday,
+						'next_celebration_comparable_string' => $celebration_string,
+						'years_old' => $years_old,
+					);
+				}
 			}
 		}
 
