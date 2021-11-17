@@ -42,9 +42,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		if ( ! empty( $birthdays ) ) {
 
-			echo $args['before_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo wp_kses_post( $args['before_widget'] );
 
-			echo $args['before_title'] . $instance['title'] . $args['after_title']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo wp_kses_post( $args['before_title'] . $instance['title'] . $args['after_title'] );
 			$max_items = (int) $instance['birthdays_to_display'];
 			$c         = 0;
 			$date_ymd  = gmdate( 'Ymd' );
@@ -122,8 +122,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						 * @param string $happy_birthday_label The text of the label (contains some HTML)
 						 * @param int $user_id
 						 */
-						echo apply_filters( 'bbirthdays_today_happy_birthday_label', $happy_birthday_label, $user_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-
+						$happy_birthday_label = apply_filters( 'bbirthdays_today_happy_birthday_label', $happy_birthday_label, $user_id );
+						echo wp_kses_post( $happy_birthday_label );
 						echo '</span>';
 						echo '</li>';
 
@@ -133,8 +133,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			}
 						echo '</ul>';
 		}
-		echo $args['after_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-
+		echo wp_kses_post( $args['after_widget'] );
 	}
 
 
