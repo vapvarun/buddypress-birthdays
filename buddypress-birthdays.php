@@ -50,7 +50,7 @@ function bb_dependent_plugin_notice() {
 
 	echo '<div class="error"><p>'
 	/* translators: %1$s: Wbcom Designs - Birthday Widget for BuddyPress, %2$s: BuddyPress */
-	. sprintf( esc_html__( '%1$s is ineffective as it requires %2$s to be installed and active.', 'bp-checkins-pro' ), '<strong>' . esc_attr( $bb_plugin ) . '</strong>', '<strong>' . esc_attr( $bp_plugin ) . '</strong>' )
+	. sprintf( esc_html__( '%1$s is ineffective as it requires %2$s to be installed and active.', 'buddypress-birthdays' ), '<strong>' . esc_attr( $bb_plugin ) . '</strong>', '<strong>' . esc_attr( $bp_plugin ) . '</strong>' )
 	. '</p></div>';
 	if ( null !== filter_input( INPUT_GET, 'activate' ) ) {
 		$activate = filter_input( INPUT_GET, 'activate' );
