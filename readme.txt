@@ -3,7 +3,7 @@ Contributors: vapvarun,wbcomdesigns
 Tags: buddypress
 Donate link: https://www.paypal.me/wbcomdesigns
 Requires at least: 4.5.0
-Tested up to: 5.8.1
+Tested up to: 5.8.2
 Requires PHP: 7.0.0
 Stable tag: 1.6.0
 License: GPLv3
