@@ -69,70 +69,74 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 							echo '<a href="' . esc_url( bp_core_get_user_domain( $user_id ) ) . '">';
 							echo get_avatar( $user_id );
 							echo '</a>';
-						else :
-							echo get_avatar( $user_id );
-						endif;
-						echo '<span class="birthday-item-content">'; ?>
+							else :
+								echo get_avatar( $user_id );
+							endif;
+							echo '<span class="birthday-item-content">'; ?>
 						<strong>
-						<?php
-						if ( 'user_name' === $display_name_type ) {
+							<?php
+							if ( 'user_name' === $display_name_type ) {
 								echo esc_html( bp_core_get_username( $user_id ) );
-						} elseif ( 'nick_name' === $display_name_type ) {
-							echo esc_html( get_user_meta( $user_id, 'nickname', true ) );
-						} elseif ( 'first_name' === $display_name_type ) {
-							echo esc_html( get_user_meta( $user_id, 'first_name', true ) );
-						}
-						?>
+							} elseif ( 'nick_name' === $display_name_type ) {
+								echo esc_html( get_user_meta( $user_id, 'nickname', true ) );
+							} elseif ( 'first_name' === $display_name_type ) {
+								echo esc_html( get_user_meta( $user_id, 'first_name', true ) );
+							}
+							?>
 						</strong>
-						<?php
-						if ( isset( $instance['display_age'] ) && 'yes' === $instance['display_age'] ) {
-							echo '<i class="bp-user-age">(' . esc_html( $age ) . ')</i>';
-						}
-						switch ( $emoji ) {
-							case 'none':
-								echo '';
-								break;
-							case 'cake':
-								echo '<span>&#x1F382;</span>';
-								break;
-							case 'party':
-								echo '<span>&#x1F389;</span>';
-								break;
-							default:
-								echo '<span>&#x1F388;</span>';
-						}
-						echo '<div class="bbirthday_action">';
-						echo '<span class="badge-wrap"> ', esc_html_x( 'on', 'happy birthday ON 25-06', 'buddypress-birthdays' );
-						$date_format = $instance['birthday_date_format'];
-						$date_format = ( ! empty( $date_format ) ) ? $date_format : 'F d';
-						echo ' <span class="badge badge-primary badge-pill">' . esc_html__( date_i18n( $date_format, $birthday['datetime']->getTimestamp(), true ), 'buddypress-birthdays' ) . '</span></span>';
-						$happy_birthday_label = '';
-						if ( $birthday['next_celebration_comparable_string'] === $date_ymd ) {
-							$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</span>';
-						}
+							<?php
+							if ( isset( $instance['display_age'] ) && 'yes' === $instance['display_age'] ) {
+								echo '<i class="bp-user-age">(' . esc_html( $age ) . ')</i>';
+							}
+							switch ( $emoji ) {
+								case 'none':
+									echo '';
+									break;
+								case 'cake':
+									echo '<span>&#x1F382;</span>';
+									break;
+								case 'party':
+									echo '<span>&#x1F389;</span>';
+									break;
+								default:
+									echo '<span>&#x1F388;</span>';
+							}
+							echo '<div class="bbirthday_action">';
+							echo '<span class="badge-wrap"> ', esc_html_x( 'on', 'happy birthday ON 25-06', 'buddypress-birthdays' );
+							$date_format = $instance['birthday_date_format'];
+							$date_format = ( ! empty( $date_format ) ) ? $date_format : 'F d';
+							echo ' <span class="badge badge-primary badge-pill">' . esc_html__( date_i18n( $date_format, $birthday['datetime']->getTimestamp(), true ), 'buddypress-birthdays' ) . '</span></span>';
+							$happy_birthday_label = '';
+							if ( $birthday['next_celebration_comparable_string'] === $date_ymd ) {
+								$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</span>';
+							}
 
-						if ( 'yes' === $instance['birthday_send_message'] && bp_is_active( 'messages' ) ) {
-							echo '<a href=" ' . esc_url( $this->bbirthday_get_send_private_message_to_user_url( $user_id ) ) . '"/><span class="dashicons dashicons-email"></span></a>';
-						}
-						echo '</div>';
-						/**
-						 * The label "Happy birthday", if today is the birthday of an user
-						 *
-						 * @param string $happy_birthday_label The text of the label (contains some HTML)
-						 * @param int $user_id
-						 */
-						$happy_birthday_label = apply_filters( 'bbirthdays_today_happy_birthday_label', $happy_birthday_label, $user_id );
-						echo wp_kses_post( $happy_birthday_label );
-						echo '</span>';
-						echo '</li>';
+							if ( 'yes' === $instance['birthday_send_message'] && bp_is_active( 'messages' ) ) {
+								echo '<a href=" ' . esc_url( $this->bbirthday_get_send_private_message_to_user_url( $user_id ) ) . '"/><span class="dashicons dashicons-email"></span></a>';
+							}
+							echo '</div>';
+							/**
+							 * The label "Happy birthday", if today is the birthday of an user
+							 *
+							 * @param string $happy_birthday_label The text of the label (contains some HTML)
+							 * @param int $user_id
+							 */
+							$happy_birthday_label = apply_filters( 'bbirthdays_today_happy_birthday_label', $happy_birthday_label, $user_id );
+							echo wp_kses_post( $happy_birthday_label );
+							echo '</span>';
+							echo '</li>';
 
-						$c++;
+							$c++;
 					}
 				}
 			}
-						echo '</ul>';
+			echo '</ul>';
 		} else {
-			esc_html_e( 'You don\'t have any friends . Make Friends and wish them!', 'buddypress-birthdays' );
+			if ( 'friends' === $instance['show_birthdays_of'] ) {
+				esc_html_e( 'You don\'t have any friends . Make Friends and wish them!', 'buddypress-birthdays' );
+			} elseif ( 'followers' === $instance['show_birthdays_of'] ) {
+				esc_html_e( 'You don\'t have any followings. Follow them and wish them!', 'buddypress-birthdays' );
+			}
 		}
 		echo wp_kses_post( $args['after_widget'] );
 	}
@@ -156,18 +160,26 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 */
 	public function bbirthdays_get_array( $data ) {
 
-		$friends = friends_get_friend_user_ids( get_current_user_id() );
+		$members = array();
+		if ( isset( $data['show_birthdays_of'] ) && 'friends' === $data['show_birthdays_of'] ) {
+			$members = friends_get_friend_user_ids( get_current_user_id() );
+		} elseif ( isset( $data['show_birthdays_of'] ) && 'followers' === $data['show_birthdays_of'] ) {
+			if ( function_exists( 'bp_follow_get_following' ) ) {
+				$members = bp_follow_get_following(
+					array(
+						'user_id' => bp_loggedin_user_id(),
+					)
+				);
+			} elseif ( function_exists( 'bp_get_following_ids' ) ) {
+				$members = bp_get_following_ids(
+					array(
+						'user_id' => bp_loggedin_user_id(),
+					)
+				);
 
-		if ( empty( $friends ) ) {
-			return;
+				$members = explode( ',', $members );
+			}
 		}
-
-		$buddypress_wp_users = get_users(
-			array(
-				'fields'  => array( 'ID' ),
-				'include' => $friends,
-			)
-		);
 
 		$members_birthdays = array();
 		// Get the Birthday field name.
@@ -190,7 +202,15 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			$max_date = 'all';
 		}
 
-		if ( ! empty( $buddypress_wp_users ) ) {
+		if ( ! empty( $members ) || ( isset( $data['show_birthdays_of'] ) && 'all' === $data['show_birthdays_of'] ) ) {
+
+			$buddypress_wp_users = get_users(
+				array(
+					'fields'  => array( 'ID' ),
+					'include' => $members,
+				)
+			);
+
 			// We check if the member has a birthday set.
 			foreach ( $buddypress_wp_users as $buddypress_wp_user ) {
 
@@ -324,6 +344,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$instance['birthday_date_format']  = ( ! empty( $new_instance['birthday_date_format'] ) ) ? $new_instance['birthday_date_format'] : '';
 		$instance['display_age']           = ( ! empty( $new_instance['display_age'] ) ) ? $new_instance['display_age'] : '';
 		$instance['birthdays_range_limit'] = ( ! empty( $new_instance['birthdays_range_limit'] ) ) ? $new_instance['birthdays_range_limit'] : '';
+		$instance['show_birthdays_of']     = ( ! empty( $new_instance['show_birthdays_of'] ) ) ? $new_instance['show_birthdays_of'] : '';
 		$instance['birthdays_to_display']  = ( ! empty( $new_instance['birthdays_to_display'] ) ) ? $new_instance['birthdays_to_display'] : '';
 		$instance['birthday_field_name']   = ( ! empty( $new_instance['birthday_field_name'] ) ) ? $new_instance['birthday_field_name'] : '';
 		$instance['emoji']                 = ( ! empty( $new_instance['emoji'] ) ) ? $new_instance['emoji'] : '';
@@ -348,6 +369,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				'birthday_send_message' => 'yes',
 				'birthday_date_format'  => 'F d',
 				'birthdays_range_limit' => 'no_limit',
+				'show_birthdays_of'     => 'all',
 				'display_name_type'     => 'user_name',
 				'birthdays_to_display'  => 5,
 				'emoji'                 => 'balloon',
@@ -375,6 +397,12 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			}
 		}
 
+		// Buddyboss follow functionality support
+		$bb_follow_buttons = false;
+		if ( function_exists( 'bp_admin_setting_callback_enable_activity_follow' ) ) {
+			$bb_follow_buttons = bp_is_activity_follow_active();
+		}
+
 		?>
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"><?php esc_html_e( 'Title:', 'buddypress-birthdays' ); ?></label>
@@ -399,6 +427,20 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				<option value="no_limit" <?php echo selected( 'no_limit', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'No Limit', 'buddypress-birthdays' ); ?></option>
 				<option value="weekly" <?php echo selected( 'weekly', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'Weekly', 'buddypress-birthdays' ); ?></option>
 				<option value="monthly" <?php echo selected( 'monthly', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'Monthly', 'buddypress-birthdays' ); ?></option>
+			</select>
+		</p>
+		<p>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'show_birthdays_of' ) ); ?>"><?php esc_html_e( 'Show Birthdays of', 'buddypress-birthdays' ); ?></label>
+			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'show_birthdays_of' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'show_birthdays_of' ) ); ?>">
+				<?php if ( bp_is_active( 'follow' ) ) : ?>
+					<option value="followers" <?php echo selected( 'followers', $instance['show_birthdays_of'] ); ?>><?php esc_html_e( 'Followings', 'buddypress-birthdays' ); ?></option>
+				<?php elseif ( $bb_follow_buttons && function_exists( 'bp_add_follow_button' ) ) : ?>
+					<option value="followers" <?php echo selected( 'followers', $instance['show_birthdays_of'] ); ?>><?php esc_html_e( 'Followings', 'buddypress-birthdays' ); ?></option>
+				<?php endif; ?>
+				<?php if ( bp_is_active( 'friends' ) ) : ?>
+					<option value="friends" <?php echo selected( 'friends', $instance['show_birthdays_of'] ); ?>><?php esc_html_e( 'Friends', 'buddypress-birthdays' ); ?></option>
+				<?php endif; ?>
+					<option value="all" <?php echo selected( 'all', $instance['show_birthdays_of'] ); ?>><?php esc_html_e( 'All Members', 'buddypress-birthdays' ); ?></option>
 			</select>
 		</p>
 		<p>
@@ -440,7 +482,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>">&#127881;</label>
 			</p>
 	</div>
-		<?php
+				<?php
 
 	}
 
