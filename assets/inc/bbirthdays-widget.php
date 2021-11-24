@@ -133,7 +133,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			echo '</ul>';
 		} else {
 			if ( 'friends' === $instance['show_birthdays_of'] ) {
-				esc_html_e( 'You don\'t have any friends . Make Friends and wish them!', 'buddypress-birthdays' );
+				if ( ! bp_is_active( 'friends' ) ) {
+					esc_html_e( 'BuddyPress Friends Component is not activate.', 'buddypress-birthdays' );
+				} else {
+					esc_html_e( 'You don\'t have any friends . Make Friends and wish them!', 'buddypress-birthdays' );
+				}
 			} elseif ( 'followers' === $instance['show_birthdays_of'] ) {
 				esc_html_e( 'You don\'t have any followings. Follow them and wish them!', 'buddypress-birthdays' );
 			}
@@ -161,7 +165,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	public function bbirthdays_get_array( $data ) {
 
 		$members = array();
-		if ( isset( $data['show_birthdays_of'] ) && 'friends' === $data['show_birthdays_of'] ) {
+		if ( isset( $data['show_birthdays_of'] ) && 'friends' === $data['show_birthdays_of'] && bp_is_active( 'friends' ) ) {
 			$members = friends_get_friend_user_ids( get_current_user_id() );
 		} elseif ( isset( $data['show_birthdays_of'] ) && 'followers' === $data['show_birthdays_of'] ) {
 			if ( function_exists( 'bp_follow_get_following' ) ) {
