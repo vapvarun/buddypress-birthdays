@@ -144,6 +144,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				esc_html_e( 'You don\'t have any birthday in this week!', 'buddypress-birthdays' );
 			} elseif ( 'monthly' === $instance['birthdays_range_limit'] ) {
 				esc_html_e( 'You don\'t have any birthday in this month!', 'buddypress-birthdays' );
+			} elseif ( 'no_limit' === $instance['birthdays_range_limit'] ) {
+				esc_html_e( 'You don\'t have any birthday!', 'buddypress-birthdays' );
 			}
 		}
 		echo wp_kses_post( $args['after_widget'] );
