@@ -140,6 +140,10 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				}
 			} elseif ( 'followers' === $instance['show_birthdays_of'] ) {
 				esc_html_e( 'You don\'t have any followings. Follow users to wish them!', 'buddypress-birthdays' );
+			} elseif ( 'weekly' === $instance['birthdays_range_limit'] ) {
+				esc_html_e( 'You don\'t have any birthday in this week!', 'buddypress-birthdays' );
+			} elseif ( 'monthly' === $instance['birthdays_range_limit'] ) {
+				esc_html_e( 'You don\'t have any birthday in this month!', 'buddypress-birthdays' );
 			}
 		}
 		echo wp_kses_post( $args['after_widget'] );
