@@ -19,6 +19,11 @@ add_action( 'wp_ajax_nopriv_bb_custom_plugin_frontend_ajax', 'bb_custom_plugin_f
  * Action performed for frontend ajax.
  */
 function bb_custom_plugin_frontend_ajax() {
+	$bp_activity_nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+	// Check for nonce security.
+	if ( ! wp_verify_nonce( $bp_activity_nonce, 'my_bb_nonce' ) ) {
+		die( 'Busted!' );
+	}
 	ob_start();
 	if ( isset( $_POST['myInputFieldValue'] ) ) {
 		$printName = sanitize_text_field( wp_unslash( $_POST['myInputFieldValue'] ) );

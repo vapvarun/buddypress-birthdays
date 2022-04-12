@@ -23,10 +23,12 @@ jQuery(document).ready(function($){
 		event.preventDefault();
 		// Vars
 		var myInputFieldValue = $('#myInputField').val();
+		var bb_nonce = <?php echo esc_html( wp_create_nonce( 'my_bb_nonce' ) ); ?>;
 		// Ajaxify the Form
 		var data = {
 			'action': 'bb_custom_plugin_frontend_ajax',
 			'myInputFieldValue':   myInputFieldValue,
+			'nonce': bb_nonce,
 		};
 		// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
 		var ajaxurl = "<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>";
