@@ -1,14 +1,14 @@
-# Copyright (C) 2021
+# Copyright (C) 2022
 # This file is distributed under the same license as the  package.
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-11-23 20:49:23+00:00\n"
+"POT-Creation-Date: 2022-04-13 09:36:38+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2021-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2022-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Varun Dubey\n"
 "Language-Team: Wbcom Designs\n"
 "Language: en\n"
@@ -38,75 +38,99 @@ msgstr ""
 msgid "Happy Birthday!"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:135
+#: assets/inc/bbirthdays-widget.php:137
+msgid "BuddyPress Friends Component is not activate."
+msgstr ""
+
+#: assets/inc/bbirthdays-widget.php:139
 msgid "You don't have any friends . Make Friends and wish them!"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:346
+#: assets/inc/bbirthdays-widget.php:142
+msgid "You don't have any followings. Follow users to wish them!"
+msgstr ""
+
+#: assets/inc/bbirthdays-widget.php:371
 msgid "Upcoming Birthdays"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:380
+#: assets/inc/bbirthdays-widget.php:412
 msgid "Title:"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:386
+#: assets/inc/bbirthdays-widget.php:418
 msgid "Show the age of the person"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:390
+#: assets/inc/bbirthdays-widget.php:422
 msgid "Enable option to wish them"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:393
+#: assets/inc/bbirthdays-widget.php:425
 msgid "Date Format"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:397
+#: assets/inc/bbirthdays-widget.php:429
 msgid "Birthday range limit"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:399
+#: assets/inc/bbirthdays-widget.php:431
 msgid "No Limit"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:400
+#: assets/inc/bbirthdays-widget.php:432
 msgid "Weekly"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:401
+#: assets/inc/bbirthdays-widget.php:433
 msgid "Monthly"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:405
+#: assets/inc/bbirthdays-widget.php:437
+msgid "Show Birthdays of"
+msgstr ""
+
+#: assets/inc/bbirthdays-widget.php:440 assets/inc/bbirthdays-widget.php:442
+msgid "Followings"
+msgstr ""
+
+#: assets/inc/bbirthdays-widget.php:445
+msgid "Friends"
+msgstr ""
+
+#: assets/inc/bbirthdays-widget.php:447
+msgid "All Members"
+msgstr ""
+
+#: assets/inc/bbirthdays-widget.php:451
 msgid "Display Name Type"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:407
+#: assets/inc/bbirthdays-widget.php:453
 msgid "User name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:408
+#: assets/inc/bbirthdays-widget.php:454
 msgid "Nick name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:409
+#: assets/inc/bbirthdays-widget.php:455
 msgid "First Name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:413
+#: assets/inc/bbirthdays-widget.php:459
 msgid "Field's name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:421
+#: assets/inc/bbirthdays-widget.php:467
 msgid "Number of birthdays to show"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:424
+#: assets/inc/bbirthdays-widget.php:470
 msgid "Select Emoji"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:428
+#: assets/inc/bbirthdays-widget.php:474
 msgid "None"
 msgstr ""
 
