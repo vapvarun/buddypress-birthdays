@@ -187,9 +187,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		$members_birthdays = array();
 		// Get the Birthday field name.
-		$field_name = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
-
-		$field_name = str_replace( "'", "\'", $field_name );
+		$field_name      = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
+		$bb_wp_time_zone = get_option( 'timezone_string' );
+		$field_name      = str_replace( "'", "\'", $field_name );
 
 		// Get the Birthday field ID.
 		$field_id = $field_name;
@@ -226,6 +226,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 				// We transform the string in a date.
 				$birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string );
+				if ( ! empty( $bb_wp_time_zone ) ) {
+					$birthday = $birthday->setTimeZone( new DateTimeZone( $bb_wp_time_zone ) );
+				}
 
 				/**
 				 * Filter if the current birthday (in the birthdays widget) can be displayed
