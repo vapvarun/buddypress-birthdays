@@ -136,10 +136,12 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				if ( ! bp_is_active( 'friends' ) ) {
 					esc_html_e( 'BuddyPress Friends Component is not activate.', 'buddypress-birthdays' );
 				} else {
-					esc_html_e( 'You don\'t have any friends . Make Friends and wish them!', 'buddypress-birthdays' );
+					esc_html_e( 'You don\'t have any friends. Make Friends and wish them!', 'buddypress-birthdays' );
 				}
 			} elseif ( 'followers' === $instance['show_birthdays_of'] ) {
 				esc_html_e( 'You don\'t have any followings. Follow users to wish them!', 'buddypress-birthdays' );
+			} elseif ( 'all' === $instance['show_birthdays_of'] ) {
+				esc_html_e( 'Not a single user has updated their birthday yet. Tell them to update their birthday and wish them!', 'buddypress-birthdays' );
 			}
 		}
 		echo wp_kses_post( $args['after_widget'] );
