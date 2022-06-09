@@ -199,15 +199,14 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		// Set all data for the date limit check.
 		$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
 		if ( 'monthly' === $birthdays_limit ) {
-			$int_date_time = strtotime( '+30 day', time() );
+			$int_date_time = strtotime( '+30 day', current_time( 'timestamp', 0 ) );
 			$max_date      = gmdate( 'md', $int_date_time );
 		} elseif ( 'weekly' === $birthdays_limit ) {
-			$int_date_time = strtotime( '+7 day', time() );
+			$int_date_time = strtotime( '+7 day', current_time( 'timestamp', 0 ) );
 			$max_date      = gmdate( 'md', $int_date_time );
 		} else {
 			$max_date = 'all';
 		}
-
 		if ( ! empty( $members ) || ( isset( $data['show_birthdays_of'] ) && 'all' === $data['show_birthdays_of'] ) ) {
 
 			$buddypress_wp_users = get_users(
@@ -228,6 +227,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 				// We transform the string in a date.
 				$birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string );
+
 				if ( ! empty( $bb_wp_time_zone ) ) {
 					$birthday = $birthday->setTimeZone( new DateTimeZone( $bb_wp_time_zone ) );
 				}
