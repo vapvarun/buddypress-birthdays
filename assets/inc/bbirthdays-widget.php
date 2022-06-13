@@ -105,7 +105,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 							echo '<span class="badge-wrap"> ', esc_html_x( 'on', 'happy birthday ON 25-06', 'buddypress-birthdays' );
 							$date_format = $instance['birthday_date_format'];
 							$date_format = ( ! empty( $date_format ) ) ? $date_format : 'F d';
-							echo ' <span class="badge badge-primary badge-pill">' . esc_html__( date_i18n( $date_format, $birthday['datetime']->getTimestamp(), true ), 'buddypress-birthdays' ) . '</span></span>';
+
+							echo ' <span class="badge badge-primary badge-pill">' . esc_html__( wp_date( $date_format, $birthday['datetime']->getTimestamp() ), 'buddypress-birthdays' ) . '</span></span>';
 							$happy_birthday_label = '';
 							if ( $birthday['next_celebration_comparable_string'] === $date_ymd ) {
 								$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</span>';
@@ -207,6 +208,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		} else {
 			$max_date = 'all';
 		}
+
 		if ( ! empty( $members ) || ( isset( $data['show_birthdays_of'] ) && 'all' === $data['show_birthdays_of'] ) ) {
 
 			$buddypress_wp_users = get_users(
@@ -226,10 +228,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				}
 
 				// We transform the string in a date.
-				$birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string );
-
 				if ( ! empty( $bb_wp_time_zone ) ) {
-					$birthday = $birthday->setTimeZone( new DateTimeZone( $bb_wp_time_zone ) );
+					$birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string, new DateTimeZone( $bb_wp_time_zone ) );
+				} else {
+					$birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string );
+
 				}
 
 				/**
