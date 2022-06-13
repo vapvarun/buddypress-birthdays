@@ -231,7 +231,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				if ( ! empty( $bb_wp_time_zone ) ) {
 					$birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string, new DateTimeZone( $bb_wp_time_zone ) );
 				} else {
-					$birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string );
+					$get_utc_time_zone = wp_timezone_string();
+					$birthday          = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string, new DateTimeZone( $get_utc_time_zone ) );
 
 				}
 
