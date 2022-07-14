@@ -252,7 +252,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						continue;
 					}
 
-					$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( '+1 years' ) );
+					$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( 'now' ) );
 
 					$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
 
