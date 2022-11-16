@@ -108,6 +108,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 							echo ' <span class="badge badge-primary badge-pill">' . esc_html__( wp_date( $date_format, $birthday['datetime']->getTimestamp() ), 'buddypress-birthdays' ) . '</span></span>';
 							$happy_birthday_label = '';
+							
 							if ( $birthday['next_celebration_comparable_string'] === $date_ymd ) {
 								$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</span>';
 							}
@@ -232,10 +233,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					$birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string, new DateTimeZone( $bb_wp_time_zone ) );
 				} else {
 					$get_utc_time_zone = wp_timezone_string();
-					$birthday          = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string, new DateTimeZone( $get_utc_time_zone ) );
-
+					$birthday          = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string, wp_timezone() );
 				}
-
+				
 				/**
 				 * Filter if the current birthday (in the birthdays widget) can be displayed
 				 *
@@ -244,18 +244,18 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				 * @param DateTime $birthday
 				 */
 				$display_this_birthday = apply_filters( 'bbirthdays_display_this_birthday', true, $buddypress_wp_user->ID, $birthday );
-
+				
 				if ( false !== $birthday && $display_this_birthday ) {
 
 					// Skip if birth date is not in the selected limit range..
 					if ( ! $this->bbirthday_is_in_range_limit( $birthday, $max_date ) ) {
 						continue;
 					}
-
+					
 					$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( 'now' ) );
-
+					
 					$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
-
+					
 					// If gone for this year already, we remove one year.
 					if ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) {
 						--$years_old;
@@ -274,7 +274,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					 */
 					$format = apply_filters( 'bbirthdays_date_format', 'md' );
 
-					$celebration_string = $celebration_year . gmdate( $format, $birthday->getTimestamp() );
+					$celebration_string = $celebration_year . $birthday->format( $format );
 
 					$members_birthdays[ $buddypress_wp_user->ID ] = array(
 						'datetime'  => $birthday,
