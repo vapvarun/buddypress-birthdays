@@ -336,8 +336,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		if ( 'all' === $max_date ) {
 			return true;
 		}
-
-		$target_date = gmdate( 'md', $birth_date->getTimestamp() );
+		
+		$target_date = $birth_date->format('md');
 		$now_date    = gmdate( 'md' );
 
 		return $max_date >= $target_date && $target_date >= $now_date;
