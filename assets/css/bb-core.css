@@ -66,11 +66,41 @@ Add Plugin Front-End CSS here
     align-items: center;
     -ms-flex-flow: row wrap;
     flex-flow: row wrap;
+    position:relative;
 }
 
 .bp-birthday-users-list .bbirthday_action span {
     margin-right: 3px;
     margin-top: 2px;
+}
+
+.bbirthday_action .send_wishes .tooltip_wishes {
+    white-space: nowrap;
+    position: absolute;
+    z-index: 99;
+    top: -25px;
+    left: 50%;
+    margin-left: -15px;
+    opacity: 0;
+    font-size: 12px;
+    line-height: 1.7;
+    padding: 0 13px;
+    border-radius: 100px;
+    background-color: #3e3f5e;
+    color: #fff;
+    visibility: hidden;
+    -webkit-transform: translate(0, 10px);
+    -ms-transform: translate(0, 10px);
+    transform: translate(0, 10px);
+    -webkit-transition: all 0.3s ease-in-out 0s;
+    transition: all 0.3s ease-in-out 0s;
+}
+.bbirthday_action .send_wishes:hover .tooltip_wishes {
+    opacity: 1;
+    visibility: visible;
+    -webkit-transform: translate(0, 0);
+    -ms-transform: translate(0, 0);
+    transform: translate(0, 0);
 }
 
 /*---------------------------

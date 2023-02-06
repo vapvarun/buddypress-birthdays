@@ -114,7 +114,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 							}
 
 							if ( 'yes' === $instance['birthday_send_message'] && bp_is_active( 'messages' ) && is_user_logged_in() ) {
-								echo '<a href=" ' . esc_url( $this->bbirthday_get_send_private_message_to_user_url( $user_id ) ) . '"/><span class="dashicons dashicons-email"></span></a>';
+								echo '<a class="send_wishes" href=" ' . esc_url( $this->bbirthday_get_send_private_message_to_user_url( $user_id ) ) . '"/><span class="dashicons dashicons-email"></span><div class="tooltip_wishes">Send my wishes</div></a>';
 							}
 							echo '</div>';
 							/**
