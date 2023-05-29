@@ -17,6 +17,7 @@ Know the upcoming birthdays of the site’s members. Wish them and make their da
 == Changelog ==
 = 2.0.2 =
 * Fix: (#45) Fixed missing string
+
 = 2.0.1 =
 * Fix: (#45) Fixed send my wishes add tooltip for message icon
 
