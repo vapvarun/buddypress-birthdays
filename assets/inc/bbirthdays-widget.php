@@ -66,7 +66,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					if ( $age > 0 ) {
 						echo '<li class="bp-birthday-users">';
 						if ( function_exists( 'bp_is_active' ) ) :
-							echo '<a href="' . esc_url( bp_core_get_user_domain( $user_id ) ) . '">';
+							if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
+								echo '<a href="' . esc_url( bp_members_get_user_url( $user_id ) ) . '">';
+							} else {
+								echo '<a href="' . esc_url( bp_core_get_user_domain( $user_id ) ) . '">';
+							}
 							echo get_avatar( $user_id );
 							echo '</a>';
 							else :
@@ -76,7 +80,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						<strong>
 							<?php
 							if ( 'user_name' === $display_name_type ) {
-								echo esc_html( bp_core_get_username( $user_id ) );
+								if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
+									echo esc_html( bp_members_get_user_slug( $user_id ) );
+								} else {
+									echo esc_html( bp_core_get_username( $user_id ) );
+								}
 							} elseif ( 'nick_name' === $display_name_type ) {
 								echo esc_html( get_user_meta( $user_id, 'nickname', true ) );
 							} elseif ( 'first_name' === $display_name_type ) {
@@ -108,7 +116,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 							echo ' <span class="badge badge-primary badge-pill">' . esc_html__( wp_date( $date_format, $birthday['datetime']->getTimestamp() ), 'buddypress-birthdays' ) . '</span></span>';
 							$happy_birthday_label = '';
-							
+
 							if ( $birthday['next_celebration_comparable_string'] === $date_ymd ) {
 								$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</span>';
 							}
@@ -158,7 +166,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 * @return string
 	 */
 	public function bbirthday_get_send_private_message_to_user_url( $user_id ) {
-		return wp_nonce_url( bp_loggedin_user_domain() . bp_get_messages_slug() . '/compose/?r=' . bp_core_get_username( $user_id ) );
+		if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
+			return wp_nonce_url( bp_loggedin_user_domain() . bp_get_messages_slug() . '/compose/?r=' . bp_members_get_user_slug( $user_id ) );
+		} else {
+			return wp_nonce_url( bp_loggedin_user_domain() . bp_get_messages_slug() . '/compose/?r=' . bp_core_get_username( $user_id ) );
+		}
 	}
 
 	/**
@@ -235,7 +247,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					$get_utc_time_zone = wp_timezone_string();
 					$birthday          = DateTime::createFromFormat( 'Y-m-d H:i:s', $birthday_string, wp_timezone() );
 				}
-				
+
 				/**
 				 * Filter if the current birthday (in the birthdays widget) can be displayed
 				 *
@@ -244,18 +256,18 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				 * @param DateTime $birthday
 				 */
 				$display_this_birthday = apply_filters( 'bbirthdays_display_this_birthday', true, $buddypress_wp_user->ID, $birthday );
-				
+
 				if ( false !== $birthday && $display_this_birthday ) {
 
 					// Skip if birth date is not in the selected limit range..
 					if ( ! $this->bbirthday_is_in_range_limit( $birthday, $max_date ) ) {
 						continue;
 					}
-					
+
 					$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( 'now' ) );
-					
+
 					$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
-					
+
 					// If gone for this year already, we remove one year.
 					if ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) {
 						--$years_old;
@@ -336,8 +348,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		if ( 'all' === $max_date ) {
 			return true;
 		}
-		
-		$target_date = $birth_date->format('md');
+
+		$target_date = $birth_date->format( 'md' );
 		$now_date    = gmdate( 'md' );
 
 		return $max_date >= $target_date && $target_date >= $now_date;
