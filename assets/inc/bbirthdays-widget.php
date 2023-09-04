@@ -251,8 +251,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					if ( ! $this->bbirthday_is_in_range_limit( $birthday, $max_date ) ) {
 						continue;
 					}
-					
-					$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( 'now' ) );
+					if( 'no_limit' === $birthdays_limit ){
+						$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( '+1 years' ) );
+					}else{
+						$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( 'now' ) );
+					}
 					
 					$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
 					
@@ -273,8 +276,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					 * @return string
 					 */
 					$format = apply_filters( 'bbirthdays_date_format', 'md' );
-
-					$celebration_string = $celebration_year . $birthday->format( $format );
+					if( 'no_limit' === $birthdays_limit ){
+						$celebration_string = $celebration_year . gmdate( $format, $birthday->getTimestamp() );
+					}else{
+						$celebration_string = $celebration_year . $birthday->format( $format );
+					}
 
 					$members_birthdays[ $buddypress_wp_user->ID ] = array(
 						'datetime'  => $birthday,
