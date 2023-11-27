@@ -15,9 +15,11 @@
  */
 
 // If this file is called directly, abort.
-
 define( 'BIRTHDAY_WIDGET_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BIRTHDAY_WIDGET_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
+
+require_once __DIR__ . '/vendor/autoload.php';
+HardG\BuddyPress120URLPolyfills\Loader::init();
 
 
 if ( ! defined( 'WPINC' ) ) {
