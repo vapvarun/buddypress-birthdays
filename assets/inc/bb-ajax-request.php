@@ -15,13 +15,19 @@ if ( ! defined( 'WPINC' ) ) {
  */
 add_action( 'wp_ajax_bb_custom_plugin_frontend_ajax', 'bb_custom_plugin_frontend_ajax' );
 add_action( 'wp_ajax_nopriv_bb_custom_plugin_frontend_ajax', 'bb_custom_plugin_frontend_ajax' );
+
+wp_localize_script('bb_widget_nonce', 'ajax_object', array(
+	'ajax_url' => admin_url('admin-ajax.php'),
+	'nonce'    => wp_create_nonce('bb_widget_nonce_action')
+));
+
 /**
  * Action performed for frontend ajax.
  */
 function bb_custom_plugin_frontend_ajax()
 {
 	// Check for nonce security
-	if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'your_nonce_action')) {
+	if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'bb_widget_nonce_action')) {
 		echo 'Nonce verification failed!';
 		wp_die();
 	}
