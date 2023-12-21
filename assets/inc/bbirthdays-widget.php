@@ -201,8 +201,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		// Set all data for the date limit check.
 		$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
 		if ( 'monthly' === $birthdays_limit ) {
-			$last_day_of_month = date('t');
-			$current_day = date('j');
+			$last_day_of_month = gmdate('t');
+			$current_day = gmdate('j');
 			$remaining_days = $last_day_of_month - $current_day;
 			$int_date_time = strtotime('+' . $remaining_days . ' day', current_time('timestamp', 0));
 			$max_date      = gmdate( 'md', $int_date_time );
