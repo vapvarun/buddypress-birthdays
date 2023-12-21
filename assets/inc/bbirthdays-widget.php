@@ -106,12 +106,22 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 							$date_format = $instance['birthday_date_format'];
 							$date_format = ( ! empty( $date_format ) ) ? $date_format : 'F d';
 
-							echo ' <span class="badge badge-primary badge-pill">' . esc_html__( wp_date( $date_format, $birthday['datetime']->getTimestamp() ), 'buddypress-birthdays' ) . '</span></span>';
-							$happy_birthday_label = '';
-							
-							if ( $birthday['next_celebration_comparable_string'] === $date_ymd ) {
-								$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</span>';
-							}
+								// First, get the formatted date string
+								$formatted_date = wp_date($date_format, $birthday['datetime']->getTimestamp());
+
+								// Then, translate and escape the string
+								$translated_date = esc_html__($formatted_date, 'buddypress-birthdays');
+
+								// Finally, echo the span with the translated and escaped date
+								echo '<span class="badge badge-primary badge-pill">' . $translated_date . '</span></span>';
+								$happy_birthday_label = '';
+
+
+								if ($birthday['next_celebration_comparable_string'] === $date_ymd) {
+									$happy_birthday_message = __('Happy Birthday!', 'buddypress-birthdays');
+									$happy_birthday_label = '<span class="badge badge-primary badge-pill">' . esc_html($happy_birthday_message) . '</span>';
+								}
+
 
 							if ( 'yes' === $instance['birthday_send_message'] && bp_is_active( 'messages' ) && is_user_logged_in() ) {
 								echo '<a class="send_wishes" href=" ' . esc_url( $this->bbirthday_get_send_private_message_to_user_url( $user_id ) ) . '"/><span class="dashicons dashicons-email"></span><div class="tooltip_wishes">Send my wishes</div></a>';

@@ -16,11 +16,6 @@ if ( ! defined( 'WPINC' ) ) {
 add_action( 'wp_ajax_bb_custom_plugin_frontend_ajax', 'bb_custom_plugin_frontend_ajax' );
 add_action( 'wp_ajax_nopriv_bb_custom_plugin_frontend_ajax', 'bb_custom_plugin_frontend_ajax' );
 
-wp_localize_script('bb_widget_nonce', 'ajax_object', array(
-	'ajax_url' => admin_url('admin-ajax.php'),
-	'nonce'    => wp_create_nonce('bb_widget_nonce_action')
-));
-
 /**
  * Action performed for frontend ajax.
  */
