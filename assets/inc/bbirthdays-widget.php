@@ -102,7 +102,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 									echo '<span>&#x1F388;</span>';
 							}
 							echo '<div class="bbirthday_action">';
-							echo '<span class="badge-wrap"> ', esc_html_x( 'on', 'happy birthday ON 25-06', 'buddypress-birthdays' );
+							echo '<span class="badge-wrap"> ', esc_html_x( 'on ', 'happy birthday ON 25-06', 'buddypress-birthdays' );
 							$date_format = $instance['birthday_date_format'];
 							$date_format = ( ! empty( $date_format ) ) ? $date_format : 'F d';
 
