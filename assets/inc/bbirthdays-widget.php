@@ -66,7 +66,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					if ( $age > 0 ) {
 						echo '<li class="bp-birthday-users">';
 						if ( function_exists( 'bp_is_active' ) ) :
-							echo '<a href="' . esc_url( bp_core_get_user_domain( $user_id ) ) . '">';
+							if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
+								echo '<a href="' . esc_url( bp_members_get_user_url( $user_id ) ) . '">';
+							} else {
+								echo '<a href="' . esc_url( bp_core_get_user_domain( $user_id ) ) . '">';
+							}
 							echo get_avatar( $user_id );
 							echo '</a>';
 							else :
@@ -76,7 +80,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						<strong>
 							<?php
 							if ( 'user_name' === $display_name_type ) {
-								echo esc_html( bp_core_get_username( $user_id ) );
+								if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
+									echo esc_html( bp_members_get_user_slug( $user_id ) );
+								} else {
+									echo esc_html( bp_core_get_username( $user_id ) );
+								}
 							} elseif ( 'nick_name' === $display_name_type ) {
 								echo esc_html( get_user_meta( $user_id, 'nickname', true ) );
 							} elseif ( 'first_name' === $display_name_type ) {
@@ -166,7 +174,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 * @return string
 	 */
 	public function bbirthday_get_send_private_message_to_user_url( $user_id ) {
-		return wp_nonce_url( bp_loggedin_user_domain() . bp_get_messages_slug() . '/compose/?r=' . bp_core_get_username( $user_id ) );
+		if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
+			return wp_nonce_url( bp_loggedin_user_domain() . bp_get_messages_slug() . '/compose/?r=' . bp_members_get_user_slug( $user_id ) );
+		} else {
+			return wp_nonce_url( bp_loggedin_user_domain() . bp_get_messages_slug() . '/compose/?r=' . bp_core_get_username( $user_id ) );
+		}
 	}
 
 	/**
@@ -302,7 +314,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		}
 
 		// uasort( $members_birthdays, array( $this, 'date_comparison' ) );
-
 		return $members_birthdays;
 	}
 
