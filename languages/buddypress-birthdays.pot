@@ -1,14 +1,14 @@
-# Copyright (C) 2023
+# Copyright (C) 2024
 # This file is distributed under the same license as the  package.
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-05-29 12:29:30+00:00\n"
+"POT-Creation-Date: 2024-04-16 13:14:44+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2023-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2024-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Varun Dubey\n"
 "Language-Team: Wbcom Designs\n"
 "Language: en\n"
@@ -34,119 +34,119 @@ msgstr ""
 msgid "(BuddyPress) Birthdays"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:113
+#: assets/inc/bbirthdays-widget.php:128
 msgid "Happy Birthday!"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:139
+#: assets/inc/bbirthdays-widget.php:155
 msgid "BuddyPress Friends Component is not activate."
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:141
+#: assets/inc/bbirthdays-widget.php:157
 msgid "You don't have any friends. Make Friends and wish them!"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:144
+#: assets/inc/bbirthdays-widget.php:160
 msgid "You don't have any followings. Follow users to wish them!"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:146
+#: assets/inc/bbirthdays-widget.php:162
 msgid ""
 "Not a single user has updated their birthday yet. Tell them to update their "
 "birthday and wish them!"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:380
+#: assets/inc/bbirthdays-widget.php:413
 msgid "Upcoming Birthdays"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:421
+#: assets/inc/bbirthdays-widget.php:454
 msgid "Title:"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:427
+#: assets/inc/bbirthdays-widget.php:460
 msgid "Show the age of the person"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:431
+#: assets/inc/bbirthdays-widget.php:464
 msgid "Enable option to wish them"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:434
+#: assets/inc/bbirthdays-widget.php:467
 msgid "Date Format"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:438
+#: assets/inc/bbirthdays-widget.php:471
 msgid "Birthday range limit"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:440
+#: assets/inc/bbirthdays-widget.php:473
 msgid "No Limit"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:441
+#: assets/inc/bbirthdays-widget.php:474
 msgid "Weekly"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:442
+#: assets/inc/bbirthdays-widget.php:475
 msgid "Monthly"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:446
+#: assets/inc/bbirthdays-widget.php:479
 msgid "Show Birthdays of"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:449 assets/inc/bbirthdays-widget.php:451
+#: assets/inc/bbirthdays-widget.php:482 assets/inc/bbirthdays-widget.php:484
 msgid "Followings"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:454
+#: assets/inc/bbirthdays-widget.php:487
 msgid "Friends"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:456
+#: assets/inc/bbirthdays-widget.php:489
 msgid "All Members"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:460
+#: assets/inc/bbirthdays-widget.php:493
 msgid "Display Name Type"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:462
+#: assets/inc/bbirthdays-widget.php:495
 msgid "User name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:463
+#: assets/inc/bbirthdays-widget.php:496
 msgid "Nick name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:464
+#: assets/inc/bbirthdays-widget.php:497
 msgid "First Name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:468
+#: assets/inc/bbirthdays-widget.php:501
 msgid "Field's name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:476
+#: assets/inc/bbirthdays-widget.php:509
 msgid "Number of birthdays to show"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:479
+#: assets/inc/bbirthdays-widget.php:512
 msgid "Select Emoji"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:483
+#: assets/inc/bbirthdays-widget.php:516
 msgid "None"
 msgstr ""
 
-#: buddypress-birthdays.php:53
+#: buddypress-birthdays.php:55
 #. translators: %1$s: Wbcom Designs - Birthday Widget for BuddyPress, %2$s:
 #. BuddyPress
 msgid "%1$s is ineffective as it requires %2$s to be installed and active."
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:105
+#: assets/inc/bbirthdays-widget.php:113
 msgctxt "happy birthday ON 25-06"
-msgid "on"
+msgid "on "
 msgstr ""
