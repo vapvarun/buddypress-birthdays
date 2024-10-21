@@ -61,6 +61,6 @@ if ( file_exists( BB_CORE_INC . 'bb-shortcodes.php' ) ) {
 }
 
 // Load the Widget File.
-if ( file_exists( BB_CORE_INC . 'bbirthdays-widget.php' ) ) {
-	require_once BB_CORE_INC . 'bbirthdays-widget.php';
+if ( file_exists( BB_CORE_INC . 'buddypress-birthdays-widget.php' ) ) {
+	require_once BB_CORE_INC . 'buddypress-birthdays-widget.php';
 }

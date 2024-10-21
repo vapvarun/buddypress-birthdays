@@ -121,7 +121,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 								$translated_date = esc_html__( $formatted_date, 'buddypress-birthdays' );
 
 								// Finally, echo the span with the translated and escaped date
-								echo '<span class="badge badge-primary badge-pill">' . $translated_date . '</span></span>';
+								echo '<span class="badge badge-primary badge-pill">' . esc_html($translated_date) . '</span></span>';
 								$happy_birthday_label = '';
 
 							if ( $birthday['next_celebration_comparable_string'] === $date_ymd ) {
