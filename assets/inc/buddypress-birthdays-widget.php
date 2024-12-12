@@ -121,7 +121,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 								$translated_date = esc_html__( $formatted_date, 'buddypress-birthdays' );
 
 								// Finally, echo the span with the translated and escaped date
-								echo '<span class="badge badge-primary badge-pill">' . esc_html($translated_date) . '</span></span>';
+								echo '<span class="badge badge-primary badge-pill">' . esc_html( $translated_date ) . '</span></span>';
 								$happy_birthday_label = '';
 
 							if ( $birthday['next_celebration_comparable_string'] === $date_ymd ) {
@@ -144,23 +144,21 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 							echo '</span>';
 							echo '</li>';
 
-							$c++;
+							++$c;
 					}
 				}
 			}
 			echo '</ul>';
-		} else {
-			if ( 'friends' === $instance['show_birthdays_of'] ) {
-				if ( ! bp_is_active( 'friends' ) ) {
-					esc_html_e( 'BuddyPress Friends Component is not activate.', 'buddypress-birthdays' );
-				} else {
-					esc_html_e( 'You don\'t have any friends. Make Friends and wish them!', 'buddypress-birthdays' );
-				}
-			} elseif ( 'followers' === $instance['show_birthdays_of'] ) {
-				esc_html_e( 'You don\'t have any followings. Follow users to wish them!', 'buddypress-birthdays' );
-			} elseif ( 'all' === $instance['show_birthdays_of'] ) {
-				esc_html_e( 'Not a single user has updated their birthday yet. Tell them to update their birthday and wish them!', 'buddypress-birthdays' );
+		} elseif ( 'friends' === $instance['show_birthdays_of'] ) {
+			if ( ! bp_is_active( 'friends' ) ) {
+				esc_html_e( 'BuddyPress Friends Component is not activate.', 'buddypress-birthdays' );
+			} else {
+				esc_html_e( 'You don\'t have any friends. Make Friends and wish them!', 'buddypress-birthdays' );
 			}
+		} elseif ( 'followers' === $instance['show_birthdays_of'] ) {
+			esc_html_e( 'You don\'t have any followings. Follow users to wish them!', 'buddypress-birthdays' );
+		} elseif ( 'all' === $instance['show_birthdays_of'] ) {
+			esc_html_e( 'Not a single user has updated their birthday yet. Tell them to update their birthday and wish them!', 'buddypress-birthdays' );
 		}
 		echo wp_kses_post( $args['after_widget'] );
 	}
@@ -239,7 +237,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					'include' => $members,
 				)
 			);
-
 			// Create a DatePeriod instance for the next 30 days
 			$period = new DatePeriod( $today, new DateInterval( 'P1D' ), $end );
 
@@ -250,7 +247,34 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 					$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $buddypress_wp_user->ID ) );
 
-					if ( empty( $birthday_string ) ) {
+					$visibility = xprofile_get_field_visibility_level( $field_id, $buddypress_wp_user->ID );
+					// public,adminsonly,loggedin,friends
+					$skip_user = false;
+					switch ( $visibility ) {
+						case 'adminsonly':
+							// Check if the current user is an admin
+							if ( ! current_user_can( 'manage_options' ) && ! bp_is_my_profile() ) {
+								$skip_user = true;
+							}
+							break;
+					
+						case 'loggedin':
+							// Check if the user is logged in
+							if ( ! is_user_logged_in()  && ! bp_is_my_profile() ) {
+								// Logged-in users logic here
+								$skip_user = true;
+							}
+							break;
+					
+						case 'friends':
+							// Check if the current user is a friend of the profile owner
+							if ( ! friends_check_friendship( get_current_user_id(), $buddypress_wp_user->ID ) && ! bp_is_my_profile() ) {
+								// Friends-only logic here
+								$skip_user = true;
+							}
+							break;
+					}
+					if ( empty( $birthday_string ) || $skip_user ) {
 						continue;
 					}
 
@@ -529,9 +553,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			</p>
 	</div>
 				<?php
-
 	}
-
 }
 
 /**
