@@ -215,7 +215,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		// Get the Birthday field ID.
 		$field_id = $field_name;
-
+		if( empty( $field_id ) ){
+			return;
+		}
 		// Set all data for the date limit check.
 		$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
 		$today           = new DateTime( 'now', $wp_time_zone );
@@ -244,10 +246,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 				// We check if the member has a birthday set.
 				foreach ( $buddypress_wp_users as $buddypress_wp_user ) {
-
-					$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $buddypress_wp_user->ID ) );
-
-					$visibility = xprofile_get_field_visibility_level( $field_id, $buddypress_wp_user->ID );
+					$buddypress_wp_user_id = ( ! empty( $buddypress_wp_user ) && isset( $buddypress_wp_user->ID ) ) ? $buddypress_wp_user->ID : $buddypress_wp_user;
+					$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $buddypress_wp_user_id ) );
+					$visibility = xprofile_get_field_visibility_level( $field_id, $buddypress_wp_user_id );
 					// public,adminsonly,loggedin,friends
 					$skip_user = false;
 					switch ( $visibility ) {
@@ -268,7 +269,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					
 						case 'friends':
 							// Check if the current user is a friend of the profile owner
-							if ( ! friends_check_friendship( get_current_user_id(), $buddypress_wp_user->ID ) && ! bp_is_my_profile() ) {
+							if ( ! friends_check_friendship( get_current_user_id(), $buddypress_wp_user_id ) && ! bp_is_my_profile() ) {
 								// Friends-only logic here
 								$skip_user = true;
 							}
@@ -288,7 +289,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					 * @param int $user_id
 					 * @param DateTime $birthday
 					 */
-					$display_this_birthday = apply_filters( 'bbirthdays_display_this_birthday', true, $buddypress_wp_user->ID, $birthday );
+					$display_this_birthday = apply_filters( 'bbirthdays_display_this_birthday', true, $buddypress_wp_user_id, $birthday );
 
 					if ( false !== $birthday && $display_this_birthday ) {
 
@@ -327,7 +328,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 							$celebration_string = $celebration_year . $birthday->format( $format );
 						}
 
-						$members_birthdays[ $buddypress_wp_user->ID ] = array(
+						$members_birthdays[ $buddypress_wp_user_id ] = array(
 							'datetime'  => $birthday,
 							'next_celebration_comparable_string' => $celebration_string,
 							'years_old' => $years_old,
