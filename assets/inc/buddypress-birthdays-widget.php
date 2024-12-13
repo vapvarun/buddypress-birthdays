@@ -215,7 +215,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		// Get the Birthday field ID.
 		$field_id = $field_name;
-		if( empty( $field_id ) ){
+		if ( empty( $field_id ) ) {
 			return;
 		}
 		// Set all data for the date limit check.
@@ -232,107 +232,88 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		}
 
 		if ( ! empty( $members ) || ( isset( $data['show_birthdays_of'] ) && 'all' === $data['show_birthdays_of'] ) ) {
-
-			$buddypress_wp_users = get_users(
-				array(
-					'fields'  => array( 'ID' ),
-					'include' => $members,
-				)
+			$args = array(
+				'fields'  => array( 'ID' ),
+				'include' => $members,
+				'number'  => 500, // Pagination for large data sets.
 			);
-			// Create a DatePeriod instance for the next 30 days
-			$period = new DatePeriod( $today, new DateInterval( 'P1D' ), $end );
 
-			foreach ( $period as $max_date ) {
+			$total_pages = ceil( count( $members ) / $args['number'] );
 
-				// We check if the member has a birthday set.
-				foreach ( $buddypress_wp_users as $buddypress_wp_user ) {
-					$buddypress_wp_user_id = ( ! empty( $buddypress_wp_user ) && isset( $buddypress_wp_user->ID ) ) ? $buddypress_wp_user->ID : $buddypress_wp_user;
-					$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $buddypress_wp_user_id ) );
-					$visibility = xprofile_get_field_visibility_level( $field_id, $buddypress_wp_user_id );
-					// public,adminsonly,loggedin,friends
-					$skip_user = false;
-					switch ( $visibility ) {
-						case 'adminsonly':
-							// Check if the current user is an admin
-							if ( ! current_user_can( 'manage_options' ) && ! bp_is_my_profile() ) {
-								$skip_user = true;
-							}
-							break;
-					
-						case 'loggedin':
-							// Check if the user is logged in
-							if ( ! is_user_logged_in()  && ! bp_is_my_profile() ) {
-								// Logged-in users logic here
-								$skip_user = true;
-							}
-							break;
-					
-						case 'friends':
-							// Check if the current user is a friend of the profile owner
-							if ( ! friends_check_friendship( get_current_user_id(), $buddypress_wp_user_id ) && ! bp_is_my_profile() ) {
-								// Friends-only logic here
-								$skip_user = true;
-							}
-							break;
-					}
-					if ( empty( $birthday_string ) || $skip_user ) {
-						continue;
-					}
+			for ( $page = 1; $page <= $total_pages; $page++ ) {
+				$args['offset'] = ( $page - 1 ) * $args['number'];
+				$buddypress_wp_users = get_users( $args );
+				// Create a DatePeriod instance for the next 30 days
+				$period = new DatePeriod( $today, new DateInterval( 'P1D' ), $end );
 
-					// We transform the string in a date.
-					$birthday = new DateTime( $birthday_string, $wp_time_zone );
+				foreach ( $period as $max_date ) {
 
-					/**
-					 * Filter if the current birthday (in the birthdays widget) can be displayed
-					 *
-					 * @param bool $is_displayed
-					 * @param int $user_id
-					 * @param DateTime $birthday
-					 */
-					$display_this_birthday = apply_filters( 'bbirthdays_display_this_birthday', true, $buddypress_wp_user_id, $birthday );
-
-					if ( false !== $birthday && $display_this_birthday ) {
-
-						// Skip if birth date is not in the selected limit range..
-						if ( ! $this->bbirthday_is_in_range_limit( $birthday, $max_date ) ) {
+					// We check if the member has a birthday set.
+					foreach ( $buddypress_wp_users as $buddypress_wp_user ) {
+						$buddypress_wp_user_id = ( ! empty( $buddypress_wp_user ) && isset( $buddypress_wp_user->ID ) ) ? $buddypress_wp_user->ID : $buddypress_wp_user;
+						$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $buddypress_wp_user_id ) );
+						$visibility = xprofile_get_field_visibility_level( $field_id, $buddypress_wp_user_id );
+						// public,adminsonly,loggedin,friends
+						$skip_user = false;
+						if ( empty( $birthday_string ) || ! $this->is_visible_to_user( $visibility, $buddypress_wp_user_id ) ) {
 							continue;
 						}
-						if ( 'no_limit' === $birthdays_limit ) {
-							$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( '+1 years' ) );
-						} else {
-							$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( 'now' ) );
-						}
 
-						$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
-
-						// If gone for this year already, we remove one year.
-						if ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) {
-							--$years_old;
-							// $years_old = $years_old - 1;
-						}
+						// We transform the string in a date.
+						$birthday = new DateTime( $birthday_string, $wp_time_zone );
 
 						/**
-						 * Filter bbirthdays_date_format
+						 * Filter if the current birthday (in the birthdays widget) can be displayed
 						 *
-						 * Let you change the date format in which the birthday is displayed
-						 * See: http://php.net/manual/en/function.date.php
-						 *
-						 * @param string - the date format PHP value
-						 *
-						 * @return string
+						 * @param bool $is_displayed
+						 * @param int $user_id
+						 * @param DateTime $birthday
 						 */
-						$format = apply_filters( 'bbirthdays_date_format', 'md' );
-						if ( 'no_limit' === $birthdays_limit ) {
-							$celebration_string = $celebration_year . gmdate( $format, $birthday->getTimestamp() );
-						} else {
-							$celebration_string = $celebration_year . $birthday->format( $format );
-						}
+						$display_this_birthday = apply_filters( 'bbirthdays_display_this_birthday', true, $buddypress_wp_user_id, $birthday );
 
-						$members_birthdays[ $buddypress_wp_user_id ] = array(
-							'datetime'  => $birthday,
-							'next_celebration_comparable_string' => $celebration_string,
-							'years_old' => $years_old,
-						);
+						if ( false !== $birthday && $display_this_birthday ) {
+
+							// Skip if birth date is not in the selected limit range..
+							if ( ! $this->bbirthday_is_in_range_limit( $birthday, $max_date ) ) {
+								continue;
+							}
+							if ( 'no_limit' === $birthdays_limit ) {
+								$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( '+1 years' ) );
+							} else {
+								$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( 'now' ) );
+							}
+
+							$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
+
+							// If gone for this year already, we remove one year.
+							if ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) {
+								--$years_old;
+								// $years_old = $years_old - 1;
+							}
+
+							/**
+							 * Filter bbirthdays_date_format
+							 *
+							 * Let you change the date format in which the birthday is displayed
+							 * See: http://php.net/manual/en/function.date.php
+							 *
+							 * @param string - the date format PHP value
+							 *
+							 * @return string
+							 */
+							$format = apply_filters( 'bbirthdays_date_format', 'md' );
+							if ( 'no_limit' === $birthdays_limit ) {
+								$celebration_string = $celebration_year . gmdate( $format, $birthday->getTimestamp() );
+							} else {
+								$celebration_string = $celebration_year . $birthday->format( $format );
+							}
+
+							$members_birthdays[ $buddypress_wp_user_id ] = array(
+								'datetime'  => $birthday,
+								'next_celebration_comparable_string' => $celebration_string,
+								'years_old' => $years_old,
+							);
+						}
 					}
 				}
 			}
@@ -341,6 +322,28 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		// uasort( $members_birthdays, array( $this, 'date_comparison' ) );
 		return $members_birthdays;
 	}
+
+	/**
+	 * Helper function to check if the user visibility allows the current user to see the data.
+	 *
+	 * @param string $visibility Visibility level of the profile field.
+	 * @param int    $user_id    User ID of the profile owner.
+	 *
+	 * @return bool True if visible, false otherwise.
+	 */
+	private function is_visible_to_user( $visibility, $user_id ) {
+		switch ( $visibility ) {
+			case 'adminsonly':
+				return current_user_can( 'manage_options' ) || bp_is_my_profile();
+			case 'loggedin':
+				return is_user_logged_in() || bp_is_my_profile();
+			case 'friends':
+				return friends_check_friendship( get_current_user_id(), $user_id ) || bp_is_my_profile();
+			default:
+				return true;
+		}
+	}
+
 
 	/**
 	 * Display the user name.
