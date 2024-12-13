@@ -180,13 +180,20 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	}
 
 	/**
-	 * Action performed for get BuddyPress Birthdays users fields data.
+	 * Fetches BuddyPress birthdays based on the specified criteria.
 	 *
-	 * @param string $data Get a Birthday field name.
+	 * @param array $data Configuration for fetching birthdays.
+	 *                    - show_birthdays_of: Criteria for filtering users (friends, followers, or all).
+	 *                    - birthday_field_name: The field name or ID for the birthday.
+	 *                    - birthdays_range_limit: Range limit (weekly, monthly, or yearly).
+	 *
+	 * @return array An array of users with their birthday details, sorted by the next birthday.
 	 */
 	public function bbirthdays_get_array( $data ) {
 
 		$members = array();
+
+		// Step 1: Initialize members based on the specified criteria.
 		if ( isset( $data['show_birthdays_of'] ) && 'friends' === $data['show_birthdays_of'] && bp_is_active( 'friends' ) ) {
 			$members = friends_get_friend_user_ids( get_current_user_id() );
 		} elseif ( isset( $data['show_birthdays_of'] ) && 'followers' === $data['show_birthdays_of'] ) {
@@ -202,26 +209,31 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						'user_id' => bp_loggedin_user_id(),
 					)
 				);
-
 				$members = explode( ',', $members );
 			}
+		} elseif ( isset( $data['show_birthdays_of'] ) && 'all' === $data['show_birthdays_of'] ) {
+			$members = get_users(
+				array(
+					'fields' => 'ID',
+				)
+			);
 		}
 
 		$members_birthdays = array();
-		// Get the Birthday field name.
-		$field_name   = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
-		$wp_time_zone = ! empty( get_option( 'timezone_string' ) ) ? new DateTimeZone( get_option( 'timezone_string' ) ) : wp_timezone();
-		$field_name   = str_replace( "'", "\'", $field_name );
 
-		// Get the Birthday field ID.
+		// Step 2: Validate the birthday field name or ID.
+		$field_name = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
+		$wp_time_zone = ! empty( get_option( 'timezone_string' ) ) ? new DateTimeZone( get_option( 'timezone_string' ) ) : wp_timezone();
 		$field_id = $field_name;
+
 		if ( empty( $field_id ) ) {
-			return;
+			return $members_birthdays; // Return empty if the birthday field is not specified.
 		}
-		// Set all data for the date limit check.
+
+		// Step 3: Define the date range for filtering birthdays.
 		$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
-		$today           = new DateTime( 'now', $wp_time_zone );
-		$end             = new DateTime( 'now', $wp_time_zone );
+		$today = new DateTime( 'now', $wp_time_zone );
+		$end = new DateTime( 'now', $wp_time_zone );
 
 		if ( 'monthly' === $birthdays_limit ) {
 			$end->modify( '+30 days' );
@@ -231,95 +243,71 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			$end->modify( '+365 days' );
 		}
 
-		if ( ! empty( $members ) || ( isset( $data['show_birthdays_of'] ) && 'all' === $data['show_birthdays_of'] ) ) {
-			$args = apply_filters( 'bbirthdays_query_args', array(
+		// Step 4: Process users in batches to optimize performance.
+		$batch_size = 500;
+		$total_members = count( $members );
+		$total_batches = ceil( $total_members / $batch_size );
+
+		for ( $batch = 0; $batch < $total_batches; $batch++ ) {
+			$batch_members = array_slice( $members, $batch * $batch_size, $batch_size );
+
+			if ( empty( $batch_members ) ) {
+				continue; // Skip empty batches.
+			}
+
+			$args = array(
 				'fields'  => array( 'ID' ),
-				'include' => $members,
-				'number'  => 500, // Pagination for large data sets.
-			));
+				'include' => $batch_members,
+			);
 
-			$total_pages = ceil( count( $members ) / $args['number'] );
+			$buddypress_wp_users = get_users( $args );
 
-			for ( $page = 1; $page <= $total_pages; $page++ ) {
-				$args['offset'] = ( $page - 1 ) * $args['number'];
-				$buddypress_wp_users = get_users( $args );
-				// Create a DatePeriod instance for the next 30 days
-				$period = new DatePeriod( $today, new DateInterval( 'P1D' ), $end );
+			foreach ( $buddypress_wp_users as $buddypress_wp_user ) {
+				$buddypress_wp_user_id = $buddypress_wp_user->ID;
+				$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $buddypress_wp_user_id ) );
 
-				foreach ( $period as $max_date ) {
+				$visibility = xprofile_get_field_visibility_level( $field_id, $buddypress_wp_user_id );
 
-					// We check if the member has a birthday set.
-					foreach ( $buddypress_wp_users as $buddypress_wp_user ) {
-						$buddypress_wp_user_id = ( ! empty( $buddypress_wp_user ) && isset( $buddypress_wp_user->ID ) ) ? $buddypress_wp_user->ID : $buddypress_wp_user;
-						$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $buddypress_wp_user_id ) );
-						$visibility = xprofile_get_field_visibility_level( $field_id, $buddypress_wp_user_id );
-						// public,adminsonly,loggedin,friends
-						$skip_user = false;
-						if ( empty( $birthday_string ) || ! $this->is_visible_to_user( $visibility, $buddypress_wp_user_id ) ) {
-							continue;
-						}
+				// Exclude users with "Only Me" visibility.
+				if ( 'onlyme' === $visibility ) {
+					continue;
+				}
 
-						// We transform the string in a date.
+				// Include public data or those accessible by friends or followers.
+				if ( 'public' === $visibility || $this->is_visible_to_user( $visibility, $buddypress_wp_user_id ) ) {
+					// Parse the birthday string into a DateTime object.
+					try {
 						$birthday = new DateTime( $birthday_string, $wp_time_zone );
+					} catch ( Exception $e ) {
+						continue; // Skip invalid date formats.
+					}
 
-						/**
-						 * Filter if the current birthday (in the birthdays widget) can be displayed
-						 *
-						 * @param bool $is_displayed
-						 * @param int $user_id
-						 * @param DateTime $birthday
-						 */
-						$display_this_birthday = apply_filters( 'bbirthdays_display_this_birthday', true, $buddypress_wp_user_id, $birthday );
+					// Adjust the birthday year for comparison.
+					$birthday_this_year = DateTime::createFromFormat( 'm-d', $birthday->format( 'm-d' ), $wp_time_zone );
 
-						if ( false !== $birthday && $display_this_birthday ) {
+					// Check if the birthday falls within the range, including today.
+					if ( ( $birthday_this_year >= $today && $birthday_this_year <= $end ) || $birthday_this_year->format( 'm-d' ) === $today->format( 'm-d' ) ) {
+						$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( '+1 years' ) );
+						$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
 
-							// Skip if birth date is not in the selected limit range..
-							if ( ! $this->bbirthday_is_in_range_limit( $birthday, $max_date ) ) {
-								continue;
-							}
-							if ( 'no_limit' === $birthdays_limit ) {
-								$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( '+1 years' ) );
-							} else {
-								$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( 'now' ) );
-							}
+						$format = apply_filters( 'bbirthdays_date_format', 'md' );
+						$celebration_string = $celebration_year . $birthday->format( $format );
 
-							$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
-
-							// If gone for this year already, we remove one year.
-							if ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) {
-								--$years_old;
-								// $years_old = $years_old - 1;
-							}
-
-							/**
-							 * Filter bbirthdays_date_format
-							 *
-							 * Let you change the date format in which the birthday is displayed
-							 * See: http://php.net/manual/en/function.date.php
-							 *
-							 * @param string - the date format PHP value
-							 *
-							 * @return string
-							 */
-							$format = apply_filters( 'bbirthdays_date_format', 'md' );
-							if ( 'no_limit' === $birthdays_limit ) {
-								$celebration_string = $celebration_year . gmdate( $format, $birthday->getTimestamp() );
-							} else {
-								$celebration_string = $celebration_year . $birthday->format( $format );
-							}
-
-							$members_birthdays[ $buddypress_wp_user_id ] = array(
-								'datetime'  => $birthday,
-								'next_celebration_comparable_string' => $celebration_string,
-								'years_old' => $years_old,
-							);
-						}
+						$members_birthdays[ $buddypress_wp_user_id ] = array(
+							'datetime'  => $birthday,
+							'next_celebration_comparable_string' => $celebration_string,
+							'years_old' => $years_old,
+						);
 					}
 				}
 			}
 		}
 
-		// uasort( $members_birthdays, array( $this, 'date_comparison' ) );
+		// Step 5: Sort the birthdays by the next celebration date.
+		uasort( $members_birthdays, function( $a, $b ) {
+			return strtotime( $a['next_celebration_comparable_string'] ) - strtotime( $b['next_celebration_comparable_string'] );
+		});
+
 		return $members_birthdays;
 	}
 
@@ -334,13 +322,15 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	private function is_visible_to_user( $visibility, $user_id ) {
 		switch ( $visibility ) {
 			case 'adminsonly':
-				return current_user_can( 'manage_options' ) || bp_is_my_profile();
+				return current_user_can( 'manage_options' );
 			case 'loggedin':
-				return is_user_logged_in() || bp_is_my_profile();
+				return is_user_logged_in();
 			case 'friends':
-				return friends_check_friendship( get_current_user_id(), $user_id ) || bp_is_my_profile();
+				return friends_check_friendship( get_current_user_id(), $user_id );
+			case 'onlyme':
+				return false; // "Only Me" should not be visible to others.
 			default:
-				return true;
+				return true; // Public visibility or other custom levels.
 		}
 	}
 
@@ -389,20 +379,30 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 */
 	public function bbirthday_is_in_range_limit( $birthdate, $max_date ) {
 
+		// Handle 'all' limit.
 		if ( 'all' === $max_date ) {
 			return true;
 		}
-
-		// Format the date for comparison
-		$formatted_date = $max_date->format( 'm-d' );
-
-		// Compare the month and day
-		if ( $birthdate->format( 'm-d' ) == $formatted_date ) {
-			return true;
-		} else {
+	
+		// Ensure $birthdate is a valid DateTime object.
+		if ( ! $birthdate instanceof DateTime ) {
 			return false;
 		}
+	
+		// Get today's date for comparison.
+		$today = new DateTime( 'now', wp_timezone() );
+	
+		// Adjust the year of the birthdate to the current year for comparison.
+		$birthdate_this_year = DateTime::createFromFormat( 'm-d', $birthdate->format( 'm-d' ), wp_timezone() );
+	
+		// Check if birthdate falls within the range (inclusive).
+		if ( $birthdate_this_year >= $today && $birthdate_this_year <= $max_date ) {
+			return true;
+		}
+	
+		return false;
 	}
+	
 
 	/**
 	 * Update the user birthday data.
