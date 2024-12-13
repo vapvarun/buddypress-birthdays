@@ -232,11 +232,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		}
 
 		if ( ! empty( $members ) || ( isset( $data['show_birthdays_of'] ) && 'all' === $data['show_birthdays_of'] ) ) {
-			$args = array(
+			$args = apply_filters( 'bbirthdays_query_args', array(
 				'fields'  => array( 'ID' ),
 				'include' => $members,
 				'number'  => 500, // Pagination for large data sets.
-			);
+			));
 
 			$total_pages = ceil( count( $members ) / $args['number'] );
 
