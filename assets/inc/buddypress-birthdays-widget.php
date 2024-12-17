@@ -246,28 +246,29 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		// Step 4: Process users in batches to optimize performance.
 		$batch_size = 500;
 		$total_members = count( $members );
-		$total_batches = ceil( $total_members / $batch_size );
-
+		$total_batches = (int)ceil( $total_members / $batch_size );
+	
 		for ( $batch = 0; $batch < $total_batches; $batch++ ) {
 			$batch_members = array_slice( $members, $batch * $batch_size, $batch_size );
-
+			
 			if ( empty( $batch_members ) ) {
 				continue; // Skip empty batches.
 			}
-
-			$args = array(
-				'fields'  => array( 'ID' ),
-				'include' => $batch_members,
-			);
-
+			$args['fields'] = array( 'ID' );
+			unset($batch_members[array_search(get_current_user_id(),$batch_members)]);
+			if( ! empty( $batch_members ) ){
+				$args['include'] = $batch_members;
+			}
+			$args['exclude'] =  array( get_current_user_id() );
 			$buddypress_wp_users = get_users( $args );
-
 			foreach ( $buddypress_wp_users as $buddypress_wp_user ) {
 				$buddypress_wp_user_id = $buddypress_wp_user->ID;
 				$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $buddypress_wp_user_id ) );
-
+				if( empty( $birthday_string  ) ){
+					continue;
+				}
 				$visibility = xprofile_get_field_visibility_level( $field_id, $buddypress_wp_user_id );
-
+				
 				// Exclude users with "Only Me" visibility.
 				if ( 'onlyme' === $visibility ) {
 					continue;
@@ -281,12 +282,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					} catch ( Exception $e ) {
 						continue; // Skip invalid date formats.
 					}
-
 					// Adjust the birthday year for comparison.
-					$birthday_this_year = DateTime::createFromFormat( 'm-d', $birthday->format( 'm-d' ), $wp_time_zone );
-
+					// $birthday_this_year = DateTime::createFromFormat( 'm-d', $birthday->format( 'm-d' ), $wp_time_zone );
+					$birthday_this_year = $this->bbirthday_get_upcoming_birthday($birthday->format( 'Y-m-d' ));
 					// Check if the birthday falls within the range, including today.
-					if ( ( $birthday_this_year >= $today && $birthday_this_year <= $end ) || $birthday_this_year->format( 'm-d' ) === $today->format( 'm-d' ) ) {
+					if ( ( $birthday_this_year >= $today->format( 'Y-m-d' ) && $birthday_this_year <= $end->format( 'Y-m-d' ) ) || ( $birthday_this_year === $today->format( 'Y-m-d' ) ) ) {
 						$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( '+1 years' ) );
 						$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
 
@@ -302,13 +302,44 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				}
 			}
 		}
-
+		
 		// Step 5: Sort the birthdays by the next celebration date.
 		uasort( $members_birthdays, function( $a, $b ) {
 			return strtotime( $a['next_celebration_comparable_string'] ) - strtotime( $b['next_celebration_comparable_string'] );
 		});
-
 		return $members_birthdays;
+	}
+
+
+	/**
+	 * Fetch the upcoming date withing 1 year .
+	 *
+	 * @param string $user Get a user info.
+	 */
+	public function bbirthday_get_upcoming_birthday( $birthdate ) {
+		// Validate and parse the birthdate using DateTime
+		$birth_date = DateTime::createFromFormat('Y-m-d', $birthdate);
+	
+		if (!$birth_date) {
+			throw new InvalidArgumentException("Invalid birthdate format. Please use 'YYYY-MM-DD'.");
+		}
+	
+		// Extract day and month
+		$birth_day = $birth_date->format('d');
+		$birth_month = $birth_date->format('m');
+	
+		// Get the current year
+		$current_year = date('Y');
+	
+		// Create a DateTime object for the upcoming birthday
+		$upcoming_birthday = DateTime::createFromFormat('Y-m-d', "{$current_year}-{$birth_month}-{$birth_day}");
+	
+		// If the birthday has already passed this year, increment the year
+		if ($upcoming_birthday->getTimestamp() < time()) {
+			$upcoming_birthday->modify('+1 year');
+		}
+	
+		return $upcoming_birthday->format('Y-m-d'); // Return the formatted date
 	}
 
 	/**
