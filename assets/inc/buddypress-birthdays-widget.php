@@ -218,7 +218,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				)
 			);
 		}
-
 		$members_birthdays = array();
 
 		// Step 2: Validate the birthday field name or ID.
@@ -255,12 +254,18 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				continue; // Skip empty batches.
 			}
 			$args['fields'] = array( 'ID' );
-			unset($batch_members[array_search(get_current_user_id(),$batch_members)]);
+			if(array_search(get_current_user_id(),$batch_members)){
+				unset($batch_members[array_search(get_current_user_id(),$batch_members)]);
+			}
+		
+			
 			if( ! empty( $batch_members ) ){
 				$args['include'] = $batch_members;
 			}
+			
 			$args['exclude'] =  array( get_current_user_id() );
 			$buddypress_wp_users = get_users( $args );
+			
 			foreach ( $buddypress_wp_users as $buddypress_wp_user ) {
 				$buddypress_wp_user_id = $buddypress_wp_user->ID;
 				$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $buddypress_wp_user_id ) );
@@ -302,7 +307,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				}
 			}
 		}
-		
+
+			
 		// Step 5: Sort the birthdays by the next celebration date.
 		uasort( $members_birthdays, function( $a, $b ) {
 			return strtotime( $a['next_celebration_comparable_string'] ) - strtotime( $b['next_celebration_comparable_string'] );
