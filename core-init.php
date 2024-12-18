@@ -47,19 +47,6 @@ add_action( 'init', 'bb_load_textdomain' );
 /**
 *  Includes
 */
-// Load the Functions.
-if ( file_exists( BB_CORE_INC . 'bb-core-functions.php' ) ) {
-	require_once BB_CORE_INC . 'bb-core-functions.php';
-}
-// Load the ajax Request.
-if ( file_exists( BB_CORE_INC . 'bb-ajax-request.php' ) ) {
-	require_once BB_CORE_INC . 'bb-ajax-request.php';
-}
-// Load the Shortcodes.
-if ( file_exists( BB_CORE_INC . 'bb-shortcodes.php' ) ) {
-	require_once BB_CORE_INC . 'bb-shortcodes.php';
-}
-
 // Load the Widget File.
 if ( file_exists( BB_CORE_INC . 'buddypress-birthdays-widget.php' ) ) {
 	require_once BB_CORE_INC . 'buddypress-birthdays-widget.php';
