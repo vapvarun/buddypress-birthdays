@@ -3,9 +3,9 @@ Contributors: vapvarun,wbcomdesigns
 Tags: buddypress
 Donate link: https://www.paypal.me/wbcomdesigns
 Requires at least: 4.5.0
-Tested up to: 6.5.2
+Tested up to: 6.7.1
 Requires PHP: 7.4.0
-Stable tag: 2.0.3
+Stable tag: 2.1.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -15,6 +15,18 @@ BuddyPress Birthdays another BuddyPress add-on by Wbcom Designs to add little bu
 Know the upcoming birthdays of the site’s members. Wish them and make their day special. A little effort to greet the members of the site on their special day to keep up the saying “community that celebrates together stays together”. The plugin will also provide an essential ability to the admin whether he wants to show the member’s age or not.
 
 == Changelog ==
+= 2.1.0 =
+* Fixed issue where logged-in users could view their own birthdays.
+* Resolved "No Limit" filter not working as expected.
+* Updated strings for better localization and readability.
+* Enhanced visibility logic and sorting for birthday displays.
+* Added a filter for customizing BuddyPress Birthday query arguments.
+* Optimized BuddyPress Birthday queries for large user datasets.
+* Resolved conflict issue with the "Who Viewed My Profile" plugin.
+* Checked and fixed DOB field visibility for accurate birthday display.
+* Removed unnecessary shortcode code for improved efficiency.
+* Resolved PHPCS errors and renamed files for consistency and functionality checks.
+
 = 2.0.3 =
 * Fix: (#56) Compatibility with BuddyPress v12
 * Managed: Extra space in birthday widget
