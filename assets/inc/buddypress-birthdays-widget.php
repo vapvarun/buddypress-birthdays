@@ -1,6 +1,6 @@
 <?php
 /**
- * BuddyPress Birthdays widgets.
+ * BuddyPress Birthdays widgets - PRODUCTION VERSION
  *
  * @package  BP_Birthdays/assets/inc
  */
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * BuddyPress Birthdays widget class.
+ * BuddyPress Birthdays widget class
  */
 class Widget_Buddypress_Birthdays extends WP_Widget {
 
@@ -290,15 +290,22 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		
 		// Define date range
 		$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
-		$end_date = clone $today;
+		
+		// Use standard DateTime with WordPress timezone
+		$today_start = new DateTime( 'now', $wp_timezone );
+		$today_start->setTime( 0, 0, 0 );
+		
+		$end_date_end = new DateTime( 'now', $wp_timezone );
 		
 		if ( 'monthly' === $birthdays_limit ) {
-			$end_date->modify( '+30 days' );
+			$end_date_end->modify( '+30 days' );
 		} elseif ( 'weekly' === $birthdays_limit ) {
-			$end_date->modify( '+7 days' );
+			$end_date_end->modify( '+7 days' );
 		} else {
-			$end_date->modify( '+365 days' );
+			$end_date_end->modify( '+365 days' );
 		}
+		
+		$end_date_end->setTime( 23, 59, 59 );
 		
 		foreach ( $members as $user_id ) {
 			// Skip current user
@@ -306,7 +313,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				continue;
 			}
 			
-			$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $user_id ) );
+			$birthday_string = $this->get_user_birthday_data( $field_id, $user_id );
 			if ( empty( $birthday_string ) ) {
 				continue;
 			}
@@ -319,39 +326,50 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			
 			if ( 'public' === $visibility || $this->is_visible_to_user( $visibility, $user_id ) ) {
 				
+				// Clean and validate birthday string
+				$birthday_string = $this->clean_birthday_string( $birthday_string );
+				if ( ! $birthday_string ) {
+					continue;
+				}
+				
 				// Get next birthday
 				$next_birthday_str = $this->bbirthday_get_upcoming_birthday( $birthday_string );
-				if ( !$next_birthday_str ) {
+				if ( ! $next_birthday_str ) {
 					continue;
 				}
 				
-				$next_birthday = DateTime::createFromFormat('Y-m-d', $next_birthday_str, $wp_timezone);
-				if ( !$next_birthday ) {
+				$next_birthday = DateTime::createFromFormat( 'Y-m-d', $next_birthday_str, $wp_timezone );
+				if ( ! $next_birthday ) {
 					continue;
 				}
+				
+				// Set to start of day for proper comparison
+				$next_birthday->setTime( 0, 0, 0 );
 				
 				// Check if within range
-				if ( $next_birthday >= $today && $next_birthday <= $end_date ) {
+				if ( $next_birthday >= $today_start && $next_birthday <= $end_date_end ) {
 					
 					// Calculate age
-					$birth_date = DateTime::createFromFormat('Y-m-d', $birthday_string, $wp_timezone);
-					if ( !$birth_date ) {
+					$birth_date = DateTime::createFromFormat( 'Y-m-d', $birthday_string, $wp_timezone );
+					if ( ! $birth_date ) {
 						continue;
 					}
 					
-					$celebration_year = (int) $next_birthday->format('Y');
-					$birth_year = (int) $birth_date->format('Y');
+					$celebration_year = (int) $next_birthday->format( 'Y' );
+					$birth_year = (int) $birth_date->format( 'Y' );
 					$years_old = $celebration_year - $birth_year;
 					
-					// Create comparable string for sorting
-					$celebration_string = $next_birthday->format('Ymd');
-					
-					$members_birthdays[ $user_id ] = array(
-						'datetime'  => $birth_date,
-						'next_celebration_comparable_string' => $celebration_string,
-						'next_birthday_date' => $next_birthday_str,
-						'years_old' => $years_old,
-					);
+					// We don't display negative ages
+					if ( $years_old > 0 ) {
+						$celebration_string = $next_birthday->format( 'Ymd' );
+						
+						$members_birthdays[ $user_id ] = array(
+							'datetime'  => $birth_date,
+							'next_celebration_comparable_string' => $celebration_string,
+							'next_birthday_date' => $next_birthday_str,
+							'years_old' => $years_old,
+						);
+					}
 				}
 			}
 		}
@@ -362,6 +380,106 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		});
 		
 		return $members_birthdays;
+	}
+
+	/**
+	 * Get user birthday data with multiple fallback methods
+	 */
+	private function get_user_birthday_data( $field_id, $user_id ) {
+		$birthday_string = '';
+		
+		// Method 1: Standard BP XProfile method
+		if ( function_exists( 'BP_XProfile_ProfileData::get_value_byid' ) ) {
+			$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $user_id ) );
+		}
+		
+		// Method 2: Direct database query if method 1 fails
+		if ( empty( $birthday_string ) ) {
+			global $wpdb;
+			$birthday_string = $wpdb->get_var( $wpdb->prepare(
+				"SELECT value FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND user_id = %d",
+				$field_id, $user_id
+			));
+			if ( $birthday_string ) {
+				$birthday_string = maybe_unserialize( $birthday_string );
+			}
+		}
+		
+		return $birthday_string;
+	}
+
+	/**
+	 * Clean birthday string from various formats
+	 */
+	private function clean_birthday_string( $birthday_string ) {
+		if ( empty( $birthday_string ) ) {
+			return false;
+		}
+		
+		// Handle serialized data
+		if ( is_string( $birthday_string ) && ( strpos( $birthday_string, 'a:' ) === 0 || strpos( $birthday_string, 's:' ) === 0 ) ) {
+			$birthday_string = maybe_unserialize( $birthday_string );
+		}
+		
+		// Handle array format
+		if ( is_array( $birthday_string ) ) {
+			if ( isset( $birthday_string['date'] ) ) {
+				$birthday_string = $birthday_string['date'];
+			} elseif ( isset( $birthday_string[0] ) ) {
+				$birthday_string = $birthday_string[0];
+			} else {
+				return false;
+			}
+		}
+		
+		// Handle object format
+		if ( is_object( $birthday_string ) ) {
+			if ( isset( $birthday_string->date ) ) {
+				$birthday_string = $birthday_string->date;
+			} elseif ( method_exists( $birthday_string, '__toString' ) ) {
+				$birthday_string = (string) $birthday_string;
+			} else {
+				return false;
+			}
+		}
+		
+		// Clean string
+		$birthday_string = trim( $birthday_string );
+		
+		// Handle common date formats and convert to Y-m-d
+		$formats_to_try = array(
+			'Y-m-d',
+			'd/m/Y',
+			'm/d/Y',
+			'd-m-Y',
+			'm-d-Y',
+			'Y/m/d',
+			'd.m.Y',
+			'm.d.Y',
+			'Y.m.d'
+		);
+		
+		foreach ( $formats_to_try as $format ) {
+			$date = DateTime::createFromFormat( $format, $birthday_string );
+			if ( $date && $date->format( $format ) === $birthday_string ) {
+				// Validate the date is reasonable
+				$year = (int) $date->format( 'Y' );
+				if ( $year >= 1900 && $year <= date( 'Y' ) ) {
+					return $date->format( 'Y-m-d' );
+				}
+			}
+		}
+		
+		// Try strtotime as last resort
+		$timestamp = strtotime( $birthday_string );
+		if ( $timestamp !== false ) {
+			$year = (int) date( 'Y', $timestamp );
+			if ( $year >= 1900 && $year <= date( 'Y' ) ) {
+				return date( 'Y-m-d', $timestamp );
+			}
+		}
+		
+		return false;
 	}
 
 	/**
@@ -381,7 +499,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			}
 			
 			// Get current date in site timezone
-			$today = current_datetime();
+			$today = new DateTime( 'now', $wp_timezone );
 			$current_year = (int) $today->format( 'Y' );
 			
 			// Create this year's birthday
@@ -421,7 +539,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			return $this_year_birthday->format( 'Y-m-d' );
 			
 		} catch ( Exception $e ) {
-			error_log( 'Birthday calculation error: ' . $e->getMessage() );
 			return false;
 		}
 	}
