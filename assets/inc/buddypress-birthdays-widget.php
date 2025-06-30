@@ -59,7 +59,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			
 			$max_items = (int) $instance['birthdays_to_display'];
 			$c = 0;
-			$date_ymd = gmdate( 'Ymd' );
 
 			echo '<div class="bp-birthday-users-list">';
 			
@@ -73,8 +72,10 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					$age = $birthday['years_old'];
 					$display_name_type = empty( $instance['display_name_type'] ) ? '' : $instance['display_name_type'];
 					
-					// Check if today is the birthday
-					$is_today = ( $birthday['next_celebration_comparable_string'] === $date_ymd );
+					// Check if today is the birthday - WordPress standard way
+					$birth_date = $birthday['datetime'];
+					$today = current_datetime();
+					$is_today = ( (int) $birth_date->format('n') === (int) $today->format('n') && (int) $birth_date->format('j') === (int) $today->format('j') );
 					$item_class = $is_today ? 'bp-birthday-item today-birthday' : 'bp-birthday-item';
 					
 					// We don't display negative ages
@@ -138,14 +139,30 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						}
 						
 						// Date
-						$date_format = $instance['birthday_date_format'];
-						$date_format = ( ! empty( $date_format ) ) ? $date_format : 'M j';
-						$formatted_date = wp_date( $date_format, $birthday['datetime']->getTimestamp() );
-						
 						echo '<span class="bp-birthday-date">';
 						if ( $is_today ) {
 							echo '<strong>' . esc_html__( 'Today!', 'buddypress-birthdays' ) . '</strong>';
 						} else {
+							$date_format = $instance['birthday_date_format'];
+							$date_format = ( ! empty( $date_format ) ) ? $date_format : 'M j';
+							
+							// Use next birthday date for display
+							$next_birthday_date = isset( $birthday['next_birthday_date'] ) ? $birthday['next_birthday_date'] : '';
+							if ( $next_birthday_date ) {
+								try {
+									$wp_timezone = wp_timezone();
+									$next_birthday = DateTime::createFromFormat( 'Y-m-d', $next_birthday_date, $wp_timezone );
+									if ( $next_birthday ) {
+										$formatted_date = wp_date( $date_format, $next_birthday->getTimestamp() );
+									} else {
+										$formatted_date = wp_date( $date_format, $birthday['datetime']->getTimestamp() );
+									}
+								} catch ( Exception $e ) {
+									$formatted_date = wp_date( $date_format, $birthday['datetime']->getTimestamp() );
+								}
+							} else {
+								$formatted_date = wp_date( $date_format, $birthday['datetime']->getTimestamp() );
+							}
 							echo esc_html( $formatted_date );
 						}
 						echo '</span>';
@@ -227,9 +244,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 * Fetches BuddyPress birthdays based on the specified criteria.
 	 *
 	 * @param array $data Configuration for fetching birthdays.
-	 *                    - show_birthdays_of: Criteria for filtering users (friends, followers, or all).
-	 *                    - birthday_field_name: The field name or ID for the birthday.
-	 *                    - birthdays_range_limit: Range limit (weekly, monthly, or yearly).
 	 *
 	 * @return array An array of users with their birthday details, sorted by the next birthday.
 	 */
@@ -262,115 +276,164 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				)
 			);
 		}
+		
 		$members_birthdays = array();
-
-		// Step 2: Validate the birthday field name or ID.
-		$field_name = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
-		$wp_time_zone = ! empty( get_option( 'timezone_string' ) ) ? new DateTimeZone( get_option( 'timezone_string' ) ) : wp_timezone();
-		$field_id = $field_name;
-
+		$field_id = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
+		
 		if ( empty( $field_id ) ) {
-			return $members_birthdays; // Return empty if the birthday field is not specified.
+			return $members_birthdays;
 		}
-
-		// Step 3: Define the date range for filtering birthdays.
-		$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
-		$today = new DateTime( 'now', $wp_time_zone );
-		$end = new DateTime( 'now', $wp_time_zone );
-
-		if ( 'monthly' === $birthdays_limit ) {
-			$end->modify( '+30 days' );
-		} elseif ( 'weekly' === $birthdays_limit ) {
-			$end->modify( '+7 days' );
-		} else {
-			$end->modify( '+365 days' );
-		}
-
+		
+		$wp_timezone = wp_timezone();
+		$today = current_datetime();
 		$current_user_id = get_current_user_id();
-
-		// Step 4: Process users - simple approach
+		
+		// Define date range
+		$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
+		$end_date = clone $today;
+		
+		if ( 'monthly' === $birthdays_limit ) {
+			$end_date->modify( '+30 days' );
+		} elseif ( 'weekly' === $birthdays_limit ) {
+			$end_date->modify( '+7 days' );
+		} else {
+			$end_date->modify( '+365 days' );
+		}
+		
 		foreach ( $members as $user_id ) {
 			// Skip current user
 			if ( $user_id == $current_user_id ) {
 				continue;
 			}
-
+			
 			$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $user_id ) );
-			if( empty( $birthday_string  ) ){
+			if ( empty( $birthday_string ) ) {
 				continue;
 			}
-			$visibility = xprofile_get_field_visibility_level( $field_id, $user_id );
 			
-			// Exclude users with "Only Me" visibility.
+			// Check visibility
+			$visibility = xprofile_get_field_visibility_level( $field_id, $user_id );
 			if ( 'onlyme' === $visibility ) {
 				continue;
 			}
-
-			// Include public data or those accessible by friends or followers.
+			
 			if ( 'public' === $visibility || $this->is_visible_to_user( $visibility, $user_id ) ) {
-				// Parse the birthday string into a DateTime object.
-				try {
-					$birthday = new DateTime( $birthday_string, $wp_time_zone );
-				} catch ( Exception $e ) {
-					continue; // Skip invalid date formats.
+				
+				// Get next birthday
+				$next_birthday_str = $this->bbirthday_get_upcoming_birthday( $birthday_string );
+				if ( !$next_birthday_str ) {
+					continue;
 				}
 				
-				// Calculate next birthday
-				$birthday_this_year = $this->bbirthday_get_upcoming_birthday($birthday->format( 'Y-m-d' ));
+				$next_birthday = DateTime::createFromFormat('Y-m-d', $next_birthday_str, $wp_timezone);
+				if ( !$next_birthday ) {
+					continue;
+				}
 				
-				// Check if the birthday falls within the range, including today.
-				if ( ( $birthday_this_year >= $today->format( 'Y-m-d' ) && $birthday_this_year <= $end->format( 'Y-m-d' ) ) || ( $birthday_this_year === $today->format( 'Y-m-d' ) ) ) {
-					$celebration_year = ( gmdate( 'md', $birthday->getTimestamp() ) >= gmdate( 'md' ) ) ? gmdate( 'Y' ) : gmdate( 'Y', strtotime( '+1 years' ) );
-					$years_old = (int) $celebration_year - (int) gmdate( 'Y', $birthday->getTimestamp() );
-
-					$format = apply_filters( 'bbirthdays_date_format', 'md' );
-					$celebration_string = $celebration_year . $birthday->format( $format );
-
+				// Check if within range
+				if ( $next_birthday >= $today && $next_birthday <= $end_date ) {
+					
+					// Calculate age
+					$birth_date = DateTime::createFromFormat('Y-m-d', $birthday_string, $wp_timezone);
+					if ( !$birth_date ) {
+						continue;
+					}
+					
+					$celebration_year = (int) $next_birthday->format('Y');
+					$birth_year = (int) $birth_date->format('Y');
+					$years_old = $celebration_year - $birth_year;
+					
+					// Create comparable string for sorting
+					$celebration_string = $next_birthday->format('Ymd');
+					
 					$members_birthdays[ $user_id ] = array(
-						'datetime'  => $birthday,
+						'datetime'  => $birth_date,
 						'next_celebration_comparable_string' => $celebration_string,
+						'next_birthday_date' => $next_birthday_str,
 						'years_old' => $years_old,
 					);
 				}
 			}
 		}
-			
-		// Step 5: Sort the birthdays by the next celebration date.
+		
+		// Sort by next celebration date
 		uasort( $members_birthdays, function( $a, $b ) {
-			return strtotime( $a['next_celebration_comparable_string'] ) - strtotime( $b['next_celebration_comparable_string'] );
+			return strcmp( $a['next_celebration_comparable_string'], $b['next_celebration_comparable_string'] );
 		});
+		
 		return $members_birthdays;
 	}
 
 	/**
-	 * Fetch the upcoming date withing 1 year .
-	 *
-	 * @param string $birthdate Get a user info.
+	 * Get the next birthday date for a given birthdate
+	 * 
+	 * @param string $birthdate Format: Y-m-d
+	 * @return string|false Next birthday in Y-m-d format or false on error
 	 */
 	public function bbirthday_get_upcoming_birthday( $birthdate ) {
-		// Validate and parse the birthdate using DateTime
-		$birth_date = DateTime::createFromFormat('Y-m-d', $birthdate);
-	
-		if (!$birth_date) {
-			throw new InvalidArgumentException("Invalid birthdate format. Please use 'YYYY-MM-DD'.");
+		try {
+			$wp_timezone = wp_timezone();
+			
+			// Parse birthdate consistently with timezone
+			$birth_date = DateTime::createFromFormat( 'Y-m-d', $birthdate, $wp_timezone );
+			if ( ! $birth_date ) {
+				return false;
+			}
+			
+			// Get current date in site timezone
+			$today = current_datetime();
+			$current_year = (int) $today->format( 'Y' );
+			
+			// Create this year's birthday
+			$birth_month = $birth_date->format( 'm' );
+			$birth_day = $birth_date->format( 'd' );
+			
+			// Handle leap year edge case (Feb 29)
+			if ( '02' === $birth_month && '29' === $birth_day ) {
+				// If it's a leap year birthday but current year is not leap year
+				if ( ! $this->is_leap_year( $current_year ) ) {
+					// Use Feb 28 instead
+					$birth_day = '28';
+				}
+			}
+			
+			$this_year_birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', 
+				$current_year . '-' . $birth_month . '-' . $birth_day . ' 00:00:00', 
+				$wp_timezone
+			);
+			
+			// If birthday has passed this year, use next year
+			if ( $this_year_birthday < $today ) {
+				$next_year = $current_year + 1;
+				
+				// Handle leap year for next year too
+				$next_birth_day = $birth_date->format( 'd' );
+				if ( '02-29' === $birth_date->format( 'm-d' ) && ! $this->is_leap_year( $next_year ) ) {
+					$next_birth_day = '28';
+				}
+				
+				$this_year_birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', 
+					$next_year . '-' . $birth_month . '-' . $next_birth_day . ' 00:00:00', 
+					$wp_timezone
+				);
+			}
+			
+			return $this_year_birthday->format( 'Y-m-d' );
+			
+		} catch ( Exception $e ) {
+			error_log( 'Birthday calculation error: ' . $e->getMessage() );
+			return false;
 		}
-	
-		// Extract day and month
-		$birth_day = $birth_date->format('d');
-		$birth_month = $birth_date->format('m');
-	
-		// Get the current year
-		$current_year = date('Y');
-	
-		// Create a DateTime object for the upcoming birthday
-		$upcoming_birthday = DateTime::createFromFormat('Y-m-d', "{$current_year}-{$birth_month}-{$birth_day}");
-	
-		// If the birthday has already passed this year, increment the year
-		if ($upcoming_birthday->getTimestamp() < time()) {
-			$upcoming_birthday->modify('+1 year');
-		}
-	
-		return $upcoming_birthday->format('Y-m-d'); // Return the formatted date
+	}
+
+	/**
+	 * Check if given year is leap year
+	 * 
+	 * @param int $year Year to check.
+	 * @return bool
+	 */
+	private function is_leap_year( $year ) {
+		return ( ( 0 === $year % 4 ) && ( 0 !== $year % 100 ) ) || ( 0 === $year % 400 );
 	}
 
 	/**
@@ -388,7 +451,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			case 'loggedin':
 				return is_user_logged_in();
 			case 'friends':
-				return friends_check_friendship( get_current_user_id(), $user_id );
+				return function_exists( 'friends_check_friendship' ) ? friends_check_friendship( get_current_user_id(), $user_id ) : false;
 			case 'onlyme':
 				return false; // "Only Me" should not be visible to others.
 			default:
@@ -578,10 +641,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>">&#127881;</label>
 			</p>
 	</div>
-		<p style="background: #f9f9f9; padding: 10px; margin-top: 10px;">
-			<small><strong>Performance:</strong> Cache refreshes every 30 minutes. Works with BuddyPress, BuddyBoss & Youzify.</small>
-		</p>
-				<?php
+		<?php
 	}
 }
 
