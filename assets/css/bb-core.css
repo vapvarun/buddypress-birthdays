@@ -1,309 +1,135 @@
-/*---------------------------
-Add Plugin Front-End CSS here
----------------------------*/
+/* BuddyPress Birthdays - Simple & Clean */
+
+.widget_bp_birthdays {
+    background: inherit;
+    border: inherit;
+    color: inherit;
+    font-family: inherit;
+}
+
+.widget_bp_birthdays .widget-title {
+    background: inherit;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    margin: inherit;
+    padding: inherit;
+}
+
+.widget_bp_birthdays .widget-title::before {
+    content: "🎂 ";
+}
+
 .bp-birthday-users-list {
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: inherit;
 }
 
-.bp-birthday-users-list li {
-    display: -webkit-box;
-    display: -ms-flexbox;
+.bp-birthday-item {
     display: flex;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
     align-items: center;
-    margin-bottom: 10px;
-    padding: 3px 0;
-    -webkit-box-flex: 1;
-    -ms-flex: 1;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    gap: 10px;
+    list-style: none !important;
+    background: inherit !important;
+}
+
+.bp-birthday-item:last-child {
+    border-bottom: none;
+}
+
+.bp-birthday-item.today-birthday {
+    font-weight: bold;
+    border-left: 3px solid;
+    padding-left: 8px;
+}
+
+.bp-birthday-avatar {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.bp-birthday-avatar img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.bp-birthday-content {
     flex: 1;
-    min-width: 100%;
-    list-style: none;
+    color: inherit;
 }
 
-.bp-birthday-users-list li:last-child {
-    margin-bottom: 0;
+.bp-birthday-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: inherit;
 }
 
-.bp-birthday-users-list .avatar {
-    max-width: 50px;
+.bp-birthday-name a {
+    color: inherit;
+    text-decoration: none;
 }
 
-.bp-birthday-users-list .badge-wrap {
-    display: block;
+.bp-birthday-details {
     font-size: 12px;
+    opacity: 0.8;
+    color: inherit;
 }
 
-.bp-birthday-users-list .birthday-item-content {
-    margin-left: 12px;
+.bp-birthday-action {
+    flex-shrink: 0;
 }
 
-.bp-birthday-users-list .birthday-item-content>.badge {
+.bp-send-wishes {
+    padding: 4px 8px;
+    font-size: 11px;
+    background: #0073aa;
     color: #fff;
-    background: #228B22;
-    padding: 2px 5px;
-    line-height: 1.4;
-    border-radius: 100px;
-    margin-top: 5px;
-    display: inline-block;
-    font-size: 12px;
-}
-
-.bp-birthday-users-list .bp-user-age {
-    font-size: 13px;
-    margin: 0 4px 0 2px;
-}
-
-.bp-birthday-users-list .bbirthday_action {
-    flex-wrap: wrap;
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
+    border: none;
+    border-radius: 3px;
+    text-decoration: none;
+    display: inline-flex;
     align-items: center;
-    -ms-flex-flow: row wrap;
-    flex-flow: row wrap;
-    position:relative;
+    gap: 2px;
 }
 
-.bp-birthday-users-list .bbirthday_action span {
-    margin-right: 3px;
-    margin-top: 2px;
-}
-
-.bbirthday_action .send_wishes .tooltip_wishes {
-    white-space: nowrap;
-    position: absolute;
-    z-index: 99;
-    top: -25px;
-    left: 50%;
-    margin-left: -15px;
-    opacity: 0;
-    font-size: 12px;
-    line-height: 1.7;
-    padding: 0 13px;
-    border-radius: 100px;
-    background-color: #3e3f5e;
+.bp-send-wishes:hover {
+    background: #005a87;
     color: #fff;
-    visibility: hidden;
-    -webkit-transform: translate(0, 10px);
-    -ms-transform: translate(0, 10px);
-    transform: translate(0, 10px);
-    -webkit-transition: all 0.3s ease-in-out 0s;
-    transition: all 0.3s ease-in-out 0s;
-}
-.bbirthday_action .send_wishes:hover .tooltip_wishes {
-    opacity: 1;
-    visibility: visible;
-    -webkit-transform: translate(0, 0);
-    -ms-transform: translate(0, 0);
-    transform: translate(0, 0);
 }
 
-/*---------------------------
-Youzify Support
----------------------------*/
-.youzify-sidebar .widget_bp_birthdays .widget-title:before {
-    content: "\f1fd";
+.bp-send-wishes .dashicons {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
 }
 
-.youzify-sidebar ul.bp-birthday-users-list {
-    padding: 0 25px !important;
-    padding-bottom: 25px !important;
-}
-
-.youzify-sidebar ul.bp-birthday-users-list > li {
-    padding: 0;
-    border: none;
-    box-shadow: none;
-    overflow: hidden;
-    margin: 25px 0 0 0;
-    list-style-type: none;
-}
-
-.youzify-sidebar ul.bp-birthday-users-list li .birthday-item-content>strong {
-    border: none;
-    color: #7c838a;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.youzify-sidebar ul.bp-birthday-users-list li .avatar {
-    max-width: 50px;
-}
-
-/*---------------------------
-CSS Filters
----------------------------*/
-.bp-birthday-blur {
-    -webkit-filter: blur(4px);
-    filter: blur(4px);
-}
-
-.bp-birthday-brightness {
-    -webkit-filter: brightness(0.30);
-    filter: brightness(0.30);
-}
-
-.bp-birthday-contrast {
-    -webkit-filter: contrast(180%);
-    filter: contrast(180%);
-}
-
-.bp-birthday-grayscale {
-    -webkit-filter: grayscale(100%);
-    filter: grayscale(100%);
-}
-
-.bp-birthday-huerotate {
-    -webkit-filter: hue-rotate(180deg);
-    filter: hue-rotate(180deg);
-}
-
-.bp-birthday-invert {
-    -webkit-filter: invert(100%);
-    filter: invert(100%);
-}
-
-.bp-birthday-opacity {
-    -webkit-filter: opacity(50%);
-    filter: opacity(50%);
-}
-
-.bp-birthday-saturate {
-    -webkit-filter: saturate(7);
-    filter: saturate(7);
-}
-
-.bp-birthday-sepia {
-    -webkit-filter: sepia(100%);
-    filter: sepia(100%);
-}
-
-.bp-birthday-shadow {
-    -webkit-filter: drop-shadow(8px 8px 10px green);
-    filter: drop-shadow(8px 8px 10px green);
-}
-
-
-/*---------------------------
-Youzify Support Widget CSS
----------------------------*/
-
-.youzify-sidebar .widget-content .bp-birthday-users-list {
-    padding: 0 25px 25px;
-}
-
-.youzify-sidebar .bp-birthday-users-list li {
-    padding: 0;
-    border: none;
-    box-shadow: none;
-    overflow: hidden;
-    margin: 25px 0 0 0;
-    list-style-type: none;
-}
-
-.youzify-sidebar .bp-birthday-users-list li .avatar {
-    border-radius: 100%;
-}
-
-.youzify-sidebar .bp-birthday-users-list li strong {
-    color: #7c838a;
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: capitalize;
-}
-
-.youzify-sidebar .bp-birthday-users-list li .badge-wrap {
-    color: #8a8a8a;
-    display: block;
-    margin-top: 6px;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: .02em;
-    text-transform: uppercase;
-}
-
-.youzify-sidebar .bp-birthday-users-list li i {
-    font-style: normal;
-    font-weight: 600;
-}
-
-.youzify-sidebar .bp-birthday-users-list .bbirthday_action span {
-    margin-right: 3px;
-    margin-top: 5px;
-}
-
-.youzify-sidebar .widget_bp_birthdays .widget-title:before {
-    content: "\f1fd";
-    font-family: "Font Awesome 5 Free" !important;
-    display: inline-block;
-    width: 35px;
-    height: 35px;
-    line-height: 35px;
-    margin-right: 10px;
+.bp-birthday-empty {
     text-align: center;
-    background-color: #f2f2f2;
-    -webkit-border-radius: 100%;
-    -moz-border-radius: 100%;
-    -ms-border-radius: 100%;
-    -o-border-radius: 100%;
-    border-radius: 100%;
-
+    padding: 20px;
+    opacity: 0.6;
+    color: inherit;
 }
 
-/*---------------------------
-Transition Classes
----------------------------*/
-/*---------------------------
-Animation Classes
----------------------------*/
-/*---------------------------
-Responsive CSS here
-*
-*   Remember these queries are a good start
-*   but media queries go much deeper than this.
-*
----------------------------*/
-/*
-Medium/Large Screens
-*/
-@media only screen and (max-width: 1430px) {}
-
-/*
-Medium Screens
-*/
-@media only screen and (max-width: 1280px) {}
-
-/*
-Large Tablet Screens
-*/
-@media only screen and (max-width: 980px) {}
-
-/*
-Medium Tablet Screens
-*/
-@media only screen and (max-width: 768px) {}
-
-/*
-Small Tablet/Largest Phone Screens
-*/
-@media only screen and (max-width: 600px) {}
-
-/*
-Large Phone Screens
-*/
-@media only screen and (max-width: 420px) {}
-
-/*
-Medium Phone Screens
-*/
-@media only screen and (max-width: 380px) {}
-
-/*
-Small Phone / Apple Watch Screens
-*/
-@media only screen and (max-width: 320px) {}
+@media (max-width: 480px) {
+    .bp-birthday-item {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 8px 0;
+    }
+    
+    .bp-birthday-content {
+        margin-top: 5px;
+    }
+    
+    .bp-birthday-action {
+        margin-top: 5px;
+    }
+}

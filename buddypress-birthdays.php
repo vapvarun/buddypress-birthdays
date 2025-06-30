@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Wbcom Designs - Birthday Widget for BuddyPress
  * Plugin URI: https://wbcomdesigns.com/downloads/buddypress-birthdays/
- * Description: Display upcoming birthdays
- * Version: 2.1.0
+ * Description: Display upcoming birthdays with optimized performance and memory usage
+ * Version: 2.2.0
  * Author: Wbcom Designs
  * Author URI: https://wbcomdesigns.com/
  * Text Domain: buddypress-birthdays
@@ -26,7 +26,6 @@ if ( ! defined( 'WPINC' ) ) {
 if ( file_exists( plugin_dir_path( __FILE__ ) . 'core-init.php' ) ) {
 	require_once plugin_dir_path( __FILE__ ) . 'core-init.php';
 }
-
 
 /**
  * Check BuddyPress is not activated.
@@ -54,5 +53,4 @@ function bb_dependent_plugin_notice() {
 		$activate = filter_input( INPUT_GET, 'activate' );
 		unset( $activate );
 	}
-
 }
