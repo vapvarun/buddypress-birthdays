@@ -33,13 +33,13 @@
             this.cache.$body = $('body');
             this.cache.$birthdayWidgets = $('.widget_bp_birthdays');
             this.cache.$birthdayLists = $('.bp-birthday-users-list');
-            this.cache.$sendWishesButtons = $('.send_wishes');
+            this.cache.$sendWishesButtons = $('.bp-send-wishes');
             this.cache.$todayBirthdays = $('.today-birthday');
         },
 
         bindEvents: function() {
             // Use event delegation for better performance
-            this.cache.$document.on('click.bpBirthdays', '.send_wishes', this.handleWishesClick.bind(this));
+            this.cache.$document.on('click.bpBirthdays', '.bp-send-wishes', this.handleWishesClick.bind(this));
             
             // Handle widget updates
             this.cache.$document.on('widget-updated.bpBirthdays', this.handleWidgetUpdate.bind(this));
@@ -64,14 +64,24 @@
                 return;
             }
 
-            // Add loading state
+            // Prevent multiple clicks and layout shift
+            if ($button.hasClass('loading')) {
+                e.preventDefault();
+                return;
+            }
+
+            // Add loading state without changing button dimensions
             $button.addClass('loading').attr('aria-disabled', 'true');
             
             // Optional: Track analytics
             this.trackWishEvent($button);
             
-            // Provide user feedback
-            this.showMessage('Redirecting to compose message...', 'info');
+            // No redirect message - let the browser handle navigation naturally
+            
+            // Remove loading state after navigation starts
+            setTimeout(() => {
+                $button.removeClass('loading').removeAttr('aria-disabled');
+            }, 1000);
         },
 
         initTooltips: function() {
@@ -133,7 +143,7 @@
 
             // Add role attributes where needed
             this.cache.$birthdayLists.attr('role', 'list');
-            this.cache.$birthdayLists.find('li').attr('role', 'listitem');
+            this.cache.$birthdayLists.find('.bp-birthday-item').attr('role', 'listitem');
             
             // Add landmark roles
             this.cache.$birthdayWidgets.attr('role', 'complementary').attr('aria-label', 'Birthday notifications');
@@ -185,7 +195,7 @@
                     rootMargin: '50px'
                 });
 
-                this.cache.$birthdayLists.find('li').each(function() {
+                this.cache.$birthdayLists.find('.bp-birthday-item').each(function() {
                     observer.observe(this);
                 });
             }
@@ -259,14 +269,14 @@
             // Reposition visible tooltips after resize
             this.cache.$sendWishesButtons.find('.tooltip_wishes.visible').each((index, element) => {
                 const $tooltip = $(element);
-                const $button = $tooltip.closest('.send_wishes');
+                const $button = $tooltip.closest('.bp-send-wishes');
                 this.positionTooltip($button, $tooltip);
             });
         },
 
         trackWishEvent: function($button) {
             // Enhanced analytics tracking
-            const userName = $button.closest('li').find('strong a').text() || 'Unknown';
+            const userName = $button.closest('.bp-birthday-item').find('.bp-birthday-name a').text() || 'Unknown';
             
             // Google Analytics 4
             if (typeof gtag !== 'undefined') {
@@ -329,8 +339,8 @@
             if ('Notification' in window && Notification.permission === 'granted') {
                 const notification = new Notification(title, {
                     body: message,
-                    icon: options.icon || '/wp-content/plugins/buddypress-birthdays/assets/images/birthday-icon.png',
-                    badge: options.badge || '/wp-content/plugins/buddypress-birthdays/assets/images/birthday-badge.png',
+                    // Use emoji SVG as icon - works universally without external files
+                    icon: options.icon || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎂</text></svg>',
                     tag: 'birthday-notification',
                     requireInteraction: false,
                     ...options
@@ -378,10 +388,10 @@
         },
 
         preloadImages: function() {
-            // Preload important images for better performance
+            // No external images to preload - using SVG data URIs instead
+            // This function is kept for future use if actual image files are added
             const imagesToPreload = [
-                '/wp-content/plugins/buddypress-birthdays/assets/images/birthday-icon.png',
-                '/wp-content/plugins/buddypress-birthdays/assets/images/birthday-badge.png'
+                // Add actual image paths here when images are available
             ];
             
             imagesToPreload.forEach(src => {
@@ -421,7 +431,7 @@
         },
 
         getUpcomingBirthdays: function() {
-            return this.cache.$birthdayLists.find('li').length;
+            return this.cache.$birthdayLists.find('.bp-birthday-item').length;
         }
     };
 
