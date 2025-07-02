@@ -21,11 +21,6 @@
     padding: inherit;
 }
 
-.widget_bp_birthdays .widget-title::before {
-    content: "🎂 ";
-    margin-right: 8px;
-}
-
 /* ====================================
    BIRTHDAY LIST STYLING
 ==================================== */
@@ -62,11 +57,11 @@
     position: relative;
 }
 
-.bp-birthday-item.today-birthday::after {
+.bp-birthday-item.today-birthday .bp-send-wishes::after {
     content: "🎉";
     position: absolute;
-    right: 0;
-    top: 50%;
+    right: -5px;
+    top: 30%;
     transform: translateY(-50%);
     font-size: 14px;
 }
@@ -109,6 +104,9 @@
     margin-bottom: 4px;
     color: inherit;
     line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .bp-birthday-name a {
@@ -331,4 +329,13 @@
 
 .tablet-layout .bp-birthday-item {
     padding: 11px 0;
+}
+
+/* ====================================
+   REIGN Theme CSS
+==================================== */
+
+.wb-reign-theme .widget_bp_birthdays .widget-title{
+    padding:0px;
+    margin:0px !important;
 }

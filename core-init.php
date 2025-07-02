@@ -47,9 +47,6 @@ function bb_register_core_css() {
 			'all'
 		);
 
-		// Add critical CSS inline for immediate styling.
-		bb_add_critical_css();
-
 		$bb_assets_loaded = true;
 	}
 }
@@ -107,66 +104,7 @@ function bb_register_core_js() {
 }
 add_action( 'wp_enqueue_scripts', 'bb_register_core_js', 10 );
 
-/**
- * Add critical CSS for immediate styling
- */
-function bb_add_critical_css() {
-	$critical_css = '
-	.widget_bp_birthdays {
-		background: #ffffff;
-		border-radius: 12px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-		border: 1px solid #e5e7eb;
-		overflow: hidden;
-		margin-bottom: 24px;
-		transition: box-shadow 0.3s ease;
-	}
-	.widget_bp_birthdays .widget-title {
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		color: #ffffff;
-		margin: 0;
-		padding: 20px 24px;
-		font-size: 18px;
-		font-weight: 600;
-		letter-spacing: 0.025em;
-		border: none;
-		position: relative;
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-	}
-	.widget_bp_birthdays .widget-title::before {
-		content: "🎂";
-		margin-right: 8px;
-		font-size: 20px;
-		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
-	}
-	.bp-birthday-users-list {
-		margin: 0;
-		padding: 16px;
-		list-style: none;
-		background: #ffffff;
-	}
-	.bp-birthday-users-list li {
-		display: flex;
-		align-items: flex-start;
-		padding: 16px;
-		margin-bottom: 12px;
-		background: #f8fafc;
-		border: 1px solid #e2e8f0;
-		border-radius: 8px;
-		transition: all 0.2s ease;
-		position: relative;
-		overflow: hidden;
-	}
-	.bp-birthday-users-list li:hover {
-		background: #f1f5f9;
-		border-color: #cbd5e1;
-		transform: translateY(-1px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-	}
-	';
 
-	wp_add_inline_style( 'bb-core', $critical_css );
-}
 
 /**
  * Force load assets - for widgets displayed in footer or dynamic content
