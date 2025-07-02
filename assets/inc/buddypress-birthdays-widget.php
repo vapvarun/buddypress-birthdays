@@ -38,13 +38,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 * @param array $instance Instance.
 	 */
 	public function widget( $args, $instance ) {
-		// Simple validation
+		// Simple validation.
 		if ( empty( $instance['birthday_field_name'] ) || ! function_exists( 'bp_is_active' ) ) {
 			return;
 		}
 
-		// Simple cache - 30 minutes, shared for all users
-		$cache_key = 'bp_birthdays_' . md5( serialize( $instance ) );
+		// Simple cache - 30 minutes, shared for all users.
+		$cache_key = 'bp_birthdays_' . md5( wp_json_encode( $instance ) );
 		$birthdays = get_transient( $cache_key );
 
 		if ( false === $birthdays ) {
@@ -56,12 +56,12 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		if ( ! empty( $birthdays ) ) {
 			echo $args['before_title'] . esc_html( $instance['title'] ) . $args['after_title']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			
+
 			$max_items = (int) $instance['birthdays_to_display'];
-			$c = 0;
+			$c         = 0;
 
 			echo '<div class="bp-birthday-users-list">';
-			
+
 			foreach ( $birthdays as $user_id => $birthday ) {
 				if ( $c === $max_items ) {
 					break;
@@ -69,20 +69,20 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 				$activation_key = get_user_meta( $user_id, 'activation_key' );
 				if ( empty( $activation_key ) ) {
-					$age = $birthday['years_old'];
+					$age               = $birthday['years_old'];
 					$display_name_type = empty( $instance['display_name_type'] ) ? '' : $instance['display_name_type'];
-					
-					// Check if today is the birthday - WordPress standard way
+
+					// Check if today is the birthday - WordPress standard way.
 					$birth_date = $birthday['datetime'];
-					$today = current_datetime();
-					$is_today = ( (int) $birth_date->format('n') === (int) $today->format('n') && (int) $birth_date->format('j') === (int) $today->format('j') );
+					$today      = current_datetime();
+					$is_today   = ( (int) $birth_date->format( 'n' ) === (int) $today->format( 'n' ) && (int) $birth_date->format( 'j' ) === (int) $today->format( 'j' ) );
 					$item_class = $is_today ? 'bp-birthday-item today-birthday' : 'bp-birthday-item';
-					
-					// We don't display negative ages
+
+					// We don't display negative ages.
 					if ( $age > 0 ) {
 						echo '<div class="' . esc_attr( $item_class ) . '">';
-						
-						// Avatar
+
+						// Avatar.
 						echo '<div class="bp-birthday-avatar">';
 						if ( function_exists( 'bp_is_active' ) ) {
 							if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
@@ -97,17 +97,17 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 							echo get_avatar( $user_id, 36 );
 						}
 						echo '</div>';
-						
-						// Content
+
+						// Content.
 						echo '<div class="bp-birthday-content">';
-						
-						// User name
+
+						// User name.
 						echo '<div class="bp-birthday-name">';
 						if ( function_exists( 'bp_is_active' ) ) {
 							echo '<a href="' . esc_url( $user_url ) . '">';
 						}
-						
-						// Get display name based on setting
+
+						// Get display name based on setting.
 						$display_name = '';
 						if ( 'user_name' === $display_name_type ) {
 							if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
@@ -122,36 +122,37 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						} else {
 							$display_name = $this->get_name_to_display( $user_id );
 						}
-						
+
 						echo esc_html( $display_name );
-						
+
 						if ( function_exists( 'bp_is_active' ) ) {
 							echo '</a>';
 						}
 						echo '</div>';
-						
-						// Birthday details in one compact line
+
+						// Birthday details in one compact line.
 						echo '<div class="bp-birthday-details">';
-						
-						// Age
+
+						// Age.
 						if ( isset( $instance['display_age'] ) && 'yes' === $instance['display_age'] ) {
 							echo '<span class="bp-birthday-age">' . sprintf( esc_html__( 'Turning %d', 'buddypress-birthdays' ), esc_html( $age ) ) . '</span>';
 						}
-						
-						// Date
+
+						// Date.
 						echo '<span class="bp-birthday-date">';
 						if ( $is_today ) {
 							echo '<strong>' . esc_html__( 'Today!', 'buddypress-birthdays' ) . '</strong>';
 						} else {
 							$date_format = $instance['birthday_date_format'];
 							$date_format = ( ! empty( $date_format ) ) ? $date_format : 'M j';
-							
-							// Use next birthday date for display
+
+							// Use next birthday date for display.
 							$next_birthday_date = isset( $birthday['next_birthday_date'] ) ? $birthday['next_birthday_date'] : '';
 							if ( $next_birthday_date ) {
 								try {
-									$wp_timezone = wp_timezone();
-									$next_birthday = DateTime::createFromFormat( 'Y-m-d', $next_birthday_date, $wp_timezone );
+									$wp_timezone    = wp_timezone();
+									$next_birthday  = DateTime::createFromFormat( 'Y-m-d', $next_birthday_date, $wp_timezone );
+									$formatted_date = '';
 									if ( $next_birthday ) {
 										$formatted_date = wp_date( $date_format, $next_birthday->getTimestamp() );
 									} else {
@@ -166,8 +167,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 							echo esc_html( $formatted_date );
 						}
 						echo '</span>';
-						
-						// Emoji (if enabled)
+
+						// Emoji (if enabled).
 						$emoji = isset( $instance['emoji'] ) ? $instance['emoji'] : '';
 						if ( $emoji && 'none' !== $emoji ) {
 							echo '<span class="bp-birthday-emoji">';
@@ -184,11 +185,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 							}
 							echo '</span>';
 						}
-						
+
 						echo '</div>'; // .bp-birthday-details
 						echo '</div>'; // .bp-birthday-content
-						
-						// Send wishes button
+
+						// Send wishes button.
 						if ( 'yes' === $instance['birthday_send_message'] && bp_is_active( 'messages' ) && is_user_logged_in() ) {
 							echo '<div class="bp-birthday-action">';
 							$message_url = $this->bbirthday_get_send_private_message_to_user_url( $user_id );
@@ -197,16 +198,16 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 							echo '</a>';
 							echo '</div>';
 						}
-						
+
 						echo '</div>'; // .bp-birthday-item
 						++$c;
 					}
 				}
 			}
 			echo '</div>'; // .bp-birthday-users-list
-			
+
 		} else {
-			// Clean empty state
+			// Clean empty state.
 			echo '<div class="bp-birthday-empty">';
 			if ( 'friends' === $instance['show_birthdays_of'] ) {
 				if ( ! bp_is_active( 'friends' ) ) {
@@ -221,7 +222,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			}
 			echo '</div>';
 		}
-		
+
 		echo wp_kses_post( $args['after_widget'] );
 	}
 
@@ -272,31 +273,31 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			$members = get_users(
 				array(
 					'fields' => 'ID',
-					'number' => 200, // Reasonable limit
+					'number' => 200, // Reasonable limit.
 				)
 			);
 		}
-		
+
 		$members_birthdays = array();
-		$field_id = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
-		
+		$field_id          = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
+
 		if ( empty( $field_id ) ) {
 			return $members_birthdays;
 		}
-		
-		$wp_timezone = wp_timezone();
-		$today = current_datetime();
+
+		$wp_timezone     = wp_timezone();
+		$today           = current_datetime();
 		$current_user_id = get_current_user_id();
-		
-		// Define date range
+
+		// Define date range.
 		$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
-		
-		// Use standard DateTime with WordPress timezone
+
+		// Use standard DateTime with WordPress timezone.
 		$today_start = new DateTime( 'now', $wp_timezone );
 		$today_start->setTime( 0, 0, 0 );
-		
+
 		$end_date_end = new DateTime( 'now', $wp_timezone );
-		
+
 		if ( 'monthly' === $birthdays_limit ) {
 			$end_date_end->modify( '+30 days' );
 		} elseif ( 'weekly' === $birthdays_limit ) {
@@ -304,124 +305,152 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		} else {
 			$end_date_end->modify( '+365 days' );
 		}
-		
+
 		$end_date_end->setTime( 23, 59, 59 );
-		
+
 		foreach ( $members as $user_id ) {
-			// Skip current user
-			if ( $user_id == $current_user_id ) {
+			// Skip current user.
+			if ( (int) $user_id === (int) $current_user_id ) {
 				continue;
 			}
-			
+
 			$birthday_string = $this->get_user_birthday_data( $field_id, $user_id );
 			if ( empty( $birthday_string ) ) {
 				continue;
 			}
-			
-			// Check visibility
+
+			// Check visibility.
 			$visibility = xprofile_get_field_visibility_level( $field_id, $user_id );
 			if ( 'onlyme' === $visibility ) {
 				continue;
 			}
-			
+
 			if ( 'public' === $visibility || $this->is_visible_to_user( $visibility, $user_id ) ) {
-				
-				// Clean and validate birthday string
+
+				// Clean and validate birthday string.
 				$birthday_string = $this->clean_birthday_string( $birthday_string );
 				if ( ! $birthday_string ) {
 					continue;
 				}
-				
-				// Get next birthday
+
+				// Get next birthday.
 				$next_birthday_str = $this->bbirthday_get_upcoming_birthday( $birthday_string );
 				if ( ! $next_birthday_str ) {
 					continue;
 				}
-				
+
 				$next_birthday = DateTime::createFromFormat( 'Y-m-d', $next_birthday_str, $wp_timezone );
 				if ( ! $next_birthday ) {
 					continue;
 				}
-				
-				// Set to start of day for proper comparison
+
+				// Set to start of day for proper comparison.
 				$next_birthday->setTime( 0, 0, 0 );
-				
-				// Check if within range
+
+				// Check if within range.
 				if ( $next_birthday >= $today_start && $next_birthday <= $end_date_end ) {
-					
-					// Calculate age
+
+					// Calculate age.
 					$birth_date = DateTime::createFromFormat( 'Y-m-d', $birthday_string, $wp_timezone );
 					if ( ! $birth_date ) {
 						continue;
 					}
-					
+
 					$celebration_year = (int) $next_birthday->format( 'Y' );
-					$birth_year = (int) $birth_date->format( 'Y' );
-					$years_old = $celebration_year - $birth_year;
-					
-					// We don't display negative ages
+					$birth_year       = (int) $birth_date->format( 'Y' );
+					$years_old        = $celebration_year - $birth_year;
+
+					// We don't display negative ages.
 					if ( $years_old > 0 ) {
 						$celebration_string = $next_birthday->format( 'Ymd' );
-						
+
 						$members_birthdays[ $user_id ] = array(
-							'datetime'  => $birth_date,
-							'next_celebration_comparable_string' => $celebration_string,
-							'next_birthday_date' => $next_birthday_str,
-							'years_old' => $years_old,
+							'datetime'                            => $birth_date,
+							'next_celebration_comparable_string'  => $celebration_string,
+							'next_birthday_date'                  => $next_birthday_str,
+							'years_old'                           => $years_old,
 						);
 					}
 				}
 			}
 		}
-		
-		// Sort by next celebration date
-		uasort( $members_birthdays, function( $a, $b ) {
-			return strcmp( $a['next_celebration_comparable_string'], $b['next_celebration_comparable_string'] );
-		});
-		
+
+		// Sort by next celebration date - today's birthdays first.
+		uasort(
+			$members_birthdays,
+			function( $a, $b ) {
+				$today_comparable = gmdate( 'Ymd' );
+				
+				// Check if either is today's birthday
+				$a_is_today = ( $a['next_celebration_comparable_string'] === $today_comparable );
+				$b_is_today = ( $b['next_celebration_comparable_string'] === $today_comparable );
+				
+				// Today's birthdays always come first
+				if ( $a_is_today && ! $b_is_today ) {
+					return -1;
+				}
+				if ( $b_is_today && ! $a_is_today ) {
+					return 1;
+				}
+				
+				// If both are today or both are not today, sort by date
+				return strcmp( $a['next_celebration_comparable_string'], $b['next_celebration_comparable_string'] );
+			}
+		);
+
 		return $members_birthdays;
 	}
 
 	/**
 	 * Get user birthday data with multiple fallback methods
+	 *
+	 * @param string $field_id The field ID.
+	 * @param int    $user_id The user ID.
+	 * @return string The birthday string.
 	 */
 	private function get_user_birthday_data( $field_id, $user_id ) {
 		$birthday_string = '';
-		
-		// Method 1: Standard BP XProfile method
+
+		// Method 1: Standard BP XProfile method.
 		if ( function_exists( 'BP_XProfile_ProfileData::get_value_byid' ) ) {
 			$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $user_id ) );
 		}
-		
-		// Method 2: Direct database query if method 1 fails
+
+		// Method 2: Direct database query if method 1 fails.
 		if ( empty( $birthday_string ) ) {
 			global $wpdb;
-			$birthday_string = $wpdb->get_var( $wpdb->prepare(
-				"SELECT value FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND user_id = %d",
-				$field_id, $user_id
-			));
+			$birthday_string = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT value FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND user_id = %d",
+					$field_id,
+					$user_id
+				)
+			);
 			if ( $birthday_string ) {
 				$birthday_string = maybe_unserialize( $birthday_string );
 			}
 		}
-		
+
 		return $birthday_string;
 	}
 
 	/**
 	 * Clean birthday string from various formats
+	 *
+	 * @param mixed $birthday_string The birthday string to clean.
+	 * @return string|false The cleaned birthday string or false on error.
 	 */
 	private function clean_birthday_string( $birthday_string ) {
 		if ( empty( $birthday_string ) ) {
 			return false;
 		}
-		
-		// Handle serialized data
-		if ( is_string( $birthday_string ) && ( strpos( $birthday_string, 'a:' ) === 0 || strpos( $birthday_string, 's:' ) === 0 ) ) {
+
+		// Handle serialized data.
+		if ( is_string( $birthday_string ) && ( 0 === strpos( $birthday_string, 'a:' ) || 0 === strpos( $birthday_string, 's:' ) ) ) {
 			$birthday_string = maybe_unserialize( $birthday_string );
 		}
-		
-		// Handle array format
+
+		// Handle array format.
 		if ( is_array( $birthday_string ) ) {
 			if ( isset( $birthday_string['date'] ) ) {
 				$birthday_string = $birthday_string['date'];
@@ -431,8 +460,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				return false;
 			}
 		}
-		
-		// Handle object format
+
+		// Handle object format.
 		if ( is_object( $birthday_string ) ) {
 			if ( isset( $birthday_string->date ) ) {
 				$birthday_string = $birthday_string->date;
@@ -442,11 +471,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				return false;
 			}
 		}
-		
-		// Clean string
+
+		// Clean string.
 		$birthday_string = trim( $birthday_string );
-		
-		// Handle common date formats and convert to Y-m-d
+
+		// Handle common date formats and convert to Y-m-d.
 		$formats_to_try = array(
 			'Y-m-d',
 			'd/m/Y',
@@ -456,88 +485,92 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			'Y/m/d',
 			'd.m.Y',
 			'm.d.Y',
-			'Y.m.d'
+			'Y.m.d',
 		);
-		
+
 		foreach ( $formats_to_try as $format ) {
 			$date = DateTime::createFromFormat( $format, $birthday_string );
 			if ( $date && $date->format( $format ) === $birthday_string ) {
-				// Validate the date is reasonable
+				// Validate the date is reasonable.
 				$year = (int) $date->format( 'Y' );
-				if ( $year >= 1900 && $year <= date( 'Y' ) ) {
+				$current_year = (int) wp_date( 'Y' );
+				if ( $year >= 1900 && $year <= $current_year ) {
 					return $date->format( 'Y-m-d' );
 				}
 			}
 		}
-		
-		// Try strtotime as last resort
+
+		// Try strtotime as last resort.
 		$timestamp = strtotime( $birthday_string );
-		if ( $timestamp !== false ) {
-			$year = (int) date( 'Y', $timestamp );
-			if ( $year >= 1900 && $year <= date( 'Y' ) ) {
-				return date( 'Y-m-d', $timestamp );
+		if ( false !== $timestamp ) {
+			$year = (int) wp_date( 'Y', $timestamp );
+			$current_year = (int) wp_date( 'Y' );
+			if ( $year >= 1900 && $year <= $current_year ) {
+				return wp_date( 'Y-m-d', $timestamp );
 			}
 		}
-		
+
 		return false;
 	}
 
 	/**
 	 * Get the next birthday date for a given birthdate
-	 * 
-	 * @param string $birthdate Format: Y-m-d
-	 * @return string|false Next birthday in Y-m-d format or false on error
+	 *
+	 * @param string $birthdate Format: Y-m-d.
+	 * @return string|false Next birthday in Y-m-d format or false on error.
 	 */
 	public function bbirthday_get_upcoming_birthday( $birthdate ) {
 		try {
 			$wp_timezone = wp_timezone();
-			
-			// Parse birthdate consistently with timezone
+
+			// Parse birthdate consistently with timezone.
 			$birth_date = DateTime::createFromFormat( 'Y-m-d', $birthdate, $wp_timezone );
 			if ( ! $birth_date ) {
 				return false;
 			}
-			
-			// Get current date in site timezone
-			$today = new DateTime( 'now', $wp_timezone );
+
+			// Get current date in site timezone.
+			$today        = new DateTime( 'now', $wp_timezone );
 			$current_year = (int) $today->format( 'Y' );
-			
-			// Create this year's birthday
+
+			// Create this year's birthday.
 			$birth_month = $birth_date->format( 'm' );
-			$birth_day = $birth_date->format( 'd' );
-			
-			// Handle leap year edge case (Feb 29)
+			$birth_day   = $birth_date->format( 'd' );
+
+			// Handle leap year edge case (Feb 29).
 			if ( '02' === $birth_month && '29' === $birth_day ) {
-				// If it's a leap year birthday but current year is not leap year
+				// If it's a leap year birthday but current year is not leap year.
 				if ( ! $this->is_leap_year( $current_year ) ) {
-					// Use Feb 28 instead
+					// Use Feb 28 instead.
 					$birth_day = '28';
 				}
 			}
-			
-			$this_year_birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', 
-				$current_year . '-' . $birth_month . '-' . $birth_day . ' 00:00:00', 
+
+			$this_year_birthday = DateTime::createFromFormat(
+				'Y-m-d H:i:s',
+				$current_year . '-' . $birth_month . '-' . $birth_day . ' 00:00:00',
 				$wp_timezone
 			);
-			
-			// If birthday has passed this year, use next year
+
+			// If birthday has passed this year, use next year.
 			if ( $this_year_birthday < $today ) {
 				$next_year = $current_year + 1;
-				
-				// Handle leap year for next year too
+
+				// Handle leap year for next year too.
 				$next_birth_day = $birth_date->format( 'd' );
 				if ( '02-29' === $birth_date->format( 'm-d' ) && ! $this->is_leap_year( $next_year ) ) {
 					$next_birth_day = '28';
 				}
-				
-				$this_year_birthday = DateTime::createFromFormat( 'Y-m-d H:i:s', 
-					$next_year . '-' . $birth_month . '-' . $next_birth_day . ' 00:00:00', 
+
+				$this_year_birthday = DateTime::createFromFormat(
+					'Y-m-d H:i:s',
+					$next_year . '-' . $birth_month . '-' . $next_birth_day . ' 00:00:00',
 					$wp_timezone
 				);
 			}
-			
+
 			return $this_year_birthday->format( 'Y-m-d' );
-			
+
 		} catch ( Exception $e ) {
 			return false;
 		}
@@ -545,7 +578,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 	/**
 	 * Check if given year is leap year
-	 * 
+	 *
 	 * @param int $year Year to check.
 	 * @return bool
 	 */
@@ -579,7 +612,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	/**
 	 * Display the user name.
 	 *
-	 * @param string $user Get a user info.
+	 * @param string|int|null $user Get a user info.
+	 * @return string The display name.
 	 */
 	public function get_name_to_display( $user = null ) {
 
@@ -607,12 +641,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	/**
 	 * Update the user birthday data.
 	 *
-	 * @param  mixed $new_instance New instance.
-	 * @param  mixed $old_instance Old instance.
+	 * @param  array $new_instance New instance.
+	 * @param  array $old_instance Old instance.
+	 * @return array Updated instance.
 	 */
 	public function update( $new_instance, $old_instance ) {
 		$instance = array();
-		
+
 		$instance['title']                 = ( ! empty( $new_instance['title'] ) ) ? wp_strip_all_tags( $new_instance['title'] ) : '';
 		$instance['birthday_date_format']  = ( ! empty( $new_instance['birthday_date_format'] ) ) ? $new_instance['birthday_date_format'] : '';
 		$instance['display_age']           = ( ! empty( $new_instance['display_age'] ) ) ? $new_instance['display_age'] : '';
@@ -624,8 +659,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$instance['birthday_send_message'] = ( ! empty( $new_instance['birthday_send_message'] ) ) ? $new_instance['birthday_send_message'] : '';
 		$instance['display_name_type']     = ( ! empty( $new_instance['display_name_type'] ) ) ? $new_instance['display_name_type'] : '';
 
-		// Clear cache when settings change
-		delete_transient( 'bp_birthdays_' . md5( serialize( $old_instance ) ) );
+		// Clear cache when settings change.
+		delete_transient( 'bp_birthdays_' . md5( wp_json_encode( $old_instance ) ) );
 
 		return $instance;
 	}
@@ -650,7 +685,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				'birthdays_to_display'  => 5,
 				'emoji'                 => 'balloon',
 				'birthday_field_name'   => 'datebox',
-
 			)
 		);
 
@@ -673,7 +707,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			}
 		}
 
-		// Buddyboss follow functionality support
+		// Buddyboss follow functionality support.
 		$bb_follow_buttons = false;
 		if ( function_exists( 'bp_admin_setting_callback_enable_activity_follow' ) ) {
 			$bb_follow_buttons = bp_is_activity_follow_active();
@@ -686,11 +720,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		</p>
 
 		<p>
-			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'display_age' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'display_age' ) ); ?>" type="checkbox" value="<?php echo esc_attr( 'yes' ); ?>" <?php echo checked( 'yes', $instance['display_age'] ); ?>/>
+			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'display_age' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'display_age' ) ); ?>" type="checkbox" value="<?php echo esc_attr( 'yes' ); ?>" <?php checked( 'yes', $instance['display_age'] ); ?>/>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'display_age' ) ); ?>"><?php esc_html_e( 'Show the age of the person', 'buddypress-birthdays' ); ?></label>
 		</p>
 		<p>
-			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthday_send_message' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthday_send_message' ) ); ?>" type="checkbox" value="<?php echo esc_attr( 'yes' ); ?>" <?php echo checked( 'yes', $instance['birthday_send_message'] ); ?>/>
+			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthday_send_message' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthday_send_message' ) ); ?>" type="checkbox" value="<?php echo esc_attr( 'yes' ); ?>" <?php checked( 'yes', $instance['birthday_send_message'] ); ?>/>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_send_message' ) ); ?>"><?php esc_html_e( 'Enable option to wish them', 'buddypress-birthdays' ); ?></label>
 		</p>
 		<p>
@@ -700,38 +734,38 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'birthdays_range_limit' ) ); ?>"><?php esc_html_e( 'Birthday range limit', 'buddypress-birthdays' ); ?></label>
 			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthdays_range_limit' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthdays_range_limit' ) ); ?>">
-				<option value="no_limit" <?php echo selected( 'no_limit', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'No Limit', 'buddypress-birthdays' ); ?></option>
-				<option value="weekly" <?php echo selected( 'weekly', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'Next 7 Days', 'buddypress-birthdays' ); ?></option>
-				<option value="monthly" <?php echo selected( 'monthly', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'Next 30 Days', 'buddypress-birthdays' ); ?></option>
+				<option value="no_limit" <?php selected( 'no_limit', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'No Limit', 'buddypress-birthdays' ); ?></option>
+				<option value="weekly" <?php selected( 'weekly', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'Next 7 Days', 'buddypress-birthdays' ); ?></option>
+				<option value="monthly" <?php selected( 'monthly', $instance['birthdays_range_limit'] ); ?>><?php esc_html_e( 'Next 30 Days', 'buddypress-birthdays' ); ?></option>
 			</select>
 		</p>
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'show_birthdays_of' ) ); ?>"><?php esc_html_e( 'Show Birthdays of', 'buddypress-birthdays' ); ?></label>
 			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'show_birthdays_of' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'show_birthdays_of' ) ); ?>">
 				<?php if ( bp_is_active( 'follow' ) ) : ?>
-					<option value="followers" <?php echo selected( 'followers', $instance['show_birthdays_of'] ); ?>><?php esc_html_e( 'Followings', 'buddypress-birthdays' ); ?></option>
+					<option value="followers" <?php selected( 'followers', $instance['show_birthdays_of'] ); ?>><?php esc_html_e( 'Followings', 'buddypress-birthdays' ); ?></option>
 				<?php elseif ( $bb_follow_buttons && function_exists( 'bp_add_follow_button' ) ) : ?>
-					<option value="followers" <?php echo selected( 'followers', $instance['show_birthdays_of'] ); ?>><?php esc_html_e( 'Followings', 'buddypress-birthdays' ); ?></option>
+					<option value="followers" <?php selected( 'followers', $instance['show_birthdays_of'] ); ?>><?php esc_html_e( 'Followings', 'buddypress-birthdays' ); ?></option>
 				<?php endif; ?>
 				<?php if ( bp_is_active( 'friends' ) ) : ?>
-					<option value="friends" <?php echo selected( 'friends', $instance['show_birthdays_of'] ); ?>><?php esc_html_e( 'Friends', 'buddypress-birthdays' ); ?></option>
+					<option value="friends" <?php selected( 'friends', $instance['show_birthdays_of'] ); ?>><?php esc_html_e( 'Friends', 'buddypress-birthdays' ); ?></option>
 				<?php endif; ?>
-					<option value="all" <?php echo selected( 'all', $instance['show_birthdays_of'] ); ?>><?php esc_html_e( 'All Members', 'buddypress-birthdays' ); ?></option>
+					<option value="all" <?php selected( 'all', $instance['show_birthdays_of'] ); ?>><?php esc_html_e( 'All Members', 'buddypress-birthdays' ); ?></option>
 			</select>
 		</p>
 		<p>
 		<label for="<?php echo esc_attr( $this->get_field_id( 'display_name_type' ) ); ?>"><?php esc_html_e( 'Display Name Type', 'buddypress-birthdays' ); ?></label>
 			<select class='widefat' id="<?php echo esc_attr( $this->get_field_id( 'display_name_type' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'display_name_type' ) ); ?>">
-				<option value="user_name" <?php echo selected( $instance['display_name_type'], 'user_name' ); ?>><?php esc_html_e( 'User name', 'buddypress-birthdays' ); ?></option>
-				<option value="nick_name" <?php echo selected( $instance['display_name_type'], 'nick_name' ); ?>><?php esc_html_e( 'Nick name', 'buddypress-birthdays' ); ?></option>
-				<option value="first_name" <?php echo selected( $instance['display_name_type'], 'first_name' ); ?>><?php esc_html_e( 'First Name', 'buddypress-birthdays' ); ?></option>
+				<option value="user_name" <?php selected( $instance['display_name_type'], 'user_name' ); ?>><?php esc_html_e( 'User name', 'buddypress-birthdays' ); ?></option>
+				<option value="nick_name" <?php selected( $instance['display_name_type'], 'nick_name' ); ?>><?php esc_html_e( 'Nick name', 'buddypress-birthdays' ); ?></option>
+				<option value="first_name" <?php selected( $instance['display_name_type'], 'first_name' ); ?>><?php esc_html_e( 'First Name', 'buddypress-birthdays' ); ?></option>
 			</select>
 		</p>
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>"><?php esc_html_e( 'Field\'s name', 'buddypress-birthdays' ); ?></label>
 			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthday_field_name' ) ); ?>">
 				<?php foreach ( $fields as $key => $field ) : ?>
-					<option value="<?php echo esc_attr( $key ); ?>" <?php echo selected( $instance['birthday_field_name'], $key ); ?>><?php echo esc_attr( $field ); ?></option>
+					<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $instance['birthday_field_name'], $key ); ?>><?php echo esc_html( $field ); ?></option>
 				<?php endforeach; ?>
 			</select>
 		</p>
@@ -742,20 +776,20 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		<label><?php esc_html_e( 'Select Emoji', 'buddypress-birthdays' ); ?></label>
 		<div class="bbirthday_emojis">
 			<p style="display: inline-block; padding: 0 5px;">
-				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="none" <?php checked( $instance['emoji'], 'none' ); ?>/>
-				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>"><?php esc_html_e( 'None', 'buddypress-birthdays' ); ?></label>
+				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_none" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="none" <?php checked( $instance['emoji'], 'none' ); ?>/>
+				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_none"><?php esc_html_e( 'None', 'buddypress-birthdays' ); ?></label>
 			</p>
 			<p style="display: inline-block; padding: 0 5px;">
-				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="cake" <?php checked( $instance['emoji'], 'cake' ); ?>/>
-				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>">&#x1F382;</label>
+				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_cake" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="cake" <?php checked( $instance['emoji'], 'cake' ); ?>/>
+				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_cake">&#x1F382;</label>
 			</p>
 			<p style="display: inline-block; padding: 0 5px;">
-				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="balloon" <?php checked( $instance['emoji'], 'balloon' ); ?>/>
-				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>">&#x1F388;</label>
+				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_balloon" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="balloon" <?php checked( $instance['emoji'], 'balloon' ); ?>/>
+				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_balloon">&#x1F388;</label>
 			</p>
 			<p style="display: inline-block; padding: 0 5px;">
-				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="party" <?php checked( $instance['emoji'], 'party' ); ?>/>
-				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>">&#127881;</label>
+				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_party" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="party" <?php checked( $instance['emoji'], 'party' ); ?>/>
+				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_party">&#127881;</label>
 			</p>
 	</div>
 		<?php

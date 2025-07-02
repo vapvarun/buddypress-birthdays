@@ -15,12 +15,12 @@
  */
 
 // If this file is called directly, abort.
-define( 'BIRTHDAY_WIDGET_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'BIRTHDAY_WIDGET_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
-
 if ( ! defined( 'WPINC' ) ) {
 	die;
-} // end if
+}
+
+define( 'BIRTHDAY_WIDGET_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'BIRTHDAY_WIDGET_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
 // Let's Initialize Everything.
 if ( file_exists( plugin_dir_path( __FILE__ ) . 'core-init.php' ) ) {
@@ -42,15 +42,16 @@ add_action( 'admin_init', 'bb_check_bp_active' );
  * Display dependent plugin admin notice.
  */
 function bb_dependent_plugin_notice() {
-	$bb_plugin = esc_html( 'Wbcom Designs - Birthday Widget for BuddyPress' );
-	$bp_plugin = esc_html( 'BuddyPress' );
+	$bb_plugin = esc_html__( 'Wbcom Designs - Birthday Widget for BuddyPress', 'buddypress-birthdays' );
+	$bp_plugin = esc_html__( 'BuddyPress', 'buddypress-birthdays' );
 
 	echo '<div class="error"><p>'
 	/* translators: %1$s: Wbcom Designs - Birthday Widget for BuddyPress, %2$s: BuddyPress */
-	. sprintf( esc_html__( '%1$s is ineffective as it requires %2$s to be installed and active.', 'buddypress-birthdays' ), '<strong>' . esc_attr( $bb_plugin ) . '</strong>', '<strong>' . esc_attr( $bp_plugin ) . '</strong>' )
+	. sprintf( esc_html__( '%1$s is ineffective as it requires %2$s to be installed and active.', 'buddypress-birthdays' ), '<strong>' . esc_html( $bb_plugin ) . '</strong>', '<strong>' . esc_html( $bp_plugin ) . '</strong>' )
 	. '</p></div>';
-	if ( null !== filter_input( INPUT_GET, 'activate' ) ) {
-		$activate = filter_input( INPUT_GET, 'activate' );
+
+	$activate = filter_input( INPUT_GET, 'activate', FILTER_SANITIZE_STRING );
+	if ( null !== $activate ) {
 		unset( $activate );
 	}
 }
