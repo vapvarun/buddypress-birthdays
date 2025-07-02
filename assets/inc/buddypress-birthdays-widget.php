@@ -75,7 +75,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					// Check if today is the birthday - WordPress standard way.
 					$birth_date = $birthday['datetime'];
 					$today      = current_datetime();
-					$is_today   = ( (int) $birth_date->format( 'n' ) === (int) $today->format( 'n' ) && (int) $birth_date->format( 'j' ) === (int) $today->format( 'j' ) );
+					$today_date = wp_date( 'Y-m-d' );
+					$next_birthday_date = isset( $birthday['next_birthday_date'] ) ? $birthday['next_birthday_date'] : '';
+					$is_today   = ( $next_birthday_date === $today_date );
 					$item_class = $is_today ? 'bp-birthday-item today-birthday' : 'bp-birthday-item';
 
 					// We don't display negative ages.
@@ -314,7 +316,10 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				continue;
 			}
 
-			$birthday_string = $this->get_user_birthday_data( $field_id, $user_id );
+			$birthday_data = $this->get_user_birthday_data( $field_id, $user_id );
+			$birthday_string = $birthday_data['raw_data'];
+			$field_date_format = $birthday_data['date_format'];
+			
 			if ( empty( $birthday_string ) ) {
 				continue;
 			}
@@ -327,8 +332,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 			if ( 'public' === $visibility || $this->is_visible_to_user( $visibility, $user_id ) ) {
 
-				// Clean and validate birthday string.
-				$birthday_string = $this->clean_birthday_string( $birthday_string );
+				// Clean and validate birthday string using field's configured format.
+				$birthday_string = $this->clean_birthday_string( $birthday_string, $field_date_format );
 				if ( ! $birthday_string ) {
 					continue;
 				}
@@ -379,7 +384,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		uasort(
 			$members_birthdays,
 			function( $a, $b ) {
-				$today_comparable = gmdate( 'Ymd' );
+				$today_comparable = wp_date( 'Ymd' );
 				
 				// Check if either is today's birthday
 				$a_is_today = ( $a['next_celebration_comparable_string'] === $today_comparable );
@@ -406,10 +411,24 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 *
 	 * @param string $field_id The field ID.
 	 * @param int    $user_id The user ID.
-	 * @return string The birthday string.
+	 * @return array Array with 'raw_data' and 'date_format' or empty array.
 	 */
 	private function get_user_birthday_data( $field_id, $user_id ) {
 		$birthday_string = '';
+		$date_format = 'Y-m-d'; // Default format
+
+		// Get the configured date format from field metadata
+		global $wpdb;
+		$field_date_format = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT meta_value FROM {$wpdb->prefix}bp_xprofile_meta WHERE object_id = %d AND object_type = 'field' AND meta_key = 'date_format'",
+				$field_id
+			)
+		);
+		
+		if ( ! empty( $field_date_format ) ) {
+			$date_format = $field_date_format;
+		}
 
 		// Method 1: Standard BP XProfile method.
 		if ( function_exists( 'BP_XProfile_ProfileData::get_value_byid' ) ) {
@@ -418,7 +437,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		// Method 2: Direct database query if method 1 fails.
 		if ( empty( $birthday_string ) ) {
-			global $wpdb;
 			$birthday_string = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT value FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND user_id = %d",
@@ -431,16 +449,20 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			}
 		}
 
-		return $birthday_string;
+		return array(
+			'raw_data' => $birthday_string,
+			'date_format' => $date_format,
+		);
 	}
 
 	/**
-	 * Clean birthday string from various formats
+	 * Clean birthday string from various formats using field's configured format
 	 *
-	 * @param mixed $birthday_string The birthday string to clean.
+	 * @param mixed  $birthday_string The birthday string to clean.
+	 * @param string $field_date_format The configured date format for this field.
 	 * @return string|false The cleaned birthday string or false on error.
 	 */
-	private function clean_birthday_string( $birthday_string ) {
+	private function clean_birthday_string( $birthday_string, $field_date_format = 'Y-m-d' ) {
 		if ( empty( $birthday_string ) ) {
 			return false;
 		}
@@ -475,9 +497,22 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		// Clean string.
 		$birthday_string = trim( $birthday_string );
 
-		// Handle common date formats and convert to Y-m-d.
-		$formats_to_try = array(
+		// Try the field's configured format first
+		$formats_to_try = array( $field_date_format );
+
+		// Add datetime variations of the configured format
+		if ( 'Y-m-d' === $field_date_format ) {
+			$formats_to_try[] = 'Y-m-d H:i:s';
+		} elseif ( 'd/m/Y' === $field_date_format ) {
+			$formats_to_try[] = 'd/m/Y H:i:s';
+		} elseif ( 'm/d/Y' === $field_date_format ) {
+			$formats_to_try[] = 'm/d/Y H:i:s';
+		}
+
+		// Add common fallback formats
+		$fallback_formats = array(
 			'Y-m-d',
+			'Y-m-d H:i:s',
 			'd/m/Y',
 			'm/d/Y',
 			'd-m-Y',
@@ -487,6 +522,23 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			'm.d.Y',
 			'Y.m.d',
 		);
+
+		// Merge without duplicates
+		$formats_to_try = array_unique( array_merge( $formats_to_try, $fallback_formats ) );
+
+		// Special handling for BuddyPress datetime format (Y-m-d H:i:s)
+		if ( preg_match( '/^(\d{4}-\d{2}-\d{2})(\s+\d{2}:\d{2}:\d{2})?$/', $birthday_string, $matches ) ) {
+			$date_part = $matches[1];
+			// Validate it's a proper date
+			$test_date = DateTime::createFromFormat( 'Y-m-d', $date_part );
+			if ( $test_date && $test_date->format( 'Y-m-d' ) === $date_part ) {
+				$year = (int) $test_date->format( 'Y' );
+				$current_year = (int) wp_date( 'Y' );
+				if ( $year >= 1900 && $year <= $current_year ) {
+					return $date_part;
+				}
+			}
+		}
 
 		foreach ( $formats_to_try as $format ) {
 			$date = DateTime::createFromFormat( $format, $birthday_string );
