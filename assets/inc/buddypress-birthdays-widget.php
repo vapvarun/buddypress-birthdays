@@ -72,12 +72,16 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					$age               = $birthday['years_old'];
 					$display_name_type = empty( $instance['display_name_type'] ) ? '' : $instance['display_name_type'];
 
-					// Check if today is the birthday - WordPress standard way.
+					// Check if today is the birthday - compare only month and day, not year.
 					$birth_date = $birthday['datetime'];
 					$today      = current_datetime();
 					$today_date = wp_date( 'Y-m-d' );
 					$next_birthday_date = isset( $birthday['next_birthday_date'] ) ? $birthday['next_birthday_date'] : '';
-					$is_today   = ( $next_birthday_date === $today_date );
+					
+					// Compare month-day only for "is today" check
+					$birth_month_day = $birth_date->format( 'm-d' );
+					$today_month_day = $today->format( 'm-d' );
+					$is_today = ( $birth_month_day === $today_month_day );
 					$item_class = $is_today ? 'bp-birthday-item today-birthday' : 'bp-birthday-item';
 
 					// We don't display negative ages.
@@ -380,15 +384,19 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			}
 		}
 
-		// Sort by next celebration date - today's birthdays first.
+		// Sort by next celebration date - today first, then chronological by next birthday.
 		uasort(
 			$members_birthdays,
 			function( $a, $b ) {
-				$today_comparable = wp_date( 'Ymd' );
+				$today = current_datetime();
+				$today_month_day = $today->format( 'm-d' );
 				
-				// Check if either is today's birthday
-				$a_is_today = ( $a['next_celebration_comparable_string'] === $today_comparable );
-				$b_is_today = ( $b['next_celebration_comparable_string'] === $today_comparable );
+				// Check if either is today's birthday (month-day comparison only)
+				$a_birth_month_day = $a['datetime']->format( 'm-d' );
+				$b_birth_month_day = $b['datetime']->format( 'm-d' );
+				
+				$a_is_today = ( $a_birth_month_day === $today_month_day );
+				$b_is_today = ( $b_birth_month_day === $today_month_day );
 				
 				// Today's birthdays always come first
 				if ( $a_is_today && ! $b_is_today ) {
@@ -398,7 +406,27 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					return 1;
 				}
 				
-				// If both are today or both are not today, sort by date
+				// If both are today, sort by name or age (optional secondary sort)
+				if ( $a_is_today && $b_is_today ) {
+					return 0; // Keep original order for same-day birthdays
+				}
+				
+				// For non-today birthdays, sort by next occurrence date
+				// Convert to timestamps for proper chronological comparison
+				$wp_timezone = wp_timezone();
+				
+				$date_a = DateTime::createFromFormat( 'Ymd', $a['next_celebration_comparable_string'], $wp_timezone );
+				$date_b = DateTime::createFromFormat( 'Ymd', $b['next_celebration_comparable_string'], $wp_timezone );
+				
+				if ( $date_a && $date_b ) {
+					$timestamp_a = $date_a->getTimestamp();
+					$timestamp_b = $date_b->getTimestamp();
+					
+					// Sort by timestamp (closest birthday first)
+					return $timestamp_a <=> $timestamp_b;
+				}
+				
+				// Fallback to string comparison if DateTime creation fails
 				return strcmp( $a['next_celebration_comparable_string'], $b['next_celebration_comparable_string'] );
 			}
 		);
