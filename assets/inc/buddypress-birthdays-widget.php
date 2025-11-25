@@ -43,11 +43,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			return;
 		}
 
-		// For friends/followers filters, user must be logged in.
-		// These filters require a logged-in user to determine whose friends/followers to show.
-		if ( isset( $instance['show_birthdays_of'] ) &&
-			 in_array( $instance['show_birthdays_of'], array( 'friends', 'followers' ), true ) &&
-			 ! is_user_logged_in() ) {
+		// Widget is only visible to logged-in users.
+		if ( ! is_user_logged_in() ) {
 			return;
 		}
 

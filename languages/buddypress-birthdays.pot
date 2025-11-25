@@ -1,14 +1,14 @@
-# Copyright (C) 2024
+# Copyright (C) 2025
 # This file is distributed under the same license as the  package.
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-04-16 13:14:44+00:00\n"
+"POT-Creation-Date: 2025-11-25 12:43:35+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2024-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2025-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Varun Dubey\n"
 "Language-Team: Wbcom Designs\n"
 "Language: en\n"
@@ -24,129 +24,179 @@ msgstr ""
 "X-Textdomain-Support: yes\n"
 "X-Generator: grunt-wp-i18n 1.0.3\n"
 
-#: assets/inc/bbirthdays-widget.php:23
+#: assets/inc/buddypress-birthdays-widget.php:23
 msgid ""
 "BuddyPress Birthdays widget to display the birthdays of the member in an "
 "elegant way."
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:29
+#: assets/inc/buddypress-birthdays-widget.php:29
 msgid "(BuddyPress) Birthdays"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:128
-msgid "Happy Birthday!"
+#: assets/inc/buddypress-birthdays-widget.php:166
+msgid "Turning %d"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:155
-msgid "BuddyPress Friends Component is not activate."
+#: assets/inc/buddypress-birthdays-widget.php:172
+msgid "Today!"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:157
-msgid "You don't have any friends. Make Friends and wish them!"
+#: assets/inc/buddypress-birthdays-widget.php:224
+msgid "Send birthday wishes"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:160
-msgid "You don't have any followings. Follow users to wish them!"
+#: assets/inc/buddypress-birthdays-widget.php:241
+msgid "Friends component not active."
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:162
-msgid ""
-"Not a single user has updated their birthday yet. Tell them to update their "
-"birthday and wish them!"
+#: assets/inc/buddypress-birthdays-widget.php:243
+msgid "No upcoming birthdays from friends."
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:413
+#: assets/inc/buddypress-birthdays-widget.php:246
+msgid "No upcoming birthdays from followers."
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:248
+msgid "No upcoming birthdays."
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:790 core-init.php:270
 msgid "Upcoming Birthdays"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:454
+#: assets/inc/buddypress-birthdays-widget.php:830
 msgid "Title:"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:460
+#: assets/inc/buddypress-birthdays-widget.php:836
 msgid "Show the age of the person"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:464
+#: assets/inc/buddypress-birthdays-widget.php:840
 msgid "Enable option to wish them"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:467
+#: assets/inc/buddypress-birthdays-widget.php:843
 msgid "Date Format"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:471
+#: assets/inc/buddypress-birthdays-widget.php:847
 msgid "Birthday range limit"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:473
+#: assets/inc/buddypress-birthdays-widget.php:849
 msgid "No Limit"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:474
-msgid "Weekly"
+#: assets/inc/buddypress-birthdays-widget.php:850
+msgid "Next 7 Days"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:475
-msgid "Monthly"
+#: assets/inc/buddypress-birthdays-widget.php:851
+msgid "Next 30 Days"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:479
+#: assets/inc/buddypress-birthdays-widget.php:855
 msgid "Show Birthdays of"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:482 assets/inc/bbirthdays-widget.php:484
+#: assets/inc/buddypress-birthdays-widget.php:858
+#: assets/inc/buddypress-birthdays-widget.php:860
 msgid "Followings"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:487
+#: assets/inc/buddypress-birthdays-widget.php:863
 msgid "Friends"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:489
+#: assets/inc/buddypress-birthdays-widget.php:865
 msgid "All Members"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:493
+#: assets/inc/buddypress-birthdays-widget.php:869
 msgid "Display Name Type"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:495
+#: assets/inc/buddypress-birthdays-widget.php:871
 msgid "User name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:496
+#: assets/inc/buddypress-birthdays-widget.php:872
 msgid "Nick name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:497
+#: assets/inc/buddypress-birthdays-widget.php:873
 msgid "First Name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:501
+#: assets/inc/buddypress-birthdays-widget.php:877
 msgid "Field's name"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:509
+#: assets/inc/buddypress-birthdays-widget.php:885
 msgid "Number of birthdays to show"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:512
+#: assets/inc/buddypress-birthdays-widget.php:888
 msgid "Select Emoji"
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:516
+#: assets/inc/buddypress-birthdays-widget.php:892
 msgid "None"
 msgstr ""
 
-#: buddypress-birthdays.php:55
+#: buddypress-birthdays.php:45
+msgid "Wbcom Designs - Birthday Widget for BuddyPress"
+msgstr ""
+
+#: buddypress-birthdays.php:46
+msgid "BuddyPress"
+msgstr ""
+
+#: buddypress-birthdays.php:50
 #. translators: %1$s: Wbcom Designs - Birthday Widget for BuddyPress, %2$s:
 #. BuddyPress
 msgid "%1$s is ineffective as it requires %2$s to be installed and active."
 msgstr ""
 
-#: assets/inc/bbirthdays-widget.php:113
-msgctxt "happy birthday ON 25-06"
-msgid "on "
+#: core-init.php:87
+msgid "Loading..."
+msgstr ""
+
+#: core-init.php:88
+msgid "Error occurred"
+msgstr ""
+
+#: core-init.php:89
+msgid "Send my wishes"
+msgstr ""
+
+#: core-init.php:90
+msgid "Birthday wishes sent!"
+msgstr ""
+
+#: core-init.php:91
+msgid "Unable to send wishes at this time."
+msgstr ""
+
+#: core-init.php:92
+msgid "Happy Birthday!"
+msgstr ""
+
+#: core-init.php:93
+msgid "No upcoming birthdays"
+msgstr ""
+
+#: core-init.php:94
+msgid "Today"
+msgstr ""
+
+#: core-init.php:95
+msgid "Tomorrow"
+msgstr ""
+
+#: core-init.php:287
+msgid "Birthday widget not available."
 msgstr ""
