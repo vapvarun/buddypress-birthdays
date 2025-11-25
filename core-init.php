@@ -88,6 +88,7 @@ function bb_register_core_js() {
 					'error'          => __( 'Error occurred', 'buddypress-birthdays' ),
 					'send_wishes'    => __( 'Send my wishes', 'buddypress-birthdays' ),
 					'wishes_sent'    => __( 'Birthday wishes sent!', 'buddypress-birthdays' ),
+					'wishes_error'   => __( 'Unable to send wishes at this time.', 'buddypress-birthdays' ),
 					'happy_birthday' => __( 'Happy Birthday!', 'buddypress-birthdays' ),
 					'no_birthdays'   => __( 'No upcoming birthdays', 'buddypress-birthdays' ),
 					'today'          => __( 'Today', 'buddypress-birthdays' ),
@@ -209,6 +210,11 @@ function bb_should_load_assets() {
  * @return bool Whether widget is found in any widget area.
  */
 function bb_check_widget_areas() {
+	// Ensure function is available (may not be during early loading).
+	if ( ! function_exists( 'wp_get_sidebars_widgets' ) ) {
+		return false;
+	}
+
 	$sidebars_widgets = wp_get_sidebars_widgets();
 
 	if ( ! is_array( $sidebars_widgets ) ) {
@@ -230,9 +236,15 @@ function bb_check_widget_areas() {
 
 /**
  * Load plugin textdomain.
+ *
+ * Note: This file is included from the main plugin file, so plugin_basename(__FILE__)
+ * would return a path relative to this file, not the main plugin. We need to use the
+ * correct relative path from the main plugin directory.
  */
 function bb_load_textdomain() {
-	load_plugin_textdomain( 'buddypress-birthdays', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	// The main plugin file is in the parent directory of this file.
+	// Use the plugin's directory name directly to ensure correct path.
+	load_plugin_textdomain( 'buddypress-birthdays', false, 'buddypress-birthdays/languages' );
 }
 add_action( 'init', 'bb_load_textdomain' );
 
@@ -353,7 +365,7 @@ function bb_debug_widget_loading() {
 
 		// Widget locations.
 		echo '<strong>Widget Locations:</strong><br>';
-		$sidebars      = wp_get_sidebars_widgets();
+		$sidebars      = function_exists( 'wp_get_sidebars_widgets' ) ? wp_get_sidebars_widgets() : array();
 		$found_widgets = array();
 		foreach ( $sidebars as $sidebar_id => $widgets ) {
 			if ( ! empty( $widgets ) && is_array( $widgets ) ) {
@@ -404,7 +416,7 @@ function bb_birthdays_ajax_handler() {
 	switch ( $action ) {
 		case 'refresh_widget':
 			// Clear birthday cache.
-			delete_transient( 'bp_birthdays_cache' );
+			bb_clear_birthday_caches();
 			wp_send_json_success( array( 'message' => 'Widget refreshed' ) );
 			break;
 
@@ -479,27 +491,19 @@ add_action( 'bb_cleanup_old_wishes', 'bb_cleanup_old_wishes' );
 /**
  * Clear all birthday widget caches.
  *
- * This function clears all transients related to the birthday widget
+ * This function clears object cache for the birthday widget
  * to ensure the widget displays fresh data.
  *
  * @since 2.0.0
  */
 function bb_clear_birthday_caches() {
-	global $wpdb;
-
-	// Delete all birthday-related transients.
-	$wpdb->query(
-		$wpdb->prepare(
-			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
-			'_transient_bp_birthdays_%',
-			'_transient_timeout_bp_birthdays_%'
-		)
-	);
-
-	// Clear object cache if available.
+	// Clear object cache for birthday cache group.
 	if ( function_exists( 'wp_cache_flush_group' ) ) {
-		wp_cache_flush_group( 'transient' );
+		wp_cache_flush_group( 'bp_birthdays' );
 	}
+
+	// Note: We no longer use transients for birthday caching.
+	// Object cache is lighter weight and more efficient for large sites.
 }
 
 /**

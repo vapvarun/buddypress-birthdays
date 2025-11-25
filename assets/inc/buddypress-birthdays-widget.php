@@ -43,8 +43,18 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			return;
 		}
 
-		// Cache with user-specific keys for friends/followers filters.
-		$cache_key = 'bp_birthdays_' . md5( wp_json_encode( $instance ) );
+		// For friends/followers filters, user must be logged in.
+		// These filters require a logged-in user to determine whose friends/followers to show.
+		if ( isset( $instance['show_birthdays_of'] ) &&
+			 in_array( $instance['show_birthdays_of'], array( 'friends', 'followers' ), true ) &&
+			 ! is_user_logged_in() ) {
+			return;
+		}
+
+		// Use object cache instead of transients for better performance on large sites.
+		// Object cache is lighter weight and works better with persistent object cache backends.
+		$cache_group = 'bp_birthdays';
+		$cache_key   = md5( wp_json_encode( $instance ) );
 
 		// Add user ID to cache key for user-specific filters (friends/followers).
 		if ( isset( $instance['show_birthdays_of'] ) &&
@@ -53,11 +63,12 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			$cache_key .= '_user_' . get_current_user_id();
 		}
 
-		$birthdays = get_transient( $cache_key );
+		$birthdays = wp_cache_get( $cache_key, $cache_group );
 
 		if ( false === $birthdays ) {
 			$birthdays = $this->bbirthdays_get_array( $instance );
-			set_transient( $cache_key, $birthdays, 30 * MINUTE_IN_SECONDS );
+			// Cache for 30 minutes using object cache.
+			wp_cache_set( $cache_key, $birthdays, $cache_group, 30 * MINUTE_IN_SECONDS );
 		}
 
 		echo $args['before_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -75,147 +86,152 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					break;
 				}
 
-				$activation_key = get_user_meta( $user_id, 'activation_key' );
-				if ( empty( $activation_key ) ) {
-					$age               = $birthday['years_old'];
-					$display_name_type = empty( $instance['display_name_type'] ) ? '' : $instance['display_name_type'];
+				// Skip users who haven't activated their accounts yet.
+				// Check both 'activation_key' (BuddyPress) and 'wp_user_activation_key' (WordPress).
+				// Note: get_user_meta returns an array with single param = false, check properly.
+				$activation_key = get_user_meta( $user_id, 'activation_key', true );
+				if ( ! empty( $activation_key ) ) {
+					continue;
+				}
 
-					// Check if today is the birthday - compare only month and day, not year.
-					$birth_date = $birthday['datetime'];
-					$today      = current_datetime();
-					$today_date = wp_date( 'Y-m-d' );
-					$next_birthday_date = isset( $birthday['next_birthday_date'] ) ? $birthday['next_birthday_date'] : '';
-					
-					// Compare month-day only for "is today" check
-					$birth_month_day = $birth_date->format( 'm-d' );
-					$today_month_day = $today->format( 'm-d' );
-					$is_today = ( $birth_month_day === $today_month_day );
-					$item_class = $is_today ? 'bp-birthday-item today-birthday' : 'bp-birthday-item';
+				$age               = $birthday['years_old'];
+				$display_name_type = empty( $instance['display_name_type'] ) ? '' : $instance['display_name_type'];
 
-					// We don't display negative ages.
-					if ( $age > 0 ) {
-						echo '<div class="' . esc_attr( $item_class ) . '">';
+				// Check if today is the birthday - compare only month and day, not year.
+				$birth_date = $birthday['datetime'];
+				$today      = current_datetime();
+				$today_date = wp_date( 'Y-m-d' );
+				$next_birthday_date = isset( $birthday['next_birthday_date'] ) ? $birthday['next_birthday_date'] : '';
 
-						// Avatar.
-						echo '<div class="bp-birthday-avatar">';
-						if ( function_exists( 'bp_is_active' ) ) {
-							if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
-								$user_url = bp_members_get_user_url( $user_id );
-							} else {
-								$user_url = bp_core_get_user_domain( $user_id );
-							}
-							echo '<a href="' . esc_url( $user_url ) . '">';
-							echo get_avatar( $user_id, 36 );
-							echo '</a>';
+				// Compare month-day only for "is today" check.
+				$birth_month_day = $birth_date->format( 'm-d' );
+				$today_month_day = $today->format( 'm-d' );
+				$is_today = ( $birth_month_day === $today_month_day );
+				$item_class = $is_today ? 'bp-birthday-item today-birthday' : 'bp-birthday-item';
+
+				// We don't display negative ages.
+				if ( $age > 0 ) {
+					echo '<div class="' . esc_attr( $item_class ) . '">';
+
+					// Avatar.
+					echo '<div class="bp-birthday-avatar">';
+					if ( function_exists( 'bp_is_active' ) ) {
+						if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
+							$user_url = bp_members_get_user_url( $user_id );
 						} else {
-							echo get_avatar( $user_id, 36 );
+							$user_url = bp_core_get_user_domain( $user_id );
 						}
-						echo '</div>';
+						echo '<a href="' . esc_url( $user_url ) . '">';
+						echo get_avatar( $user_id, 36 );
+						echo '</a>';
+					} else {
+						echo get_avatar( $user_id, 36 );
+					}
+					echo '</div>';
 
-						// Content.
-						echo '<div class="bp-birthday-content">';
+					// Content.
+					echo '<div class="bp-birthday-content">';
 
-						// User name.
-						echo '<div class="bp-birthday-name">';
-						if ( function_exists( 'bp_is_active' ) ) {
-							echo '<a href="' . esc_url( $user_url ) . '">';
-						}
+					// User name.
+					echo '<div class="bp-birthday-name">';
+					if ( function_exists( 'bp_is_active' ) ) {
+						echo '<a href="' . esc_url( $user_url ) . '">';
+					}
 
-						// Get display name based on setting.
-						$display_name = '';
-						if ( 'user_name' === $display_name_type ) {
-							if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
-								$display_name = bp_members_get_user_slug( $user_id );
-							} else {
-								$display_name = bp_core_get_username( $user_id );
-							}
-						} elseif ( 'nick_name' === $display_name_type ) {
-							$display_name = get_user_meta( $user_id, 'nickname', true );
-						} elseif ( 'first_name' === $display_name_type ) {
-							$display_name = get_user_meta( $user_id, 'first_name', true );
+					// Get display name based on setting.
+					$display_name = '';
+					if ( 'user_name' === $display_name_type ) {
+						if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
+							$display_name = bp_members_get_user_slug( $user_id );
 						} else {
-							$display_name = $this->get_name_to_display( $user_id );
+							$display_name = bp_core_get_username( $user_id );
 						}
+					} elseif ( 'nick_name' === $display_name_type ) {
+						$display_name = get_user_meta( $user_id, 'nickname', true );
+					} elseif ( 'first_name' === $display_name_type ) {
+						$display_name = get_user_meta( $user_id, 'first_name', true );
+					} else {
+						$display_name = $this->get_name_to_display( $user_id );
+					}
 
-						echo esc_html( $display_name );
+					echo esc_html( $display_name );
 
-						if ( function_exists( 'bp_is_active' ) ) {
-							echo '</a>';
-						}
-						echo '</div>';
+					if ( function_exists( 'bp_is_active' ) ) {
+						echo '</a>';
+					}
+					echo '</div>';
 
-						// Birthday details in one compact line.
-						echo '<div class="bp-birthday-details">';
+					// Birthday details in one compact line.
+					echo '<div class="bp-birthday-details">';
 
-						// Age.
-						if ( isset( $instance['display_age'] ) && 'yes' === $instance['display_age'] ) {
-							echo '<span class="bp-birthday-age">' . sprintf( esc_html__( 'Turning %d', 'buddypress-birthdays' ), esc_html( $age ) ) . '</span>';
-						}
+					// Age.
+					if ( isset( $instance['display_age'] ) && 'yes' === $instance['display_age'] ) {
+						echo '<span class="bp-birthday-age">' . sprintf( esc_html__( 'Turning %d', 'buddypress-birthdays' ), esc_html( $age ) ) . '</span>';
+					}
 
-						// Date.
-						echo '<span class="bp-birthday-date">';
-						if ( $is_today ) {
-							echo '<strong>' . esc_html__( 'Today!', 'buddypress-birthdays' ) . '</strong>';
-						} else {
-							$date_format = $instance['birthday_date_format'];
-							$date_format = ( ! empty( $date_format ) ) ? $date_format : 'M j';
+					// Date.
+					echo '<span class="bp-birthday-date">';
+					if ( $is_today ) {
+						echo '<strong>' . esc_html__( 'Today!', 'buddypress-birthdays' ) . '</strong>';
+					} else {
+						$date_format = $instance['birthday_date_format'];
+						$date_format = ( ! empty( $date_format ) ) ? $date_format : 'M j';
 
-							// Use next birthday date for display.
-							$next_birthday_date = isset( $birthday['next_birthday_date'] ) ? $birthday['next_birthday_date'] : '';
-							if ( $next_birthday_date ) {
-								try {
-									$wp_timezone    = wp_timezone();
-									$next_birthday  = DateTime::createFromFormat( 'Y-m-d', $next_birthday_date, $wp_timezone );
-									$formatted_date = '';
-									if ( $next_birthday ) {
-										$formatted_date = wp_date( $date_format, $next_birthday->getTimestamp() );
-									} else {
-										$formatted_date = wp_date( $date_format, $birthday['datetime']->getTimestamp() );
-									}
-								} catch ( Exception $e ) {
+						// Use next birthday date for display.
+						$next_birthday_date = isset( $birthday['next_birthday_date'] ) ? $birthday['next_birthday_date'] : '';
+						if ( $next_birthday_date ) {
+							try {
+								$wp_timezone    = wp_timezone();
+								$next_birthday  = DateTime::createFromFormat( 'Y-m-d', $next_birthday_date, $wp_timezone );
+								$formatted_date = '';
+								if ( $next_birthday ) {
+									$formatted_date = wp_date( $date_format, $next_birthday->getTimestamp() );
+								} else {
 									$formatted_date = wp_date( $date_format, $birthday['datetime']->getTimestamp() );
 								}
-							} else {
+							} catch ( Exception $e ) {
 								$formatted_date = wp_date( $date_format, $birthday['datetime']->getTimestamp() );
 							}
-							echo esc_html( $formatted_date );
+						} else {
+							$formatted_date = wp_date( $date_format, $birthday['datetime']->getTimestamp() );
+						}
+						echo esc_html( $formatted_date );
+					}
+					echo '</span>';
+
+					// Emoji (if enabled).
+					$emoji = isset( $instance['emoji'] ) ? $instance['emoji'] : '';
+					if ( $emoji && 'none' !== $emoji ) {
+						echo '<span class="bp-birthday-emoji">';
+						switch ( $emoji ) {
+							case 'cake':
+								echo '🎂';
+								break;
+							case 'party':
+								echo '🎉';
+								break;
+							case 'balloon':
+							default:
+								echo '🎈';
 						}
 						echo '</span>';
-
-						// Emoji (if enabled).
-						$emoji = isset( $instance['emoji'] ) ? $instance['emoji'] : '';
-						if ( $emoji && 'none' !== $emoji ) {
-							echo '<span class="bp-birthday-emoji">';
-							switch ( $emoji ) {
-								case 'cake':
-									echo '🎂';
-									break;
-								case 'party':
-									echo '🎉';
-									break;
-								case 'balloon':
-								default:
-									echo '🎈';
-							}
-							echo '</span>';
-						}
-
-						echo '</div>'; // .bp-birthday-details
-						echo '</div>'; // .bp-birthday-content
-
-						// Send wishes button.
-						if ( 'yes' === $instance['birthday_send_message'] && bp_is_active( 'messages' ) && is_user_logged_in() ) {
-							echo '<div class="bp-birthday-action">';
-							$message_url = $this->bbirthday_get_send_private_message_to_user_url( $user_id );
-							echo '<a class="bp-send-wishes" href="' . esc_url( $message_url ) . '" title="' . esc_attr__( 'Send birthday wishes', 'buddypress-birthdays' ) . '">';
-							echo '<span class="dashicons dashicons-email"></span>';
-							echo '</a>';
-							echo '</div>';
-						}
-
-						echo '</div>'; // .bp-birthday-item
-						++$c;
 					}
+
+					echo '</div>'; // .bp-birthday-details
+					echo '</div>'; // .bp-birthday-content
+
+					// Send wishes button.
+					if ( 'yes' === $instance['birthday_send_message'] && bp_is_active( 'messages' ) && is_user_logged_in() ) {
+						echo '<div class="bp-birthday-action">';
+						$message_url = $this->bbirthday_get_send_private_message_to_user_url( $user_id );
+						echo '<a class="bp-send-wishes" href="' . esc_url( $message_url ) . '" title="' . esc_attr__( 'Send birthday wishes', 'buddypress-birthdays' ) . '">';
+						echo '<span class="dashicons dashicons-email"></span>';
+						echo '</a>';
+						echo '</div>';
+					}
+
+					echo '</div>'; // .bp-birthday-item
+					++$c;
 				}
 			}
 			echo '</div>'; // .bp-birthday-users-list
@@ -751,9 +767,14 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		// This ensures user-specific caches are also cleared.
 		if ( function_exists( 'bb_clear_birthday_caches' ) ) {
 			bb_clear_birthday_caches();
+		}
+
+		// Also clear object cache for this widget's cache group.
+		if ( function_exists( 'wp_cache_flush_group' ) ) {
+			wp_cache_flush_group( 'bp_birthdays' );
 		} else {
-			// Fallback: clear base cache key.
-			delete_transient( 'bp_birthdays_' . md5( wp_json_encode( $old_instance ) ) );
+			// Fallback: delete specific cache keys.
+			wp_cache_delete( md5( wp_json_encode( $old_instance ) ), 'bp_birthdays' );
 		}
 
 		return $instance;

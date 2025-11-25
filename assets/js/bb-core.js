@@ -57,10 +57,14 @@
         handleWishesClick: function(e) {
             const $button = $(e.currentTarget);
             const href = $button.attr('href');
-            
+
             if (!href || href === '#') {
                 e.preventDefault();
-                this.showMessage('Unable to send wishes at this time.', 'error');
+                // Use localized string if available, fallback to English.
+                const errorMsg = (typeof bbBirthdays !== 'undefined' && bbBirthdays.strings && bbBirthdays.strings.wishes_error)
+                    ? bbBirthdays.strings.wishes_error
+                    : 'Unable to send wishes at this time.';
+                this.showMessage(errorMsg, 'error');
                 return;
             }
 
