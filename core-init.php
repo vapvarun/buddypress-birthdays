@@ -475,3 +475,113 @@ if ( ! wp_next_scheduled( 'bb_cleanup_old_wishes' ) ) {
 	wp_schedule_event( time(), 'daily', 'bb_cleanup_old_wishes' );
 }
 add_action( 'bb_cleanup_old_wishes', 'bb_cleanup_old_wishes' );
+
+/**
+ * Clear all birthday widget caches.
+ *
+ * This function clears all transients related to the birthday widget
+ * to ensure the widget displays fresh data.
+ *
+ * @since 2.0.0
+ */
+function bb_clear_birthday_caches() {
+	global $wpdb;
+
+	// Delete all birthday-related transients.
+	$wpdb->query(
+		$wpdb->prepare(
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+			'_transient_bp_birthdays_%',
+			'_transient_timeout_bp_birthdays_%'
+		)
+	);
+
+	// Clear object cache if available.
+	if ( function_exists( 'wp_cache_flush_group' ) ) {
+		wp_cache_flush_group( 'transient' );
+	}
+}
+
+/**
+ * Clear birthday caches when xprofile field is updated.
+ *
+ * @param BP_XProfile_ProfileData $field_data The field data object.
+ */
+function bb_clear_cache_on_xprofile_update( $field_data ) {
+	bb_clear_birthday_caches();
+}
+add_action( 'xprofile_data_after_save', 'bb_clear_cache_on_xprofile_update' );
+
+/**
+ * Clear birthday caches when a friendship is accepted.
+ *
+ * @param int $id                Friendship ID.
+ * @param int $initiator_user_id User ID of the initiator.
+ * @param int $friend_user_id    User ID of the friend.
+ */
+function bb_clear_cache_on_friendship_accepted( $id, $initiator_user_id, $friend_user_id ) {
+	bb_clear_birthday_caches();
+}
+add_action( 'friends_friendship_accepted', 'bb_clear_cache_on_friendship_accepted', 10, 3 );
+
+/**
+ * Clear birthday caches when a friendship is deleted.
+ *
+ * @param int $id                Friendship ID.
+ * @param int $initiator_user_id User ID of the initiator.
+ * @param int $friend_user_id    User ID of the friend.
+ */
+function bb_clear_cache_on_friendship_deleted( $id, $initiator_user_id, $friend_user_id ) {
+	bb_clear_birthday_caches();
+}
+add_action( 'friends_friendship_deleted', 'bb_clear_cache_on_friendship_deleted', 10, 3 );
+
+/**
+ * Clear birthday caches when a friendship is withdrawn.
+ *
+ * @param int $friendship_id Friendship ID.
+ */
+function bb_clear_cache_on_friendship_withdrawn( $friendship_id ) {
+	bb_clear_birthday_caches();
+}
+add_action( 'friends_friendship_withdrawn', 'bb_clear_cache_on_friendship_withdrawn' );
+
+/**
+ * Clear birthday caches when a user is deleted.
+ *
+ * @param int $user_id The user ID being deleted.
+ */
+function bb_clear_cache_on_user_deleted( $user_id ) {
+	bb_clear_birthday_caches();
+}
+add_action( 'delete_user', 'bb_clear_cache_on_user_deleted' );
+add_action( 'wpmu_delete_user', 'bb_clear_cache_on_user_deleted' );
+
+/**
+ * Clear birthday caches when a user is registered.
+ *
+ * @param int $user_id The user ID being registered.
+ */
+function bb_clear_cache_on_user_registered( $user_id ) {
+	bb_clear_birthday_caches();
+}
+add_action( 'user_register', 'bb_clear_cache_on_user_registered' );
+
+/**
+ * Clear birthday caches when follow/unfollow happens (BP Follow plugin).
+ *
+ * @param BP_Follow $follow The follow object.
+ */
+function bb_clear_cache_on_follow_change( $follow ) {
+	bb_clear_birthday_caches();
+}
+add_action( 'bp_follow_start_following', 'bb_clear_cache_on_follow_change' );
+add_action( 'bp_follow_stop_following', 'bb_clear_cache_on_follow_change' );
+
+/**
+ * Clear birthday caches daily via cron to ensure fresh data.
+ */
+function bb_daily_cache_clear() {
+	bb_clear_birthday_caches();
+}
+add_action( 'bb_cleanup_old_wishes', 'bb_daily_cache_clear' );
