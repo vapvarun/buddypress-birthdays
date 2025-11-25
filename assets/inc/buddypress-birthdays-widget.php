@@ -747,8 +747,14 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$instance['birthday_send_message'] = ( ! empty( $new_instance['birthday_send_message'] ) ) ? $new_instance['birthday_send_message'] : '';
 		$instance['display_name_type']     = ( ! empty( $new_instance['display_name_type'] ) ) ? $new_instance['display_name_type'] : '';
 
-		// Clear cache when settings change.
-		delete_transient( 'bp_birthdays_' . md5( wp_json_encode( $old_instance ) ) );
+		// Clear all birthday caches when settings change.
+		// This ensures user-specific caches are also cleared.
+		if ( function_exists( 'bb_clear_birthday_caches' ) ) {
+			bb_clear_birthday_caches();
+		} else {
+			// Fallback: clear base cache key.
+			delete_transient( 'bp_birthdays_' . md5( wp_json_encode( $old_instance ) ) );
+		}
 
 		return $instance;
 	}
