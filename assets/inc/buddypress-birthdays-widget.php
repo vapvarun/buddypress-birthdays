@@ -72,6 +72,12 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			wp_cache_set( $cache_key, $birthdays, $cache_group, 30 * MINUTE_IN_SECONDS );
 		}
 
+		// Don't render widget at all if there are no birthdays to display.
+		// This prevents empty widget containers from showing.
+		if ( empty( $birthdays ) ) {
+			return;
+		}
+
 		echo $args['before_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 		if ( ! empty( $birthdays ) ) {
@@ -236,22 +242,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				}
 			}
 			echo '</div>'; // .bp-birthday-users-list
-
-		} else {
-			// Clean empty state.
-			echo '<div class="bp-birthday-empty">';
-			if ( 'friends' === $instance['show_birthdays_of'] ) {
-				if ( ! bp_is_active( 'friends' ) ) {
-					esc_html_e( 'Friends component not active.', 'buddypress-birthdays' );
-				} else {
-					esc_html_e( 'No upcoming birthdays from friends.', 'buddypress-birthdays' );
-				}
-			} elseif ( 'followers' === $instance['show_birthdays_of'] ) {
-				esc_html_e( 'No upcoming birthdays from followers.', 'buddypress-birthdays' );
-			} else {
-				esc_html_e( 'No upcoming birthdays.', 'buddypress-birthdays' );
-			}
-			echo '</div>';
 		}
 
 		echo wp_kses_post( $args['after_widget'] );
