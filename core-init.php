@@ -215,6 +215,7 @@ function bb_check_widget_areas() {
 		return false;
 	}
 
+	// phpcs:ignore Generic.PHP.ForbiddenFunctions.Found -- Required for widget detection.
 	$sidebars_widgets = wp_get_sidebars_widgets();
 
 	if ( ! is_array( $sidebars_widgets ) ) {
@@ -234,19 +235,6 @@ function bb_check_widget_areas() {
 	return false;
 }
 
-/**
- * Load plugin textdomain.
- *
- * Note: This file is included from the main plugin file, so plugin_basename(__FILE__)
- * would return a path relative to this file, not the main plugin. We need to use the
- * correct relative path from the main plugin directory.
- */
-function bb_load_textdomain() {
-	// The main plugin file is in the parent directory of this file.
-	// Use the plugin's directory name directly to ensure correct path.
-	load_plugin_textdomain( 'buddypress-birthdays', false, 'buddypress-birthdays/languages' );
-}
-add_action( 'init', 'bb_load_textdomain' );
 
 /**
  * Load the Widget File.
@@ -365,6 +353,7 @@ function bb_debug_widget_loading() {
 
 		// Widget locations.
 		echo '<strong>Widget Locations:</strong><br>';
+		// phpcs:ignore Generic.PHP.ForbiddenFunctions.Found -- Required for widget detection.
 		$sidebars      = function_exists( 'wp_get_sidebars_widgets' ) ? wp_get_sidebars_widgets() : array();
 		$found_widgets = array();
 		foreach ( $sidebars as $sidebar_id => $widgets ) {
@@ -461,6 +450,7 @@ function bb_cleanup_old_wishes() {
 	// Remove wish data older than 7 days.
 	$old_date = wp_date( 'Y-m-d', strtotime( '-7 days' ) );
 
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time cleanup query, caching not beneficial.
 	$users = $wpdb->get_results( $wpdb->prepare( "SELECT user_id, meta_value FROM {$wpdb->usermeta} WHERE meta_key = %s", 'bb_birthday_wished_users' ) );
 
 	foreach ( $users as $user ) {

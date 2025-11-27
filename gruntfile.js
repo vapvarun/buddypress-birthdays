@@ -23,7 +23,7 @@ module.exports = function (grunt) {
                         '!node_modules/**',
                         '!dist/**',
                         '!.git/**',
-                        '!.gitignore',
+                        '!.git*',
                         '!Gruntfile.js',
                         '!gruntfile.js',
                         '!package.json',

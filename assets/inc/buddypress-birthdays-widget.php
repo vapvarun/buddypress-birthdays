@@ -173,6 +173,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 					// Age.
 					if ( isset( $instance['display_age'] ) && 'yes' === $instance['display_age'] ) {
+						/* translators: %d: The age the person is turning */
 						echo '<span class="bp-birthday-age">' . sprintf( esc_html__( 'Turning %d', 'buddypress-birthdays' ), esc_html( $age ) ) . '</span>';
 					}
 
@@ -460,15 +461,16 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$birthday_string = '';
 		$date_format = 'Y-m-d'; // Default format
 
-		// Get the configured date format from field metadata
+		// Get the configured date format from field metadata.
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time query for field metadata.
 		$field_date_format = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT meta_value FROM {$wpdb->prefix}bp_xprofile_meta WHERE object_id = %d AND object_type = 'field' AND meta_key = 'date_format'",
 				$field_id
 			)
 		);
-		
+
 		if ( ! empty( $field_date_format ) ) {
 			$date_format = $field_date_format;
 		}
@@ -480,6 +482,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		// Method 2: Direct database query if method 1 fails.
 		if ( empty( $birthday_string ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Fallback when BP function unavailable.
 			$birthday_string = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT value FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND user_id = %d",
