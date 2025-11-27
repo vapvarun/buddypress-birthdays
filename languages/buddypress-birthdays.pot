@@ -1,10 +1,10 @@
-# Copyright (C) 2025
-# This file is distributed under the same license as the  package.
+# Copyright (C) 2025 Wbcom Designs
+# This file is distributed under the same license as the Wbcom Designs - Birthday Widget for BuddyPress package.
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
+"Project-Id-Version: Wbcom Designs - Birthday Widget for BuddyPress 2.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-26 03:54:06+00:00\n"
+"POT-Creation-Date: 2025-11-27 05:32:46+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -131,7 +131,7 @@ msgstr ""
 msgid "None"
 msgstr ""
 
-#: buddypress-birthdays.php:45
+#. Plugin Name of the plugin/theme
 msgid "Wbcom Designs - Birthday Widget for BuddyPress"
 msgstr ""
 
@@ -183,4 +183,20 @@ msgstr ""
 
 #: core-init.php:287
 msgid "Birthday widget not available."
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "https://wbcomdesigns.com/downloads/buddypress-birthdays/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Display upcoming birthdays with optimized performance and memory usage"
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Wbcom Designs"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "https://wbcomdesigns.com/"
 msgstr ""

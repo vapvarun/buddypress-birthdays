@@ -1,23 +1,26 @@
 {
   "name": "buddypress-birthdays",
-  "version": "1.6.0",
+  "version": "2.2.0",
   "url": "https://github.com/vapvarun/buddypress-birthdays",
   "license": "GPL-2.0+",
-  "description": "buddypress-birthdays",
+  "description": "Birthday Widget for BuddyPress - Display upcoming birthdays of members",
   "devDependencies": {
-    "grunt": "^1.0.4",
+    "grunt": "^1.6.1",
     "grunt-checktextdomain": "^1.0.1",
-    "grunt-wp-i18n": "^1.0.3"
+    "grunt-contrib-clean": "^2.0.1",
+    "grunt-contrib-compress": "^2.0.0",
+    "grunt-contrib-copy": "^1.0.0",
+    "grunt-contrib-cssmin": "^5.0.0",
+    "grunt-contrib-uglify": "^5.2.2",
+    "grunt-shell": "^4.0.0",
+    "grunt-wp-i18n": "^1.0.3",
+    "load-grunt-tasks": "^5.1.0"
   },
   "engines": {
-    "node": ">=6.9.1"
+    "node": ">=14.0.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/vapvarun/buddypress-birthdays"
-  },
-  "dependencies": {
-    "load-grunt-tasks": "^3.5.2",
-    "npm": "^10.2.5"
   }
 }

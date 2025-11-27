@@ -1,4 +1,12 @@
-
+# Development files
+node_modules/
+dist/
 *.cmd
-node_modules
 .DS_Store
+Thumbs.db
+*.log
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
