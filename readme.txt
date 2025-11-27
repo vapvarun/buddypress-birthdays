@@ -5,7 +5,7 @@ Donate link: https://www.paypal.me/wbcomdesigns
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.3.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -103,24 +103,28 @@ Yes! The plugin works seamlessly with Youzify and other popular BuddyPress exten
 
 == Changelog ==
 
-= 2.2.0 =
+= 2.3.0 =
 * Fixed: Widget no longer shows empty container when no birthdays to display.
 * Fixed: Widget visibility now works correctly for logged-out users.
 * Fixed: "All Members" filter now visible to logged-out users for public birthdays.
 * Fixed: Friends/Followers filter properly hidden for logged-out users.
 * Fixed: Widget cache now clears properly when settings are updated.
 * Fixed: Replaced transient caching with object cache for better performance on large sites.
-* Fixed: Plugin check errors related to early wp_get_sidebars_widgets() calls.
-* Fixed: Text domain loading path corrected for proper translations.
-* Fixed: JavaScript error messages now use localized strings.
-* Fixed: Birthday sorting now correctly shows today's birthdays first.
-* Fixed: Date calculations now use WordPress timezone settings.
-* Fixed: Activation key check properly skips non-activated users.
-* Improved: Birthday calculation logic with proper timezone handling.
-* Improved: Widget UI with cleaner, more modern design.
-* Improved: Date format now reads from xprofile field metadata.
-* Improved: Performance optimization for sites with many users.
+* Fixed: Non-activated users are now properly excluded from birthday listings.
+* Fixed: JavaScript error messages now properly localized.
+* Improved: WordPress.org Plugin Check compatibility.
+* Improved: Added grunt build process for distribution.
 * Updated: Regenerated .pot file with all translation strings.
+
+= 2.2.0 =
+* Enhancement: Complete UI/UX redesign with modern, clean interface.
+* Enhancement: Improved theme compatibility with CSS inheritance.
+* Enhancement: Zero Cumulative Layout Shift (CLS) implementation.
+* Enhancement: Smart asset loading - only loads when widget is active.
+* Enhancement: Enhanced mobile responsiveness with touch-friendly buttons.
+* Enhancement: Improved performance with optimized caching system.
+* Enhancement: Better accessibility with WCAG 2.1 compliance.
+* Enhancement: Smooth animations and hover effects.
 
 = 2.1.0 =
 * Fixed issue where logged-in users could view their own birthdays.

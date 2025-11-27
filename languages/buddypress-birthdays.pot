@@ -2,9 +2,9 @@
 # This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: Wbcom Designs - Birthday Widget for BuddyPress 2.2.0\n"
+"Project-Id-Version: Wbcom Designs - Birthday Widget for BuddyPress 2.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-27 05:42:18+00:00\n"
+"POT-Creation-Date: 2025-11-27 06:02:54+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
