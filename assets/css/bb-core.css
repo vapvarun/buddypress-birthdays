@@ -301,6 +301,28 @@
 }
 
 /* ====================================
+   ZODIAC SIGN
+==================================== */
+
+.bp-birthday-zodiac {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    font-size: 0.95em;
+}
+
+.bp-birthday-zodiac .zodiac-symbol {
+    font-size: 1.1em;
+    opacity: 0.85;
+}
+
+.bp-birthday-zodiac .zodiac-name {
+    margin-left: 3px;
+    font-size: 0.85em;
+    color: #666;
+}
+
+/* ====================================
    ACCESSIBILITY & PERFORMANCE
 ==================================== */
 
