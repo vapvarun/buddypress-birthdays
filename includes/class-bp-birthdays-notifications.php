@@ -465,9 +465,16 @@ class BP_Birthdays_Notifications {
 	 * @return mixed
 	 */
 	private function get_setting( $key, $default = null ) {
+		// Try Admin class first (available in admin context).
 		if ( class_exists( 'BP_Birthdays_Admin' ) ) {
 			$value = BP_Birthdays_Admin::get_settings( $key );
 			return null !== $value ? $value : $default;
+		}
+
+		// Fallback: read directly from option (for cron/CLI context).
+		$settings = get_option( 'bp_birthdays_settings', array() );
+		if ( isset( $settings[ $key ] ) ) {
+			return $settings[ $key ];
 		}
 
 		return $default;
