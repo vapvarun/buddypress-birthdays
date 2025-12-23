@@ -24,6 +24,7 @@ module.exports = function (grunt) {
                         '!dist/**',
                         '!.git/**',
                         '!.git*',
+                        '!.gitignore',
                         '!Gruntfile.js',
                         '!gruntfile.js',
                         '!package.json',
@@ -37,8 +38,11 @@ module.exports = function (grunt) {
                         '!phpunit.xml.dist',
                         '!tests/**',
                         '!bin/**',
-                        '!*.md',
+                        '!CLAUDE.md',
+                        '!developer_guide.md',
+                        '!user_guide.md',
                         '!docs/**',
+                        '!marketing/**',
                         '!*.map',
                         '!*.log',
                         '!*.sql',
@@ -111,12 +115,21 @@ module.exports = function (grunt) {
 
         // CSS minification
         cssmin: {
-            dist: {
+            assets: {
                 files: [{
                     expand: true,
                     cwd: 'assets/css/',
                     src: ['*.css', '!*.min.css'],
                     dest: 'assets/css/',
+                    ext: '.min.css'
+                }]
+            },
+            admin: {
+                files: [{
+                    expand: true,
+                    cwd: 'admin/css/',
+                    src: ['*.css', '!*.min.css'],
+                    dest: 'admin/css/',
                     ext: '.min.css'
                 }]
             }
@@ -127,12 +140,21 @@ module.exports = function (grunt) {
             options: {
                 mangle: false
             },
-            dist: {
+            assets: {
                 files: [{
                     expand: true,
                     cwd: 'assets/js/',
                     src: ['*.js', '!*.min.js'],
                     dest: 'assets/js/',
+                    ext: '.min.js'
+                }]
+            },
+            admin: {
+                files: [{
+                    expand: true,
+                    cwd: 'admin/js/',
+                    src: ['*.js', '!*.min.js'],
+                    dest: 'admin/js/',
                     ext: '.min.js'
                 }]
             }
@@ -179,9 +201,10 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-shell');
 
     // Register tasks
-    grunt.registerTask('minify', ['cssmin', 'uglify']);
+    grunt.registerTask('minify', ['cssmin:assets', 'cssmin:admin', 'uglify:assets', 'uglify:admin']);
     grunt.registerTask('i18n', ['checktextdomain', 'makepot']);
     grunt.registerTask('build', ['checktextdomain', 'minify', 'makepot']);
-    grunt.registerTask('zip', ['clean:dist', 'build', 'copy:dist', 'compress:dist', 'clean:temp']);
+    grunt.registerTask('release', ['clean:dist', 'build', 'copy:dist', 'compress:dist', 'clean:temp']);
+    grunt.registerTask('zip', ['release']);
     grunt.registerTask('default', ['checktextdomain', 'makepot']);
 };

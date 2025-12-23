@@ -2,9 +2,9 @@
 # This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: Wbcom Designs - Birthday Widget for BuddyPress 2.3.0\n"
+"Project-Id-Version: Wbcom Designs - Birthday Widget for BuddyPress 2.4.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-27 06:02:54+00:00\n"
+"POT-Creation-Date: 2025-12-23 17:47:09+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -23,6 +23,178 @@ msgstr ""
 "X-Poedit-Bookmarks: \n"
 "X-Textdomain-Support: yes\n"
 "X-Generator: grunt-wp-i18n 1.0.3\n"
+
+#: admin/class-bp-birthdays-admin.php:98 admin/class-bp-birthdays-admin.php:99
+#: admin/class-bp-birthdays-admin.php:209
+msgid "Birthday Settings"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:216
+msgid "General"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:220
+msgid "Email Notifications"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:224
+msgid "Activity Feed"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:228
+msgid "Notifications"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:232
+msgid "Display"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:268
+msgid "Default Birthday Field"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:272
+msgid "— Select Field —"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:280
+msgid "Select the default xProfile field for birthdays. Widgets can override this."
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:286
+msgid "Cache Duration"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:295
+msgid "minutes"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:297
+msgid "How long to cache birthday data. Lower values mean more database queries."
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:316
+msgid "Enable Birthday Emails"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:323
+msgid "Send automatic birthday greeting emails to members"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:328
+msgid "Customize Email Content"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:335
+#. translators: %s: URL to BuddyPress Emails admin
+msgid ""
+"Birthday email content is managed in <a href=\"%s\">BuddyPress Emails</a>. "
+"Look for <strong>\"Birthday Greeting\"</strong> to customize the subject "
+"and message."
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:346
+msgid "Available tokens: {{{recipient.name}}}, {{{birthday.age}}}, {{{site.name}}}"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:352
+msgid "Send Time"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:363
+#. translators: %s: Site timezone
+msgid "Time to send birthday emails (site timezone: %s)"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:371
+msgid "Admin Summary"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:378
+msgid "Send daily summary of birthdays to admin"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:387
+msgid "Leave empty to use site admin email."
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:405
+msgid "BuddyPress Activity component is not active. Enable it to use this feature."
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:411
+msgid "Enable Activity Posts"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:419
+msgid "Automatically post to activity feed on member birthdays"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:425
+msgid "Activity Message"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:434
+msgid "Available placeholders: {name}, {age}, {profile_url}"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:452
+msgid ""
+"BuddyPress Notifications component is not active. Enable it to use this "
+"feature."
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:458
+msgid "Enable Notifications"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:466
+msgid "Send BuddyPress notifications about member birthdays"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:471
+msgid "Notify"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:478
+msgid "Only notify friends of the birthday member"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:481
+msgid "If unchecked, all members will be notified."
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:487
+msgid "Notification Text"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:496
+msgid "Available placeholders: {name}"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:513
+msgid "Confetti Animation"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:520
+msgid "Show confetti animation for today's birthdays"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:523
+msgid "Adds a celebratory confetti effect when viewing today's birthdays."
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:528
+msgid "Zodiac Sign"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:535
+msgid "Display zodiac sign next to birthday"
+msgstr ""
+
+#: admin/class-bp-birthdays-admin.php:538
+msgid "Shows the zodiac symbol (e.g., ♈ ♉ ♊) based on birth date."
+msgstr ""
 
 #: assets/inc/buddypress-birthdays-widget.php:23
 msgid ""
@@ -47,88 +219,118 @@ msgstr ""
 msgid "Send birthday wishes"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:787 core-init.php:258
+#: assets/inc/buddypress-birthdays-widget.php:797 core-init.php:258
 msgid "Upcoming Birthdays"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:827
-msgid "Title:"
-msgstr ""
-
-#: assets/inc/buddypress-birthdays-widget.php:833
-msgid "Show the age of the person"
-msgstr ""
-
-#: assets/inc/buddypress-birthdays-widget.php:837
-msgid "Enable option to wish them"
-msgstr ""
-
-#: assets/inc/buddypress-birthdays-widget.php:840
-msgid "Date Format"
+#: assets/inc/buddypress-birthdays-widget.php:841
+msgid "Setup Required:"
 msgstr ""
 
 #: assets/inc/buddypress-birthdays-widget.php:844
-msgid "Birthday range limit"
-msgstr ""
-
-#: assets/inc/buddypress-birthdays-widget.php:846
-msgid "No Limit"
+msgid ""
+"No birthday date field found. Please create a date field in BuddyPress "
+"profile fields first:"
 msgstr ""
 
 #: assets/inc/buddypress-birthdays-widget.php:847
-msgid "Next 7 Days"
+msgid "Go to %s"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:847
+msgid "Users → Profile Fields"
 msgstr ""
 
 #: assets/inc/buddypress-birthdays-widget.php:848
-msgid "Next 30 Days"
+msgid "Add a new field with type \"Date Selector\" or \"Birthdate\""
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:852
-msgid "Show Birthdays of"
+#: assets/inc/buddypress-birthdays-widget.php:849
+msgid "Save and return here to configure the widget"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:855
 #: assets/inc/buddypress-birthdays-widget.php:857
-msgid "Followings"
+msgid "Title:"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:860
-msgid "Friends"
+#: assets/inc/buddypress-birthdays-widget.php:863
+msgid "Show the age of the person"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:862
-msgid "All Members"
-msgstr ""
-
-#: assets/inc/buddypress-birthdays-widget.php:866
-msgid "Display Name Type"
-msgstr ""
-
-#: assets/inc/buddypress-birthdays-widget.php:868
-msgid "User name"
-msgstr ""
-
-#: assets/inc/buddypress-birthdays-widget.php:869
-msgid "Nick name"
+#: assets/inc/buddypress-birthdays-widget.php:867
+msgid "Enable option to wish them"
 msgstr ""
 
 #: assets/inc/buddypress-birthdays-widget.php:870
-msgid "First Name"
+msgid "Date Format"
 msgstr ""
 
 #: assets/inc/buddypress-birthdays-widget.php:874
-msgid "Field's name"
+msgid "Birthday range limit"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:876
+msgid "No Limit"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:877
+msgid "Next 7 Days"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:878
+msgid "Next 30 Days"
 msgstr ""
 
 #: assets/inc/buddypress-birthdays-widget.php:882
-msgid "Number of birthdays to show"
+msgid "Show Birthdays of"
 msgstr ""
 
 #: assets/inc/buddypress-birthdays-widget.php:885
+#: assets/inc/buddypress-birthdays-widget.php:887
+msgid "Followings"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:890
+msgid "Friends"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:892
+msgid "All Members"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:896
+msgid "Display Name Type"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:898
+msgid "User name"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:899
+msgid "Nick name"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:900
+msgid "First Name"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:904
+msgid "Birthday Field"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:907
+msgid "— No date fields available —"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:916
+msgid "Number of birthdays to show"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:919
 msgid "Select Emoji"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:889
+#: assets/inc/buddypress-birthdays-widget.php:923
 msgid "None"
 msgstr ""
 
@@ -136,11 +338,11 @@ msgstr ""
 msgid "Wbcom Designs - Birthday Widget for BuddyPress"
 msgstr ""
 
-#: buddypress-birthdays.php:49
+#: buddypress-birthdays.php:64
 msgid "BuddyPress"
 msgstr ""
 
-#: buddypress-birthdays.php:53
+#: buddypress-birthdays.php:68
 #. translators: %1$s: Wbcom Designs - Birthday Widget for BuddyPress, %2$s:
 #. BuddyPress
 msgid "%1$s is ineffective as it requires %2$s to be installed and active."
@@ -166,7 +368,8 @@ msgstr ""
 msgid "Unable to send wishes at this time."
 msgstr ""
 
-#: core-init.php:92
+#: core-init.php:92 includes/class-bp-birthdays-notifications.php:170
+#: includes/class-bp-birthdays-notifications.php:493
 msgid "Happy Birthday!"
 msgstr ""
 
@@ -184,6 +387,142 @@ msgstr ""
 
 #: core-init.php:275
 msgid "Birthday widget not available."
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:108
+msgid "[{{{site.name}}}] Happy Birthday, {{{recipient.name}}}!"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:114
+msgid "[{{{site.name}}}] {{birthdays.count}} Birthday(s) Today"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:130
+msgid "A member receives a birthday greeting from the site."
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:135
+msgid "Site admin receives a daily summary of member birthdays."
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:148
+msgid "🎂 <strong>Happy Birthday!</strong> 🎉"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:150
+#: includes/class-bp-birthdays-notifications.php:172
+msgid ""
+"Wishing you a fantastic birthday filled with joy, laughter, and wonderful "
+"moments! The entire {{{site.name}}} community sends you warm birthday "
+"wishes on your special day."
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:152
+msgid ""
+"Cheers to turning <strong>{{{birthday.age}}}</strong>! May this new year of "
+"life bring you happiness and success."
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:154
+msgid "Visit your profile to see birthday wishes from your friends:"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:156
+msgid "View My Profile"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:158
+#: includes/class-bp-birthdays-notifications.php:178
+#: includes/class-bp-birthdays-notifications.php:507
+msgid "Best wishes,"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:159
+#: includes/class-bp-birthdays-notifications.php:179
+msgid "The {{{site.name}}} Team"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:174
+msgid ""
+"Cheers to turning {{{birthday.age}}}! May this new year of life bring you "
+"happiness and success."
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:176
+msgid "Visit your profile: {{{recipient.url}}}"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:190
+#: includes/class-bp-birthdays-notifications.php:210
+msgid "Hi Admin,"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:192
+msgid "🎂 Here are the members celebrating their birthday today:"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:196
+#: includes/class-bp-birthdays-notifications.php:216
+msgid "Consider sending them a personal birthday wish to make their day special!"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:198
+#: includes/class-bp-birthdays-notifications.php:218
+msgid "Best,"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:199
+#: includes/class-bp-birthdays-notifications.php:219
+msgid "{{site.name}} Birthday System"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:212
+msgid "Here are the members celebrating their birthday today:"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:483
+#. translators: %s: site name
+msgid "[%s] Happy Birthday!"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:489
+#. translators: %s: user name
+msgid "Hi %s,"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:497
+#. translators: %s: site name
+msgid ""
+"Wishing you a fantastic birthday! The entire %s community sends you warm "
+"birthday wishes."
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:503
+#. translators: %d: age
+msgid "Cheers to turning %d!"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:510
+#. translators: %s: site name
+msgid "The %s Team"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:650
+msgid "Someone"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:701
+#. translators: %d: age
+msgid "(Turning %d)"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:727
+#. translators: %1$d: birthday count, %2$s: site name
+msgid "[%2$s] %1$d Birthday(s) Today"
+msgstr ""
+
+#: includes/class-bp-birthdays-notifications.php:732
+msgid "Today's Birthdays"
 msgstr ""
 
 #. Plugin URI of the plugin/theme

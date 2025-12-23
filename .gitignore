@@ -10,3 +10,7 @@ Thumbs.db
 *~
 .idea/
 .vscode/
+
+# Internal documentation
+CLAUDE.md
+marketing/

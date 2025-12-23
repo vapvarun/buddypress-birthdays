@@ -34,10 +34,8 @@ class BP_Birthdays_Admin {
 		// General.
 		'default_field_id'    => '',
 		'cache_duration'      => 30,
-		// Email Notifications.
+		// Email Notifications (content is managed in BP Emails).
 		'email_enabled'       => false,
-		'email_subject'       => 'Happy Birthday, {name}!',
-		'email_message'       => '',
 		'email_send_time'     => '09:00',
 		'admin_email_enabled' => false,
 		'admin_email'         => '',
@@ -133,10 +131,8 @@ class BP_Birthdays_Admin {
 		$sanitized['default_field_id'] = isset( $input['default_field_id'] ) ? absint( $input['default_field_id'] ) : '';
 		$sanitized['cache_duration']   = isset( $input['cache_duration'] ) ? absint( $input['cache_duration'] ) : 30;
 
-		// Email Notifications.
+		// Email Notifications (content managed in BP Emails).
 		$sanitized['email_enabled']       = ! empty( $input['email_enabled'] );
-		$sanitized['email_subject']       = isset( $input['email_subject'] ) ? sanitize_text_field( $input['email_subject'] ) : '';
-		$sanitized['email_message']       = isset( $input['email_message'] ) ? wp_kses_post( $input['email_message'] ) : '';
 		$sanitized['email_send_time']     = isset( $input['email_send_time'] ) ? sanitize_text_field( $input['email_send_time'] ) : '09:00';
 		$sanitized['admin_email_enabled'] = ! empty( $input['admin_email_enabled'] );
 		$sanitized['admin_email']         = isset( $input['admin_email'] ) ? sanitize_email( $input['admin_email'] ) : '';
@@ -312,8 +308,8 @@ class BP_Birthdays_Admin {
 	 * @param array $settings Current settings.
 	 */
 	private function render_email_tab( $settings ) {
-		$default_message = $this->get_default_email_message();
-		$email_message   = ! empty( $settings['email_message'] ) ? $settings['email_message'] : $default_message;
+		// Get the URL to BP Emails admin page.
+		$emails_url = $this->get_bp_emails_url();
 		?>
 		<table class="form-table">
 			<tr>
@@ -329,39 +325,25 @@ class BP_Birthdays_Admin {
 				</td>
 			</tr>
 			<tr class="email-dependent">
-				<th scope="row">
-					<label for="email_subject"><?php esc_html_e( 'Email Subject', 'buddypress-birthdays' ); ?></label>
-				</th>
+				<th scope="row"><?php esc_html_e( 'Customize Email Content', 'buddypress-birthdays' ); ?></th>
 				<td>
-					<input type="text"
-						   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[email_subject]"
-						   id="email_subject"
-						   value="<?php echo esc_attr( $settings['email_subject'] ); ?>"
-						   class="regular-text">
-					<p class="description">
-						<?php esc_html_e( 'Available placeholders: {name}, {first_name}, {site_name}', 'buddypress-birthdays' ); ?>
+					<p>
+						<?php
+						printf(
+							/* translators: %s: URL to BuddyPress Emails admin */
+							wp_kses(
+								__( 'Birthday email content is managed in <a href="%s">BuddyPress Emails</a>. Look for <strong>"Birthday Greeting"</strong> to customize the subject and message.', 'buddypress-birthdays' ),
+								array(
+									'a'      => array( 'href' => array() ),
+									'strong' => array(),
+								)
+							),
+							esc_url( $emails_url )
+						);
+						?>
 					</p>
-				</td>
-			</tr>
-			<tr class="email-dependent">
-				<th scope="row">
-					<label for="email_message"><?php esc_html_e( 'Email Message', 'buddypress-birthdays' ); ?></label>
-				</th>
-				<td>
-					<?php
-					wp_editor(
-						$email_message,
-						'email_message',
-						array(
-							'textarea_name' => self::OPTION_NAME . '[email_message]',
-							'textarea_rows' => 10,
-							'media_buttons' => false,
-							'teeny'         => true,
-						)
-					);
-					?>
 					<p class="description">
-						<?php esc_html_e( 'Available placeholders: {name}, {first_name}, {age}, {site_name}, {site_url}, {profile_url}', 'buddypress-birthdays' ); ?>
+						<?php esc_html_e( 'Available tokens: {{{recipient.name}}}, {{{birthday.age}}}, {{{site.name}}}', 'buddypress-birthdays' ); ?>
 					</p>
 				</td>
 			</tr>
@@ -588,17 +570,18 @@ class BP_Birthdays_Admin {
 	}
 
 	/**
-	 * Get default email message template.
+	 * Get the URL to BuddyPress/BuddyBoss Emails admin page.
 	 *
-	 * @return string Default HTML email template.
+	 * @return string URL to emails admin page.
 	 */
-	private function get_default_email_message() {
-		$message = '<p>' . __( 'Dear {first_name},', 'buddypress-birthdays' ) . '</p>';
-		$message .= '<p>' . __( 'Wishing you a very Happy Birthday! May your special day be filled with joy, laughter, and wonderful moments.', 'buddypress-birthdays' ) . '</p>';
-		$message .= '<p>' . __( 'The entire {site_name} community sends you warm birthday wishes!', 'buddypress-birthdays' ) . '</p>';
-		$message .= '<p>' . __( 'Best wishes,', 'buddypress-birthdays' ) . '<br>{site_name}</p>';
+	private function get_bp_emails_url() {
+		// BuddyBoss uses a different menu location.
+		if ( function_exists( 'buddyboss_theme' ) || class_exists( 'BuddyBoss_Platform' ) ) {
+			return admin_url( 'edit.php?post_type=bp-email' );
+		}
 
-		return $message;
+		// Standard BuddyPress.
+		return admin_url( 'edit.php?post_type=bp-email' );
 	}
 }
 
