@@ -3,9 +3,9 @@
 ## Project Overview
 
 **Plugin:** Wbcom Designs - Birthday Widget for BuddyPress
-**Version:** 2.3.0
+**Version:** 2.4.0
 **Type:** BuddyPress Addon
-**Purpose:** Display upcoming birthdays of BuddyPress members with a widget and shortcode
+**Purpose:** Display upcoming birthdays of BuddyPress members with widget, shortcode, email notifications, and activity feed integration
 
 ---
 
@@ -47,9 +47,12 @@ The plugin detects birthdays by:
 
 | File | Purpose | Lines |
 |------|---------|-------|
-| `buddypress-birthdays.php` | Main plugin file, dependency check | ~60 |
+| `buddypress-birthdays.php` | Main plugin file, dependency check | ~70 |
 | `core-init.php` | Asset loading, shortcode, AJAX handlers | ~580 |
 | `assets/inc/buddypress-birthdays-widget.php` | Widget class, birthday logic | ~920 |
+| `admin/class-bp-birthdays-admin.php` | Admin settings page | ~450 |
+| `includes/class-bp-birthdays-notifications.php` | Email, activity, BP notifications | ~400 |
+| `includes/class-bp-birthdays-helpers.php` | Zodiac signs, utility functions | ~200 |
 | `assets/css/bb-core.css` | Widget styling | ~340 |
 | `assets/js/bb-core.js` | Frontend JavaScript | ~680 |
 

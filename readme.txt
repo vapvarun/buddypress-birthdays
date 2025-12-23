@@ -5,7 +5,7 @@ Donate link: https://www.paypal.me/wbcomdesigns
 Requires at least: 5.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.3.0
+Stable tag: 2.4.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -34,6 +34,18 @@ Transform your BuddyPress community with the Birthday Widget! Know the upcoming 
 * Customizable date formats
 * Optional emoji support
 * Send birthday wishes via private messages
+
+**NEW: Automatic Notifications**
+* Automatic birthday email greetings to members
+* Activity feed auto-posts for birthdays
+* BuddyPress notification support
+* Admin daily birthday summary email
+* Configurable send time and templates
+
+**NEW: Display Enhancements**
+* Zodiac sign display option
+* Confetti animation for celebrations
+* Centralized admin settings page
 
 **Developer Friendly**
 * Theme-compatible styling using CSS inheritance
@@ -102,6 +114,18 @@ Yes! The plugin works seamlessly with Youzify and other popular BuddyPress exten
 5. Integration with BuddyBoss platform
 
 == Changelog ==
+
+= 2.4.0 =
+* New: Admin settings page under BuddyPress menu for centralized configuration.
+* New: Automatic birthday email notifications with customizable templates.
+* New: Activity feed auto-post when members have birthdays.
+* New: BuddyPress notifications for birthdays (notify all members or friends only).
+* New: Admin daily summary email of today's birthdays.
+* New: Zodiac sign display option with Unicode symbols.
+* New: Confetti animation option for birthday celebrations.
+* New: Helper functions for zodiac signs and age calculation.
+* Improved: WP Cron integration for scheduled birthday checks.
+* Improved: Modular code architecture with separate classes.
 
 = 2.3.0 =
 * Fixed: Widget no longer shows empty container when no birthdays to display.

@@ -1,0 +1,84 @@
+/**
+ * BuddyPress Birthdays Admin Settings Styles
+ *
+ * @package BP_Birthdays
+ * @since 2.4.0
+ */
+
+.bp-birthdays-settings {
+	max-width: 900px;
+}
+
+.bp-birthdays-settings .nav-tab-wrapper {
+	margin-bottom: 20px;
+}
+
+.bp-birthdays-settings .form-table th {
+	width: 200px;
+	padding: 20px 10px 20px 0;
+}
+
+.bp-birthdays-settings .form-table td {
+	padding: 15px 10px;
+}
+
+.bp-birthdays-settings .notice.inline {
+	margin: 15px 0;
+}
+
+/* Toggle dependent fields visibility */
+.bp-birthdays-settings .email-dependent,
+.bp-birthdays-settings .activity-dependent,
+.bp-birthdays-settings .notification-dependent {
+	transition: opacity 0.3s ease;
+}
+
+.bp-birthdays-settings .email-dependent.disabled,
+.bp-birthdays-settings .activity-dependent.disabled,
+.bp-birthdays-settings .notification-dependent.disabled {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+/* Feature cards for display tab */
+.bp-birthdays-settings .feature-preview {
+	display: inline-block;
+	margin-left: 10px;
+	padding: 2px 8px;
+	background: #f0f0f1;
+	border-radius: 3px;
+	font-size: 12px;
+	color: #50575e;
+}
+
+/* Help text styling */
+.bp-birthdays-settings .description {
+	color: #646970;
+	font-style: italic;
+	margin-top: 5px;
+}
+
+/* Placeholder tags */
+.bp-birthdays-settings code {
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 12px;
+}
+
+/* Email editor wrapper */
+.bp-birthdays-settings .wp-editor-wrap {
+	max-width: 600px;
+}
+
+/* Time input styling */
+.bp-birthdays-settings input[type="time"] {
+	width: 120px;
+}
+
+/* Submit button spacing */
+.bp-birthdays-settings .submit {
+	margin-top: 20px;
+	padding-top: 20px;
+	border-top: 1px solid #c3c4c7;
+}
