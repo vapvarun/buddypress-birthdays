@@ -145,24 +145,18 @@ class BP_Birthdays_Notifications {
 	 * @return string
 	 */
 	private function get_birthday_email_content() {
-		$content  = '{{#recipient.name}}' . "\n";
-		$content .= __( 'Hi {{{recipient.name}}},', 'buddypress-birthdays' ) . "\n";
-		$content .= '{{/recipient.name}}' . "\n\n";
+		$content  = '<p>' . __( '🎂 <strong>Happy Birthday!</strong> 🎉', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
-		$content .= '<p>' . __( '🎂 <strong>Happy Birthday!</strong> 🎉', 'buddypress-birthdays' ) . '</p>' . "\n\n";
+		$content .= '<p>' . __( 'Wishing you a fantastic birthday filled with joy, laughter, and wonderful moments! The entire {{{site.name}}} community sends you warm birthday wishes on your special day.', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
-		$content .= '<p>' . __( 'Wishing you a fantastic birthday filled with joy, laughter, and wonderful moments! The entire {{site.name}} community sends you warm birthday wishes on your special day.', 'buddypress-birthdays' ) . '</p>' . "\n\n";
-
-		$content .= '{{#birthday.age}}' . "\n";
-		$content .= '<p>' . __( 'Cheers to turning <strong>{{birthday.age}}</strong>! May this new year of life bring you happiness and success.', 'buddypress-birthdays' ) . '</p>' . "\n";
-		$content .= '{{/birthday.age}}' . "\n\n";
+		$content .= '<p>' . __( 'Cheers to turning <strong>{{{birthday.age}}}</strong>! May this new year of life bring you happiness and success.', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
 		$content .= '<p>' . __( 'Visit your profile to see birthday wishes from your friends:', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
-		$content .= '<p><a class="btn" href="{{{recipient.url}}}">{{#recipient.name}}{{{recipient.name}}}\'s Profile{{/recipient.name}}</a></p>' . "\n\n";
+		$content .= '<p><a class="btn" href="{{{recipient.url}}}">' . __( 'View My Profile', 'buddypress-birthdays' ) . '</a></p>' . "\n\n";
 
 		$content .= '<p>' . __( 'Best wishes,', 'buddypress-birthdays' ) . '<br>' . "\n";
-		$content .= __( 'The {{site.name}} Team', 'buddypress-birthdays' ) . '</p>';
+		$content .= __( 'The {{{site.name}}} Team', 'buddypress-birthdays' ) . '</p>';
 
 		return $content;
 	}
@@ -173,22 +167,16 @@ class BP_Birthdays_Notifications {
 	 * @return string
 	 */
 	private function get_birthday_email_plaintext() {
-		$content  = "{{#recipient.name}}\n";
-		$content .= __( 'Hi {{{recipient.name}}},', 'buddypress-birthdays' ) . "\n";
-		$content .= "{{/recipient.name}}\n\n";
+		$content  = __( 'Happy Birthday!', 'buddypress-birthdays' ) . "\n\n";
 
-		$content .= __( 'Happy Birthday!', 'buddypress-birthdays' ) . "\n\n";
+		$content .= __( 'Wishing you a fantastic birthday filled with joy, laughter, and wonderful moments! The entire {{{site.name}}} community sends you warm birthday wishes on your special day.', 'buddypress-birthdays' ) . "\n\n";
 
-		$content .= __( 'Wishing you a fantastic birthday filled with joy, laughter, and wonderful moments! The entire {{site.name}} community sends you warm birthday wishes on your special day.', 'buddypress-birthdays' ) . "\n\n";
-
-		$content .= "{{#birthday.age}}\n";
-		$content .= __( 'Cheers to turning {{birthday.age}}! May this new year of life bring you happiness and success.', 'buddypress-birthdays' ) . "\n";
-		$content .= "{{/birthday.age}}\n\n";
+		$content .= __( 'Cheers to turning {{{birthday.age}}}! May this new year of life bring you happiness and success.', 'buddypress-birthdays' ) . "\n\n";
 
 		$content .= __( 'Visit your profile: {{{recipient.url}}}', 'buddypress-birthdays' ) . "\n\n";
 
 		$content .= __( 'Best wishes,', 'buddypress-birthdays' ) . "\n";
-		$content .= __( 'The {{site.name}} Team', 'buddypress-birthdays' );
+		$content .= __( 'The {{{site.name}}} Team', 'buddypress-birthdays' );
 
 		return $content;
 	}
