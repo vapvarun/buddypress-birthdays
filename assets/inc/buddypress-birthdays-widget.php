@@ -226,10 +226,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					}
 
 					// Zodiac sign (if enabled in global settings).
-					$zodiac_enabled = false;
-					if ( class_exists( 'BP_Birthdays_Admin' ) ) {
-						$zodiac_enabled = BP_Birthdays_Admin::get_settings( 'zodiac_enabled' );
-					}
+					$bp_settings    = get_option( 'bp_birthdays_settings', array() );
+					$zodiac_enabled = ! empty( $bp_settings['zodiac_enabled'] );
 					if ( $zodiac_enabled && class_exists( 'BP_Birthdays_Helpers' ) && isset( $birthday['datetime'] ) ) {
 						$birth_date  = $birthday['datetime']->format( 'Y-m-d' );
 						$zodiac_html = BP_Birthdays_Helpers::get_zodiac_html( $birth_date, false );
