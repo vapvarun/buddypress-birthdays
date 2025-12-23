@@ -289,11 +289,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						'user_id' => bp_loggedin_user_id(),
 					)
 				);
-				// Handle empty string case - explode(',', '') returns [''] not [].
-				if ( empty( $members ) ) {
-					$members = array();
-				} else {
+				// Handle different return types from various BP-Follow versions.
+				if ( is_array( $members ) ) {
+					$members = array_filter( array_map( 'absint', $members ) );
+				} elseif ( is_string( $members ) && ! empty( $members ) ) {
 					$members = array_filter( array_map( 'absint', explode( ',', $members ) ) );
+				} else {
+					$members = array();
 				}
 			}
 		} elseif ( isset( $data['show_birthdays_of'] ) && 'all' === $data['show_birthdays_of'] ) {
