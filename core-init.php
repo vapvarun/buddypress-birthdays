@@ -395,15 +395,20 @@ add_action( 'wp_footer', 'bb_debug_widget_loading', 999 );
  */
 function bb_birthdays_ajax_handler() {
 	// Verify nonce.
-	$nonce = filter_input( INPUT_POST, 'nonce', FILTER_SANITIZE_STRING );
+	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 	if ( ! wp_verify_nonce( $nonce, 'bb_birthdays_nonce' ) ) {
 		wp_die( 'Security check failed' );
 	}
 
-	$action = filter_input( INPUT_POST, 'birthday_action', FILTER_SANITIZE_STRING );
+	$action = isset( $_POST['birthday_action'] ) ? sanitize_key( wp_unslash( $_POST['birthday_action'] ) ) : '';
 
 	switch ( $action ) {
 		case 'refresh_widget':
+			// Only allow logged-in users to refresh cache.
+			if ( ! is_user_logged_in() ) {
+				wp_send_json_error( 'Authentication required' );
+				break;
+			}
 			// Clear birthday cache.
 			bb_clear_birthday_caches();
 			wp_send_json_success( array( 'message' => 'Widget refreshed' ) );

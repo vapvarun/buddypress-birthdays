@@ -289,7 +289,12 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						'user_id' => bp_loggedin_user_id(),
 					)
 				);
-				$members = explode( ',', $members );
+				// Handle empty string case - explode(',', '') returns [''] not [].
+				if ( empty( $members ) ) {
+					$members = array();
+				} else {
+					$members = array_filter( array_map( 'absint', explode( ',', $members ) ) );
+				}
 			}
 		} elseif ( isset( $data['show_birthdays_of'] ) && 'all' === $data['show_birthdays_of'] ) {
 			$members = get_users(
@@ -476,7 +481,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		}
 
 		// Method 1: Standard BP XProfile method.
-		if ( function_exists( 'BP_XProfile_ProfileData::get_value_byid' ) ) {
+		if ( class_exists( 'BP_XProfile_ProfileData' ) && method_exists( 'BP_XProfile_ProfileData', 'get_value_byid' ) ) {
 			$birthday_string = maybe_unserialize( BP_XProfile_ProfileData::get_value_byid( $field_id, $user_id ) );
 		}
 
@@ -651,7 +656,10 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			);
 
 			// If birthday has passed this year, use next year.
-			if ( $this_year_birthday < $today ) {
+			// Compare date strings only (not DateTime objects with time) to fix today's birthday bug.
+			$today_date              = $today->format( 'Y-m-d' );
+			$this_year_birthday_date = $this_year_birthday->format( 'Y-m-d' );
+			if ( $this_year_birthday_date < $today_date ) {
 				$next_year = $current_year + 1;
 
 				// Handle leap year for next year too.
@@ -747,15 +755,15 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$instance = array();
 
 		$instance['title']                 = ( ! empty( $new_instance['title'] ) ) ? wp_strip_all_tags( $new_instance['title'] ) : '';
-		$instance['birthday_date_format']  = ( ! empty( $new_instance['birthday_date_format'] ) ) ? $new_instance['birthday_date_format'] : '';
-		$instance['display_age']           = ( ! empty( $new_instance['display_age'] ) ) ? $new_instance['display_age'] : '';
-		$instance['birthdays_range_limit'] = ( ! empty( $new_instance['birthdays_range_limit'] ) ) ? $new_instance['birthdays_range_limit'] : '';
-		$instance['show_birthdays_of']     = ( ! empty( $new_instance['show_birthdays_of'] ) ) ? $new_instance['show_birthdays_of'] : '';
-		$instance['birthdays_to_display']  = ( ! empty( $new_instance['birthdays_to_display'] ) ) ? $new_instance['birthdays_to_display'] : '';
-		$instance['birthday_field_name']   = ( ! empty( $new_instance['birthday_field_name'] ) ) ? $new_instance['birthday_field_name'] : '';
-		$instance['emoji']                 = ( ! empty( $new_instance['emoji'] ) ) ? $new_instance['emoji'] : '';
-		$instance['birthday_send_message'] = ( ! empty( $new_instance['birthday_send_message'] ) ) ? $new_instance['birthday_send_message'] : '';
-		$instance['display_name_type']     = ( ! empty( $new_instance['display_name_type'] ) ) ? $new_instance['display_name_type'] : '';
+		$instance['birthday_date_format']  = ( ! empty( $new_instance['birthday_date_format'] ) ) ? sanitize_text_field( $new_instance['birthday_date_format'] ) : '';
+		$instance['display_age']           = ( ! empty( $new_instance['display_age'] ) ) ? sanitize_key( $new_instance['display_age'] ) : '';
+		$instance['birthdays_range_limit'] = ( ! empty( $new_instance['birthdays_range_limit'] ) ) ? sanitize_key( $new_instance['birthdays_range_limit'] ) : '';
+		$instance['show_birthdays_of']     = ( ! empty( $new_instance['show_birthdays_of'] ) ) ? sanitize_key( $new_instance['show_birthdays_of'] ) : '';
+		$instance['birthdays_to_display']  = ( ! empty( $new_instance['birthdays_to_display'] ) ) ? absint( $new_instance['birthdays_to_display'] ) : 5;
+		$instance['birthday_field_name']   = ( ! empty( $new_instance['birthday_field_name'] ) ) ? absint( $new_instance['birthday_field_name'] ) : '';
+		$instance['emoji']                 = ( ! empty( $new_instance['emoji'] ) ) ? sanitize_key( $new_instance['emoji'] ) : '';
+		$instance['birthday_send_message'] = ( ! empty( $new_instance['birthday_send_message'] ) ) ? sanitize_key( $new_instance['birthday_send_message'] ) : '';
+		$instance['display_name_type']     = ( ! empty( $new_instance['display_name_type'] ) ) ? sanitize_key( $new_instance['display_name_type'] ) : '';
 
 		// Clear all birthday caches when settings change.
 		// This ensures user-specific caches are also cleared.

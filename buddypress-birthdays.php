@@ -53,8 +53,8 @@ function bb_dependent_plugin_notice() {
 	. sprintf( esc_html__( '%1$s is ineffective as it requires %2$s to be installed and active.', 'buddypress-birthdays' ), '<strong>' . esc_html( $bb_plugin ) . '</strong>', '<strong>' . esc_html( $bp_plugin ) . '</strong>' )
 	. '</p></div>';
 
-	$activate = filter_input( INPUT_GET, 'activate', FILTER_SANITIZE_STRING );
-	if ( null !== $activate ) {
-		unset( $activate );
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking if parameter exists to hide activation notice.
+	if ( isset( $_GET['activate'] ) ) {
+		unset( $_GET['activate'] );
 	}
 }
