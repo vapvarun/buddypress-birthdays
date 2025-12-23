@@ -830,6 +830,26 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			$bb_follow_buttons = bp_is_activity_follow_active();
 		}
 
+		// Show notice if no date fields are available.
+		if ( empty( $fields ) ) :
+			$xprofile_url = admin_url( 'admin.php?page=bp-profile-setup' );
+			?>
+			<div class="notice notice-warning inline" style="margin: 0 0 15px; padding: 10px 12px;">
+				<p style="margin: 0 0 8px;">
+					<strong><?php esc_html_e( 'Setup Required:', 'buddypress-birthdays' ); ?></strong>
+				</p>
+				<p style="margin: 0 0 8px;">
+					<?php esc_html_e( 'No birthday date field found. Please create a date field in BuddyPress profile fields first:', 'buddypress-birthdays' ); ?>
+				</p>
+				<ol style="margin: 0 0 8px; padding-left: 20px;">
+					<li><?php printf( esc_html__( 'Go to %s', 'buddypress-birthdays' ), '<a href="' . esc_url( $xprofile_url ) . '" target="_blank">' . esc_html__( 'Users → Profile Fields', 'buddypress-birthdays' ) . '</a>' ); ?></li>
+					<li><?php esc_html_e( 'Add a new field with type "Date Selector" or "Birthdate"', 'buddypress-birthdays' ); ?></li>
+					<li><?php esc_html_e( 'Save and return here to configure the widget', 'buddypress-birthdays' ); ?></li>
+				</ol>
+			</div>
+			<?php
+		endif;
+
 		?>
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"><?php esc_html_e( 'Title:', 'buddypress-birthdays' ); ?></label>
@@ -879,11 +899,15 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			</select>
 		</p>
 		<p>
-			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>"><?php esc_html_e( 'Field\'s name', 'buddypress-birthdays' ); ?></label>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>"><?php esc_html_e( 'Birthday Field', 'buddypress-birthdays' ); ?></label>
 			<select class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthday_field_name' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthday_field_name' ) ); ?>">
-				<?php foreach ( $fields as $key => $field ) : ?>
-					<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $instance['birthday_field_name'], $key ); ?>><?php echo esc_html( $field ); ?></option>
-				<?php endforeach; ?>
+				<?php if ( empty( $fields ) ) : ?>
+					<option value=""><?php esc_html_e( '— No date fields available —', 'buddypress-birthdays' ); ?></option>
+				<?php else : ?>
+					<?php foreach ( $fields as $key => $field ) : ?>
+						<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $instance['birthday_field_name'], $key ); ?>><?php echo esc_html( $field ); ?></option>
+					<?php endforeach; ?>
+				<?php endif; ?>
 			</select>
 		</p>
 		<p>
