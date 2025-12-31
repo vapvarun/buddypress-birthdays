@@ -681,7 +681,8 @@ class BP_Birthdays_Notifications {
 
 		foreach ( $birthdays as $birthday ) {
 			$profile_url = bp_core_get_user_domain( $birthday['user_id'] );
-			$avatar      = function_exists( 'bp_core_fetch_avatar' )
+
+			$avatar = function_exists( 'bp_core_fetch_avatar' )
 				? bp_core_fetch_avatar(
 					array(
 						'item_id' => $birthday['user_id'],
@@ -693,14 +694,24 @@ class BP_Birthdays_Notifications {
 				)
 				: '';
 
-			$list_html .= '<li style="margin-bottom: 10px; padding: 10px; background: #f9f9f9; border-radius: 5px;">';
-			$list_html .= $avatar . ' ';
-			$list_html .= '<a href="' . esc_url( $profile_url ) . '"><strong>' . esc_html( $birthday['display_name'] ) . '</strong></a>';
-			$list_html .= ' <span style="color: #666;">' . sprintf(
-				/* translators: %d: age */
+			$list_html .= '<li style="margin-bottom:10px;padding:10px;background:#f9f9f9;border-radius:5px;">';
+
+			// Avatar block
+			if ( $avatar ) {
+				$list_html .= '<span style="display:inline-block;vertical-align:middle;margin-right:8px;">' . $avatar . '</span>';
+			}
+
+			// Text block
+			$list_html .= '<span style="display:inline-block;vertical-align:middle;">';
+			$list_html .= '<a href="' . esc_url( $profile_url ) . '" style="color:#007CFF;text-decoration:none;">';
+			$list_html .= '<strong>' . esc_html( $birthday['display_name'] ) . '</strong>';
+			$list_html .= '</a>';
+			$list_html .= '<span style="color:#666;"> ' . sprintf(
 				__( '(Turning %d)', 'buddypress-birthdays' ),
 				$birthday['age']
 			) . '</span>';
+			$list_html .= '</span>';
+
 			$list_html .= '</li>';
 
 			$list_plain .= '• ' . $birthday['display_name'] . ' (Turning ' . $birthday['age'] . ")\n";

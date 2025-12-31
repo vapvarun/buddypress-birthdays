@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Wbcom Designs - Birthday Widget for BuddyPress 2.4.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-23 17:47:09+00:00\n"
+"POT-Creation-Date: 2025-12-31 09:42:41+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -215,122 +215,122 @@ msgstr ""
 msgid "Today!"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:235
+#: assets/inc/buddypress-birthdays-widget.php:246
 msgid "Send birthday wishes"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:797 core-init.php:258
+#: assets/inc/buddypress-birthdays-widget.php:808 core-init.php:258
 msgid "Upcoming Birthdays"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:841
+#: assets/inc/buddypress-birthdays-widget.php:852
 msgid "Setup Required:"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:844
+#: assets/inc/buddypress-birthdays-widget.php:855
 msgid ""
 "No birthday date field found. Please create a date field in BuddyPress "
 "profile fields first:"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:847
+#: assets/inc/buddypress-birthdays-widget.php:858
 msgid "Go to %s"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:847
+#: assets/inc/buddypress-birthdays-widget.php:858
 msgid "Users → Profile Fields"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:848
+#: assets/inc/buddypress-birthdays-widget.php:859
 msgid "Add a new field with type \"Date Selector\" or \"Birthdate\""
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:849
+#: assets/inc/buddypress-birthdays-widget.php:860
 msgid "Save and return here to configure the widget"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:857
+#: assets/inc/buddypress-birthdays-widget.php:868
 msgid "Title:"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:863
+#: assets/inc/buddypress-birthdays-widget.php:874
 msgid "Show the age of the person"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:867
+#: assets/inc/buddypress-birthdays-widget.php:878
 msgid "Enable option to wish them"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:870
+#: assets/inc/buddypress-birthdays-widget.php:881
 msgid "Date Format"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:874
+#: assets/inc/buddypress-birthdays-widget.php:885
 msgid "Birthday range limit"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:876
+#: assets/inc/buddypress-birthdays-widget.php:887
 msgid "No Limit"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:877
+#: assets/inc/buddypress-birthdays-widget.php:888
 msgid "Next 7 Days"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:878
+#: assets/inc/buddypress-birthdays-widget.php:889
 msgid "Next 30 Days"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:882
+#: assets/inc/buddypress-birthdays-widget.php:893
 msgid "Show Birthdays of"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:885
-#: assets/inc/buddypress-birthdays-widget.php:887
+#: assets/inc/buddypress-birthdays-widget.php:896
+#: assets/inc/buddypress-birthdays-widget.php:898
 msgid "Followings"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:890
+#: assets/inc/buddypress-birthdays-widget.php:901
 msgid "Friends"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:892
+#: assets/inc/buddypress-birthdays-widget.php:903
 msgid "All Members"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:896
+#: assets/inc/buddypress-birthdays-widget.php:907
 msgid "Display Name Type"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:898
+#: assets/inc/buddypress-birthdays-widget.php:909
 msgid "User name"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:899
+#: assets/inc/buddypress-birthdays-widget.php:910
 msgid "Nick name"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:900
+#: assets/inc/buddypress-birthdays-widget.php:911
 msgid "First Name"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:904
+#: assets/inc/buddypress-birthdays-widget.php:915
 msgid "Birthday Field"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:907
+#: assets/inc/buddypress-birthdays-widget.php:918
 msgid "— No date fields available —"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:916
+#: assets/inc/buddypress-birthdays-widget.php:927
 msgid "Number of birthdays to show"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:919
+#: assets/inc/buddypress-birthdays-widget.php:930
 msgid "Select Emoji"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:923
+#: assets/inc/buddypress-birthdays-widget.php:934
 msgid "None"
 msgstr ""
 
@@ -511,17 +511,16 @@ msgstr ""
 msgid "Someone"
 msgstr ""
 
-#: includes/class-bp-birthdays-notifications.php:701
-#. translators: %d: age
+#: includes/class-bp-birthdays-notifications.php:710
 msgid "(Turning %d)"
 msgstr ""
 
-#: includes/class-bp-birthdays-notifications.php:727
+#: includes/class-bp-birthdays-notifications.php:738
 #. translators: %1$d: birthday count, %2$s: site name
 msgid "[%2$s] %1$d Birthday(s) Today"
 msgstr ""
 
-#: includes/class-bp-birthdays-notifications.php:732
+#: includes/class-bp-birthdays-notifications.php:743
 msgid "Today's Birthdays"
 msgstr ""
 
