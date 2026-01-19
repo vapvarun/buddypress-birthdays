@@ -95,6 +95,42 @@ class BP_Birthdays_Notifications {
 
 		// Create emails on plugin load if they don't exist.
 		add_action( 'admin_init', array( $this, 'maybe_install_emails' ) );
+
+		// Register birthday celebration activity action.
+		add_action( 'bp_register_activity_actions', array( $this, 'register_activity_action' ) );
+	}
+
+	/**
+	 * Register birthday celebration activity action with BuddyPress.
+	 */
+	public function register_activity_action() {
+		bp_activity_set_action(
+			'birthdays',                                    // component
+			'birthday_celebration',                         // action type
+			__( 'Birthday Celebrations', 'buddypress-birthdays' ),  // action name
+			array( $this, 'format_activity_action' ),       // format callback
+			__( 'Birthday Celebrations', 'buddypress-birthdays' ),  // action label
+			array( 'activity', 'member' )                    // contexts
+		);
+	}
+
+	/**
+	 * Format birthday celebration activity action for display.
+	 *
+	 * @param string $action   The activity action string.
+	 * @param object $activity The activity object.
+	 * @return string The formatted activity action.
+	 */
+	public function format_activity_action( $action, $activity ) {
+		$user_link = bp_members_get_user_url( $activity->user_id );
+		$user_name = bp_core_get_user_displayname( $activity->user_id );
+
+		$action = sprintf(
+			__( '%1$s posted a birthday celebration', 'buddypress-birthdays' ),
+			'<a href="' . esc_url( $user_link ) . '">' . esc_html( $user_name ) . '</a>'
+		);
+
+		return $action;
 	}
 
 	/**
