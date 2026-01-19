@@ -354,6 +354,48 @@
 }
 
 /* ====================================
+   CONFETTI STYLES - Professional Grade
+==================================== */
+.bb-confetti-container {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 9999;
+    perspective: 1200px;
+    perspective-origin: 50% 50%;
+}
+
+.bb-confetti-particle {
+    position: absolute;
+    backface-visibility: visible;
+    transform-origin: center center;
+    transform-style: preserve-3d;
+}
+
+/* GPU acceleration for smooth animations */
+.bb-confetti,
+.bb-confetti-particle {
+    will-change: transform, opacity;
+    -webkit-backface-visibility: visible;
+    backface-visibility: visible;
+}
+
+/* Accessibility: Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .bb-confetti-container,
+    .bb-confetti,
+    .bb-confetti-particle {
+        display: none !important;
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* ====================================
    REIGN Theme CSS
 ==================================== */
 

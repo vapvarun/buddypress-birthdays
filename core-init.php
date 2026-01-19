@@ -74,6 +74,13 @@ function bb_register_core_js() {
 		);
 
 		// Enhanced localization.
+		// Determine confetti setting from saved options (don't rely on admin class being loaded).
+		$confetti_enabled = false;
+		$bb_opts = get_option( 'bp_birthdays_settings', array() );
+		if ( is_array( $bb_opts ) && isset( $bb_opts['confetti_enabled'] ) ) {
+			$confetti_enabled = (bool) $bb_opts['confetti_enabled'];
+		}
+
 		wp_localize_script(
 			'bb-core',
 			'bbBirthdays',
@@ -98,6 +105,8 @@ function bb_register_core_js() {
 					'animation_speed' => apply_filters( 'bb_birthdays_animation_speed', 300 ),
 					'tooltip_delay'   => apply_filters( 'bb_birthdays_tooltip_delay', 300 ),
 					'cache_duration'  => apply_filters( 'bb_birthdays_cache_duration', 1800 ), // 30 minutes.
+					// Frontend toggle for confetti animation (from admin settings).
+					'confetti_enabled' => $confetti_enabled,
 				),
 			)
 		);
