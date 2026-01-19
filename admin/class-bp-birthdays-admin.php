@@ -111,7 +111,6 @@ class BP_Birthdays_Admin {
 			'bp_birthdays_settings_group',
 			self::OPTION_NAME,
 			array(
-				'type'              => 'array',
 				'sanitize_callback' => array( $this, 'sanitize_settings' ),
 				'default'           => $this->defaults,
 			)
@@ -125,30 +124,59 @@ class BP_Birthdays_Admin {
 	 * @return array Sanitized settings.
 	 */
 	public function sanitize_settings( $input ) {
-		$sanitized = array();
+		// Get existing settings to merge with.
+		$existing_settings = get_option( self::OPTION_NAME, array() );
+
+		$sanitized = $existing_settings;
 
 		// General.
-		$sanitized['default_field_id'] = isset( $input['default_field_id'] ) ? absint( $input['default_field_id'] ) : '';
-		$sanitized['cache_duration']   = isset( $input['cache_duration'] ) ? absint( $input['cache_duration'] ) : 30;
+		if ( isset( $input['default_field_id'] ) ) {
+			$sanitized['default_field_id'] = absint( $input['default_field_id'] );
+		}
+		if ( isset( $input['cache_duration'] ) ) {
+			$sanitized['cache_duration'] = absint( $input['cache_duration'] );
+		}
 
 		// Email Notifications (content managed in BP Emails).
-		$sanitized['email_enabled']       = ! empty( $input['email_enabled'] );
-		$sanitized['email_send_time']     = isset( $input['email_send_time'] ) ? sanitize_text_field( $input['email_send_time'] ) : '09:00';
-		$sanitized['admin_email_enabled'] = ! empty( $input['admin_email_enabled'] );
-		$sanitized['admin_email']         = isset( $input['admin_email'] ) ? sanitize_email( $input['admin_email'] ) : '';
+		if ( isset( $input['email_enabled'] ) ) {
+			$sanitized['email_enabled'] = '1' === $input['email_enabled'];
+		}
+		if ( isset( $input['email_send_time'] ) ) {
+			$sanitized['email_send_time'] = sanitize_text_field( $input['email_send_time'] );
+		}
+		if ( isset( $input['admin_email_enabled'] ) ) {
+			$sanitized['admin_email_enabled'] = '1' === $input['admin_email_enabled'];
+		}
+		if ( isset( $input['admin_email'] ) ) {
+			$sanitized['admin_email'] = sanitize_email( $input['admin_email'] );
+		}
 
 		// Activity Feed.
-		$sanitized['activity_enabled'] = ! empty( $input['activity_enabled'] );
-		$sanitized['activity_message'] = isset( $input['activity_message'] ) ? sanitize_text_field( $input['activity_message'] ) : '';
+		if ( isset( $input['activity_enabled'] ) ) {
+			$sanitized['activity_enabled'] = '1' === $input['activity_enabled'];
+		}
+		if ( isset( $input['activity_message'] ) ) {
+			$sanitized['activity_message'] = sanitize_text_field( $input['activity_message'] );
+		}
 
 		// BP Notifications.
-		$sanitized['notification_enabled']      = ! empty( $input['notification_enabled'] );
-		$sanitized['notification_friends_only'] = ! empty( $input['notification_friends_only'] );
-		$sanitized['notification_text']         = isset( $input['notification_text'] ) ? sanitize_text_field( $input['notification_text'] ) : '';
+		if ( isset( $input['notification_enabled'] ) ) {
+			$sanitized['notification_enabled'] = '1' === $input['notification_enabled'];
+		}
+		if ( isset( $input['notification_friends_only'] ) ) {
+			$sanitized['notification_friends_only'] = '1' === $input['notification_friends_only'];
+		}
+		if ( isset( $input['notification_text'] ) ) {
+			$sanitized['notification_text'] = sanitize_text_field( $input['notification_text'] );
+		}
 
 		// Display Extras.
-		$sanitized['confetti_enabled'] = ! empty( $input['confetti_enabled'] );
-		$sanitized['zodiac_enabled']   = ! empty( $input['zodiac_enabled'] );
+		if ( isset( $input['confetti_enabled'] ) ) {
+			$sanitized['confetti_enabled'] = '1' === $input['confetti_enabled'];
+		}
+		if ( isset( $input['zodiac_enabled'] ) ) {
+			$sanitized['zodiac_enabled'] = '1' === $input['zodiac_enabled'];
+		}
 
 		return $sanitized;
 	}
@@ -316,6 +344,7 @@ class BP_Birthdays_Admin {
 				<th scope="row"><?php esc_html_e( 'Enable Birthday Emails', 'buddypress-birthdays' ); ?></th>
 				<td>
 					<label>
+						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[email_enabled]" value="0">
 						<input type="checkbox"
 							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[email_enabled]"
 							   value="1"
@@ -329,7 +358,7 @@ class BP_Birthdays_Admin {
 				<td>
 					<p>
 						<?php
-						printf(
+						printf(	
 							/* translators: %s: URL to BuddyPress Emails admin */
 							wp_kses(
 								__( 'Birthday email content is managed in <a href="%s">BuddyPress Emails</a>. Look for <strong>"Birthday Greeting"</strong> to customize the subject and message.', 'buddypress-birthdays' ),
@@ -371,6 +400,7 @@ class BP_Birthdays_Admin {
 				<th scope="row"><?php esc_html_e( 'Admin Summary', 'buddypress-birthdays' ); ?></th>
 				<td>
 					<label>
+						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[admin_email_enabled]" value="0">
 						<input type="checkbox"
 							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[admin_email_enabled]"
 							   value="1"
@@ -411,6 +441,7 @@ class BP_Birthdays_Admin {
 				<th scope="row"><?php esc_html_e( 'Enable Activity Posts', 'buddypress-birthdays' ); ?></th>
 				<td>
 					<label>
+						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[activity_enabled]" value="0">
 						<input type="checkbox"
 							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[activity_enabled]"
 							   value="1"
@@ -458,6 +489,7 @@ class BP_Birthdays_Admin {
 				<th scope="row"><?php esc_html_e( 'Enable Notifications', 'buddypress-birthdays' ); ?></th>
 				<td>
 					<label>
+						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[notification_enabled]" value="0">
 						<input type="checkbox"
 							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[notification_enabled]"
 							   value="1"
@@ -471,6 +503,7 @@ class BP_Birthdays_Admin {
 				<th scope="row"><?php esc_html_e( 'Notify', 'buddypress-birthdays' ); ?></th>
 				<td>
 					<label>
+						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[notification_friends_only]" value="0">
 						<input type="checkbox"
 							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[notification_friends_only]"
 							   value="1"
@@ -513,6 +546,7 @@ class BP_Birthdays_Admin {
 				<th scope="row"><?php esc_html_e( 'Confetti Animation', 'buddypress-birthdays' ); ?></th>
 				<td>
 					<label>
+						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[confetti_enabled]" value="0">
 						<input type="checkbox"
 							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[confetti_enabled]"
 							   value="1"
@@ -528,6 +562,7 @@ class BP_Birthdays_Admin {
 				<th scope="row"><?php esc_html_e( 'Zodiac Sign', 'buddypress-birthdays' ); ?></th>
 				<td>
 					<label>
+						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[zodiac_enabled]" value="0">
 						<input type="checkbox"
 							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[zodiac_enabled]"
 							   value="1"
