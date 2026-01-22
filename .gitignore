@@ -1,6 +1,5 @@
 # Development files
 node_modules/
-dist/
 *.cmd
 .DS_Store
 Thumbs.db
