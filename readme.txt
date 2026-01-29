@@ -3,7 +3,7 @@ Contributors: vapvarun,wbcomdesigns
 Tags: buddypress, birthdays, widget, community, members
 Donate link: https://www.paypal.me/wbcomdesigns
 Requires at least: 5.0
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 2.4.0
 License: GPLv3
