@@ -122,14 +122,21 @@ class BP_Birthdays_Notifications {
 	 * @return string The formatted activity action.
 	 */
 	public function format_activity_action( $action, $activity ) {
-		$user_link = bp_members_get_user_url( $activity->user_id );
-		$user_name = bp_core_get_user_displayname( $activity->user_id );
+		if ( function_exists( 'bp_is_active' ) ) {
+			if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
+				$user_link = bp_members_get_user_url($activity->user_id );
+			} else {
+				$user_link = bp_core_get_user_domain($activity->user_id );
+			}
+			$user_name = bp_core_get_user_displayname( $activity->user_id );
 
-		$action = sprintf(
-			__( '%1$s posted a birthday celebration', 'buddypress-birthdays' ),
-			'<a href="' . esc_url( $user_link ) . '">' . esc_html( $user_name ) . '</a>'
-		);
+			$action = sprintf(
+				__( '%1$s posted a birthday celebration', 'buddypress-birthdays' ),
+				'<a href="' . esc_url( $user_link ) . '">' . esc_html( $user_name ) . '</a>'
+			);
 
+		}
+		
 		return $action;
 	}
 
