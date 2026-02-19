@@ -152,7 +152,7 @@ class BP_Birthdays_Helpers {
 			return '';
 		}
 
-		$html = '<span class="bp-birthday-zodiac" title="' . esc_attr( $sign['name'] ) . '">';
+		$html  = '<span class="bp-birthday-zodiac" title="' . esc_attr( $sign['name'] ) . '">';
 		$html .= '<span class="zodiac-symbol">' . esc_html( $sign['symbol'] ) . '</span>';
 
 		if ( $include_name ) {
@@ -205,8 +205,8 @@ class BP_Birthdays_Helpers {
 	 */
 	public static function is_birthday_today( $date ) {
 		try {
-			$birth    = new DateTime( $date );
-			$today    = new DateTime();
+			$birth = new DateTime( $date );
+			$today = new DateTime();
 			return $birth->format( 'm-d' ) === $today->format( 'm-d' );
 		} catch ( Exception $e ) {
 			return false;

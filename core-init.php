@@ -13,11 +13,11 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Define Our Constants.
-define( 'BB_CORE_INC', dirname( __FILE__ ) . '/assets/inc/' );
+define( 'BB_CORE_INC', __DIR__ . '/assets/inc/' );
 define( 'BB_CORE_IMG', plugins_url( 'assets/img/', __FILE__ ) );
 define( 'BB_CORE_CSS', plugins_url( 'assets/css/', __FILE__ ) );
 define( 'BB_CORE_JS', plugins_url( 'assets/js/', __FILE__ ) );
-define( 'BB_CORE_VERSION', '2.0.0' ); // Add version for cache busting
+define( 'BB_CORE_VERSION', '2.0.0' ); // Add version for cache busting.
 
 /**
  * Global flag to track if assets are loaded
@@ -76,7 +76,7 @@ function bb_register_core_js() {
 		// Enhanced localization.
 		// Determine confetti setting from saved options (don't rely on admin class being loaded).
 		$confetti_enabled = false;
-		$bb_opts = get_option( 'bp_birthdays_settings', array() );
+		$bb_opts          = get_option( 'bp_birthdays_settings', array() );
 		if ( is_array( $bb_opts ) && isset( $bb_opts['confetti_enabled'] ) ) {
 			$confetti_enabled = (bool) $bb_opts['confetti_enabled'];
 		}
@@ -102,9 +102,9 @@ function bb_register_core_js() {
 					'tomorrow'       => __( 'Tomorrow', 'buddypress-birthdays' ),
 				),
 				'settings'   => array(
-					'animation_speed' => apply_filters( 'bb_birthdays_animation_speed', 300 ),
-					'tooltip_delay'   => apply_filters( 'bb_birthdays_tooltip_delay', 300 ),
-					'cache_duration'  => apply_filters( 'bb_birthdays_cache_duration', 1800 ), // 30 minutes.
+					'animation_speed'  => apply_filters( 'bb_birthdays_animation_speed', 300 ),
+					'tooltip_delay'    => apply_filters( 'bb_birthdays_tooltip_delay', 300 ),
+					'cache_duration'   => apply_filters( 'bb_birthdays_cache_duration', 1800 ), // 30 minutes.
 					// Frontend toggle for confetti animation (from admin settings).
 					'confetti_enabled' => $confetti_enabled,
 				),
@@ -289,16 +289,16 @@ function bb_birthdays_shortcode( $atts ) {
 
 	// Convert shortcode atts to widget instance format.
 	$instance = array(
-		'title'                    => $atts['title'],
-		'birthdays_to_display'     => (int) $atts['limit'],
-		'display_age'              => $atts['show_age'],
-		'birthday_send_message'    => $atts['show_message_button'],
-		'birthday_date_format'     => $atts['date_format'],
-		'birthdays_range_limit'    => $atts['range_limit'],
-		'show_birthdays_of'        => $atts['show_birthdays_of'],
-		'display_name_type'        => $atts['display_name_type'],
-		'emoji'                    => $atts['emoji'],
-		'birthday_field_name'      => $atts['field_name'],
+		'title'                 => $atts['title'],
+		'birthdays_to_display'  => (int) $atts['limit'],
+		'display_age'           => $atts['show_age'],
+		'birthday_send_message' => $atts['show_message_button'],
+		'birthday_date_format'  => $atts['date_format'],
+		'birthdays_range_limit' => $atts['range_limit'],
+		'show_birthdays_of'     => $atts['show_birthdays_of'],
+		'display_name_type'     => $atts['display_name_type'],
+		'emoji'                 => $atts['emoji'],
+		'birthday_field_name'   => $atts['field_name'],
 	);
 
 	$args = array(

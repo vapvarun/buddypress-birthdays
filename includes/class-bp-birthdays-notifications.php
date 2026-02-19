@@ -105,12 +105,12 @@ class BP_Birthdays_Notifications {
 	 */
 	public function register_activity_action() {
 		bp_activity_set_action(
-			'birthdays',                                    // component
-			'birthday_celebration',                         // action type
-			__( 'Birthday Celebrations', 'buddypress-birthdays' ),  // action name
-			array( $this, 'format_activity_action' ),       // format callback
-			__( 'Birthday Celebrations', 'buddypress-birthdays' ),  // action label
-			array( 'activity', 'member' )                    // contexts
+			'birthdays',                                    // Component.
+			'birthday_celebration',                         // Action type.
+			__( 'Birthday Celebrations', 'buddypress-birthdays' ),  // Action name.
+			array( $this, 'format_activity_action' ),       // Format callback.
+			__( 'Birthday Celebrations', 'buddypress-birthdays' ),  // Action label.
+			array( 'activity', 'member' )                    // Contexts.
 		);
 	}
 
@@ -124,19 +124,20 @@ class BP_Birthdays_Notifications {
 	public function format_activity_action( $action, $activity ) {
 		if ( function_exists( 'bp_is_active' ) ) {
 			if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
-				$user_link = bp_members_get_user_url($activity->user_id );
+				$user_link = bp_members_get_user_url( $activity->user_id );
 			} else {
-				$user_link = bp_core_get_user_domain($activity->user_id );
+				$user_link = bp_core_get_user_domain( $activity->user_id );
 			}
 			$user_name = bp_core_get_user_displayname( $activity->user_id );
 
 			$action = sprintf(
+				/* translators: %1$s: User display name with link. */
 				__( '%1$s posted a birthday celebration', 'buddypress-birthdays' ),
 				'<a href="' . esc_url( $user_link ) . '">' . esc_html( $user_name ) . '</a>'
 			);
 
 		}
-		
+
 		return $action;
 	}
 
@@ -170,12 +171,12 @@ class BP_Birthdays_Notifications {
 	 */
 	public function register_email_type_schema( $type_schema ) {
 		$type_schema[ self::EMAIL_TYPE_BIRTHDAY ] = array(
-			'description' => __( 'A member receives a birthday greeting from the site.', 'buddypress-birthdays' ),
+			'description'      => __( 'A member receives a birthday greeting from the site.', 'buddypress-birthdays' ),
 			'named_salutation' => true,
 		);
 
 		$type_schema[ self::EMAIL_TYPE_ADMIN_SUMMARY ] = array(
-			'description' => __( 'Site admin receives a daily summary of member birthdays.', 'buddypress-birthdays' ),
+			'description'      => __( 'Site admin receives a daily summary of member birthdays.', 'buddypress-birthdays' ),
 			'named_salutation' => false,
 		);
 
@@ -188,7 +189,7 @@ class BP_Birthdays_Notifications {
 	 * @return string
 	 */
 	private function get_birthday_email_content() {
-		$content  = '<p>' . __( '🎂 <strong>Happy Birthday!</strong> 🎉', 'buddypress-birthdays' ) . '</p>' . "\n\n";
+		$content = '<p>' . __( '🎂 <strong>Happy Birthday!</strong> 🎉', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
 		$content .= '<p>' . __( 'Wishing you a fantastic birthday filled with joy, laughter, and wonderful moments! The entire {{{site.name}}} community sends you warm birthday wishes on your special day.', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
@@ -210,7 +211,7 @@ class BP_Birthdays_Notifications {
 	 * @return string
 	 */
 	private function get_birthday_email_plaintext() {
-		$content  = __( 'Happy Birthday!', 'buddypress-birthdays' ) . "\n\n";
+		$content = __( 'Happy Birthday!', 'buddypress-birthdays' ) . "\n\n";
 
 		$content .= __( 'Wishing you a fantastic birthday filled with joy, laughter, and wonderful moments! The entire {{{site.name}}} community sends you warm birthday wishes on your special day.', 'buddypress-birthdays' ) . "\n\n";
 
@@ -230,7 +231,7 @@ class BP_Birthdays_Notifications {
 	 * @return string
 	 */
 	private function get_admin_summary_content() {
-		$content  = '<p>' . __( 'Hi Admin,', 'buddypress-birthdays' ) . '</p>' . "\n\n";
+		$content = '<p>' . __( 'Hi Admin,', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
 		$content .= '<p>' . __( '🎂 Here are the members celebrating their birthday today:', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
@@ -250,7 +251,7 @@ class BP_Birthdays_Notifications {
 	 * @return string
 	 */
 	private function get_admin_summary_plaintext() {
-		$content  = __( 'Hi Admin,', 'buddypress-birthdays' ) . "\n\n";
+		$content = __( 'Hi Admin,', 'buddypress-birthdays' ) . "\n\n";
 
 		$content .= __( 'Here are the members celebrating their birthday today:', 'buddypress-birthdays' ) . "\n\n";
 
@@ -527,7 +528,7 @@ class BP_Birthdays_Notifications {
 			get_bloginfo( 'name' )
 		);
 
-		$message  = '<p>' . sprintf(
+		$message = '<p>' . sprintf(
 			/* translators: %s: user name */
 			__( 'Hi %s,', 'buddypress-birthdays' ),
 			esc_html( $birthday_data['display_name'] )
@@ -739,17 +740,18 @@ class BP_Birthdays_Notifications {
 
 			$list_html .= '<li style="margin-bottom:10px;padding:10px;background:#f9f9f9;border-radius:5px;">';
 
-			// Avatar block
+			// Avatar block.
 			if ( $avatar ) {
 				$list_html .= '<span style="display:inline-block;vertical-align:middle;margin-right:8px;">' . $avatar . '</span>';
 			}
 
-			// Text block
+			// Text block.
 			$list_html .= '<span style="display:inline-block;vertical-align:middle;">';
 			$list_html .= '<a href="' . esc_url( $profile_url ) . '" style="color:#007CFF;text-decoration:none;">';
 			$list_html .= '<strong>' . esc_html( $birthday['display_name'] ) . '</strong>';
 			$list_html .= '</a>';
 			$list_html .= '<span style="color:#666;"> ' . sprintf(
+				/* translators: %d: Age the person is turning. */
 				__( '(Turning %d)', 'buddypress-birthdays' ),
 				$birthday['age']
 			) . '</span>';
