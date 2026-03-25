@@ -83,15 +83,41 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		if ( ! empty( $birthdays ) ) {
 			echo $args['before_title'] . esc_html( $instance['title'] ) . $args['after_title']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
-			$max_items = (int) $instance['birthdays_to_display'];
-			$c         = 0;
+			$birthdays_to_display = isset( $instance['birthdays_to_display'] ) ? (int) $instance['birthdays_to_display'] : 5;
+			$items_per_page = isset( $instance['birthdays_per_page'] ) ? (int) $instance['birthdays_per_page'] : 10;
+			if ( $items_per_page < 1 ) {
+				$items_per_page = 10;
+			}
+
+			$total_birthdays = count( $birthdays );
+			$max_to_show = min( $total_birthdays, $birthdays_to_display );
+			$total_pages = ( $max_to_show > 0 ) ? ceil( $max_to_show / $items_per_page ) : 0;
+
+			$current_page = isset( $_GET['bbirthday_page'] ) ? absint( $_GET['bbirthday_page'] ) : 1;
+			if ( $current_page < 1 ) {
+				$current_page = 1;
+			}
+			if ( $current_page > $total_pages && $total_pages > 0 ) {
+				$current_page = $total_pages;
+			}
+			$offset = ( $current_page - 1 ) * $items_per_page;
 
 			echo '<div class="bp-birthday-users-list">';
 
-			foreach ( $birthdays as $user_id => $birthday ) {
-				if ( $c === $max_items ) {
+			$birthdays_array = array_values( $birthdays );
+			$user_ids_array = array_keys( $birthdays );
+			$c = 0;
+			$displayed = 0;
+
+			foreach ( $birthdays_array as $index => $birthday ) {
+				if ( $index < $offset ) {
+					continue;
+				}
+				if ( $displayed >= $items_per_page || $offset + $displayed >= $max_to_show ) {
 					break;
 				}
+
+				$user_id = $user_ids_array[ $index ];
 
 				// Skip users who haven't activated their accounts yet.
 				// Check both 'activation_key' (BuddyPress) and 'wp_user_activation_key' (WordPress).
@@ -251,9 +277,44 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 					echo '</div>'; // .bp-birthday-item
 					++$c;
+					++$displayed;
 				}
 			}
 			echo '</div>'; // .bp-birthday-users-list
+
+			if ( $total_pages > 1 ) {
+				$current_url = set_url_scheme( 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
+				$current_url = remove_query_arg( 'bbirthday_page', $current_url );
+
+				echo '<div class="bp-birthday-pagination">';
+
+				if ( $current_page > 1 ) {
+					$prev_page = $current_page - 1;
+					echo '<a href="' . esc_url( add_query_arg( 'bbirthday_page', $prev_page, $current_url ) ) . '" class="bp-birthday-page-btn" aria-label="' . esc_attr__( 'Previous page', 'buddypress-birthdays' ) . '">‹</a>';
+				}
+
+				$max_nav = 5;
+				$start = max( 1, $current_page - floor( $max_nav / 2 ) );
+				$end = min( $total_pages, $start + $max_nav - 1 );
+				if ( $end - $start < $max_nav - 1 ) {
+					$start = max( 1, $end - $max_nav + 1 );
+				}
+
+				for ( $i = $start; $i <= $end; $i++ ) {
+					if ( $i === $current_page ) {
+						echo '<span class="bp-birthday-page-current">' . esc_html( $i ) . '</span>';
+					} else {
+						echo '<a href="' . esc_url( add_query_arg( 'bbirthday_page', $i, $current_url ) ) . '" class="bp-birthday-page-num">' . esc_html( $i ) . '</a>';
+					}
+				}
+
+				if ( $current_page < $total_pages ) {
+					$next_page = $current_page + 1;
+					echo '<a href="' . esc_url( add_query_arg( 'bbirthday_page', $next_page, $current_url ) ) . '" class="bp-birthday-page-btn" aria-label="' . esc_attr__( 'Next page', 'buddypress-birthdays' ) . '">›</a>';
+				}
+
+				echo '</div>';
+			}
 		}
 
 		echo wp_kses_post( $args['after_widget'] );
@@ -310,12 +371,22 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				}
 			}
 		} elseif ( isset( $data['show_birthdays_of'] ) && 'all' === $data['show_birthdays_of'] ) {
-			$members = get_users(
-				array(
-					'fields' => 'ID',
-					'number' => 200, // Reasonable limit.
-				)
-			);
+			$field_id = isset( $data['birthday_field_name'] ) ? absint( $data['birthday_field_name'] ) : 0;
+
+			if ( $field_id ) {
+				global $wpdb;
+
+				$users_with_birthday = $wpdb->get_col(
+					$wpdb->prepare(
+						"SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != ''",
+						$field_id
+					)
+				);
+
+				$members = array_filter( array_map( 'absint', $users_with_birthday ) );
+			} else {
+				$members = array();
+			}
 		}
 
 		$members_birthdays = array();
@@ -773,6 +844,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$instance['birthdays_range_limit'] = ( ! empty( $new_instance['birthdays_range_limit'] ) ) ? sanitize_key( $new_instance['birthdays_range_limit'] ) : '';
 		$instance['show_birthdays_of']     = ( ! empty( $new_instance['show_birthdays_of'] ) ) ? sanitize_key( $new_instance['show_birthdays_of'] ) : '';
 		$instance['birthdays_to_display']  = ( ! empty( $new_instance['birthdays_to_display'] ) ) ? absint( $new_instance['birthdays_to_display'] ) : 5;
+		$instance['birthdays_per_page']   = ( ! empty( $new_instance['birthdays_per_page'] ) ) ? absint( $new_instance['birthdays_per_page'] ) : 10;
 		$instance['birthday_field_name']   = ( ! empty( $new_instance['birthday_field_name'] ) ) ? absint( $new_instance['birthday_field_name'] ) : '';
 		$instance['emoji']                 = ( ! empty( $new_instance['emoji'] ) ) ? sanitize_key( $new_instance['emoji'] ) : '';
 		$instance['birthday_send_message'] = ( ! empty( $new_instance['birthday_send_message'] ) ) ? sanitize_key( $new_instance['birthday_send_message'] ) : '';
@@ -813,6 +885,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				'show_birthdays_of'     => 'all',
 				'display_name_type'     => 'user_name',
 				'birthdays_to_display'  => 5,
+				'birthdays_per_page'   => 10,
 				'emoji'                 => 'balloon',
 				'birthday_field_name'   => 'datebox',
 			)
@@ -931,6 +1004,10 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		<p>
 			<label for="<?php echo esc_attr( $this->get_field_id( 'birthdays_to_display' ) ); ?>"><?php esc_html_e( 'Number of birthdays to show', 'buddypress-birthdays' ); ?></label>
 			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthdays_to_display' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthdays_to_display' ) ); ?>" type="text" value="<?php echo esc_attr( $instance['birthdays_to_display'] ); ?>"/>
+		</p>
+		<p>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'birthdays_per_page' ) ); ?>"><?php esc_html_e( 'Birthdays per page (for pagination)', 'buddypress-birthdays' ); ?></label>
+			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthdays_per_page' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthdays_per_page' ) ); ?>" type="number" min="1" value="<?php echo esc_attr( isset( $instance['birthdays_per_page'] ) ? $instance['birthdays_per_page'] : 10 ); ?>"/>
 		</p>
 		<label><?php esc_html_e( 'Select Emoji', 'buddypress-birthdays' ); ?></label>
 		<div class="bbirthday_emojis">
