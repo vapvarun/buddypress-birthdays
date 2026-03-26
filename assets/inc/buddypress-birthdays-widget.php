@@ -283,7 +283,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			echo '</div>'; // .bp-birthday-users-list
 
 			if ( $total_pages > 1 ) {
-				$current_url = set_url_scheme( 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
+				$current_url = home_url( add_query_arg( null, null ) );
 				$current_url = remove_query_arg( 'bbirthday_page', $current_url );
 
 				echo '<div class="bp-birthday-pagination">';
@@ -301,7 +301,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				}
 
 				for ( $i = $start; $i <= $end; $i++ ) {
-					if ( $i === $current_page ) {
+					if ( (int) $i === (int) $current_page ) {
 						echo '<span class="bp-birthday-page-current">' . esc_html( $i ) . '</span>';
 					} else {
 						echo '<a href="' . esc_url( add_query_arg( 'bbirthday_page', $i, $current_url ) ) . '" class="bp-birthday-page-num">' . esc_html( $i ) . '</a>';
