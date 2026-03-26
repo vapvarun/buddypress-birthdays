@@ -376,12 +376,57 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			if ( $field_id ) {
 				global $wpdb;
 
-				$users_with_birthday = $wpdb->get_col(
+				// Get field date format
+				$field_date_format = $wpdb->get_var(
 					$wpdb->prepare(
-						"SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != ''",
+						"SELECT meta_value FROM {$wpdb->prefix}bp_xprofile_meta WHERE object_id = %d AND object_type = 'field' AND meta_key = 'date_format'",
 						$field_id
 					)
 				);
+
+				if ( ! $field_date_format ) {
+					$field_date_format = 'Y-m-d'; // default
+				}
+
+				// Define date range.
+				$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
+
+				if ( 'monthly' === $birthdays_limit || 'weekly' === $birthdays_limit ) {
+					// Use standard DateTime with WordPress timezone.
+					$wp_timezone = wp_timezone();
+					$today = new DateTime( 'now', $wp_timezone );
+					$start_md = $today->format( 'm-d' );
+					$end_date = clone $today;
+
+					if ( 'monthly' === $birthdays_limit ) {
+						$end_date->modify( '+30 days' );
+					} elseif ( 'weekly' === $birthdays_limit ) {
+						$end_date->modify( '+7 days' );
+					}
+
+					$end_md = $end_date->format( 'm-d' );
+					$parsed_date_sql = "STR_TO_DATE(value, '$field_date_format')";
+					$month_day_sql = "DATE_FORMAT($parsed_date_sql, '%m-%d')";
+
+					if ( $end_md >= $start_md ) {
+						$date_where = "$month_day_sql BETWEEN '$start_md' AND '$end_md'";
+					} else {
+						$date_where = "($month_day_sql BETWEEN '$start_md' AND '12-31' OR $month_day_sql BETWEEN '01-01' AND '$end_md')";
+					}
+
+					$query = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND $date_where";
+					$users_with_birthday = $wpdb->get_col(
+						$wpdb->prepare( $query, $field_id )
+					);
+				} else {
+					// No limit, fetch all
+					$users_with_birthday = $wpdb->get_col(
+						$wpdb->prepare(
+							"SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != ''",
+							$field_id
+						)
+					);
+				}
 
 				$members = array_filter( array_map( 'absint', $users_with_birthday ) );
 			} else {

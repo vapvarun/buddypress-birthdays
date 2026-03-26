@@ -273,7 +273,8 @@ function bb_birthdays_shortcode( $atts ) {
 			'show_birthdays_of'   => 'all',
 			'display_name_type'   => 'user_name',
 			'emoji'               => 'balloon',
-			'field_name'          => get_option( 'bb_birthdays_default_field', 'datebox' ),
+			'field_name'          => '',
+			'birthdays_per_page'  => 10,
 		),
 		$atts,
 		'bp_birthdays'
@@ -282,6 +283,15 @@ function bb_birthdays_shortcode( $atts ) {
 	// Check if widget class exists.
 	if ( ! class_exists( 'Widget_Buddypress_Birthdays' ) ) {
 		return '<p>' . __( 'Birthday widget not available.', 'buddypress-birthdays' ) . '</p>';
+	}
+
+	// If field_name is not provided or empty, find the first available date field.
+	if ( empty( $atts['field_name'] ) ) {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$atts['field_name'] = $wpdb->get_var(
+			"SELECT id FROM {$wpdb->prefix}bp_xprofile_fields WHERE type IN ('datebox', 'birthdate') LIMIT 1"
+		);
 	}
 
 	// Create widget instance.
@@ -298,7 +308,8 @@ function bb_birthdays_shortcode( $atts ) {
 		'show_birthdays_of'     => $atts['show_birthdays_of'],
 		'display_name_type'     => $atts['display_name_type'],
 		'emoji'                 => $atts['emoji'],
-		'birthday_field_name'   => $atts['field_name'],
+		'birthday_field_name'   => (int) $atts['field_name'],
+		'birthdays_per_page'    => (int) $atts['birthdays_per_page'],
 	);
 
 	$args = array(
