@@ -156,9 +156,10 @@ Display birthdays anywhere with the shortcode:
 - `date_format`: PHP date format
 - `range_limit`: weekly/monthly/no_limit
 - `show_birthdays_of`: all/friends/followers
-- `display_name_type`: user_name/nick_name/first_name
+- `display_name_type`: user_name/nickname/first_name
 - `emoji`: none/cake/balloon/party
 - `field_name`: Birthday field ID
+- `birthdays_per_page`: Number per page for pagination
 
 ## Troubleshooting
 

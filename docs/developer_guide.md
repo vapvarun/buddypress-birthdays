@@ -10,13 +10,23 @@ The BuddyPress Birthday Widget is built with performance, security, and extensib
 buddypress-birthdays/
 ├── buddypress-birthdays.php          # Main plugin file
 ├── core-init.php                     # Core initialization & asset management
+├── admin/
+│   ├── class-bp-birthdays-admin.php  # Admin settings page
+│   ├── css/                          # Admin stylesheets
+│   └── js/                           # Admin JavaScript
+├── includes/
+│   ├── class-bp-birthdays-notifications.php  # Email & notifications
+│   └── class-bp-birthdays-helpers.php        # Helper functions
 ├── assets/
 │   ├── css/bb-core.css              # Theme-compatible styles
-│   ├── js/bb-core.js                # Enhanced JavaScript functionality
+│   ├── js/bb-core.js                # Enhanced JavaScript
 │   └── inc/
 │       └── buddypress-birthdays-widget.php  # Main widget class
+├── languages/                       # Translation files
+├── docs/                            # Documentation
 ├── readme.txt                       # WordPress.org readme
-└── .gitignore                       # Git ignore rules
+├── package.json                     # NPM dependencies
+└── gruntfile.js                     # Build configuration
 ```
 
 ## Core Components
@@ -130,7 +140,7 @@ Age Calculation & Data Structure
     ↓
 Sorting (by celebration date)
     ↓
-Cache Storage (set_transient - 30 min)
+Cache Storage (wp_cache_set - 30 min)
     ↓
 Template Rendering
     ↓
@@ -141,29 +151,37 @@ HTML Output
 
 **Implementation**:
 ```php
-// Cache key generation
-$cache_key = 'bp_birthdays_' . md5( serialize( $instance ) );
+// Cache group and key
+$cache_group = 'bp_birthdays';
+$cache_key   = md5( wp_json_encode( $instance ) );
 
-// Cache check
-$birthdays = get_transient( $cache_key );
+// Add user ID to cache key for user-specific filters (friends/followers)
+if ( is_user_logged_in() && in_array( $instance['show_birthdays_of'], array( 'friends', 'followers' ), true ) ) {
+    $cache_key .= '_user_' . get_current_user_id();
+}
+
+// Cache check using object cache
+$birthdays = wp_cache_get( $cache_key, $cache_group );
 
 if ( false === $birthdays ) {
     // Fetch and process data
     $birthdays = $this->bbirthdays_get_array( $instance );
     
-    // Store for 30 minutes
-    set_transient( $cache_key, $birthdays, 30 * MINUTE_IN_SECONDS );
+    // Store for 30 minutes using object cache
+    wp_cache_set( $cache_key, $birthdays, $cache_group, 30 * MINUTE_IN_SECONDS );
 }
 
 // Cache invalidation on settings change
-delete_transient( 'bp_birthdays_' . md5( serialize( $old_instance ) ) );
+function bb_clear_birthday_caches() {
+    wp_cache_flush_group( 'bp_birthdays' );
+}
 ```
 
 **Cache Benefits**:
-- **Performance**: Reduces database queries by 95%
-- **Scalability**: Handles large member bases efficiently
-- **Smart Invalidation**: Auto-clears when settings change
-- **Shared Cache**: Same cache for all users (privacy-aware)
+- **Performance**: Uses WordPress object cache API
+- **Scalability**: Works with Redis/Memcached for persistent caching
+- **Smart Invalidation**: Auto-clears on profile updates, friendships, user changes
+- **Object Cache**: More efficient than transients for large sites
 
 ## Security Implementation
 
@@ -227,21 +245,23 @@ if ( 'friends' === $visibility ) {
 
 **Efficient Queries**:
 ```php
-// Limited user queries for large sites
-$members = get_users( array(
-    'fields' => 'ID',        // Only fetch IDs
-    'number' => 200,         // Reasonable limit
-) );
+// Query all users with birthday data directly from xProfile table
+global $wpdb;
+$users_with_birthday = $wpdb->get_col(
+    $wpdb->prepare(
+        "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != ''",
+        $field_id
+    )
+);
 
-// Single profile data fetch per user
-$birthday_string = BP_XProfile_ProfileData::get_value_byid( $field_id, $user_id );
+$members = array_filter( array_map( 'absint', $users_with_birthday ) );
 ```
 
 **Query Reduction**:
-- Cache birthday data for 30 minutes
-- Fetch only necessary user fields
-- Skip processing for inactive/invalid users
-- Early exit conditions for performance
+- Direct xProfile data query instead of get_users()
+- No artificial limit - fetches all users with birthday data
+- Filter by date range in PHP after fetching
+- Skip processing for inactive users
 
 ### Asset Loading Strategy
 
@@ -298,69 +318,61 @@ function destroy() {
 
 ## Extensibility & Hooks
 
+### Available Filters
+
+```php
+// Customize animation speed (default: 300ms)
+add_filter( 'bb_birthdays_animation_speed', function( $speed ) {
+    return 500;
+} );
+
+// Customize tooltip delay (default: 300ms)
+add_filter( 'bb_birthdays_tooltip_delay', function( $delay ) {
+    return 500;
+} );
+
+// Customize cache duration (default: 1800 seconds = 30 minutes)
+add_filter( 'bb_birthdays_cache_duration', function( $duration ) {
+    return 3600; // 1 hour
+} );
+
+// Force asset loading
+add_filter( 'bb_core_load_assets', '__return_true' );
+
+// Customize name display
+add_filter( 'bbirthdays_get_name_to_display', function( $display, $user_info ) {
+    return $display;
+}, 10, 2 );
+```
+
 ### Action Hooks
 
 ```php
-// Before birthday data processing
-do_action( 'bb_before_birthday_processing', $instance );
-
-// After birthday calculations
-do_action( 'bb_after_birthday_calculations', $members_birthdays );
-
-// Widget display hooks
-do_action( 'bb_before_birthday_widget', $args, $instance );
-do_action( 'bb_after_birthday_widget', $args, $instance );
-```
-
-### Filter Hooks
-
-```php
-// Customize birthday query arguments
-$members = apply_filters( 'bb_birthday_members_query', $members, $data );
-
-// Modify birthday data before display
-$birthday_data = apply_filters( 'bb_birthday_data', $birthday_data, $user_id );
-
-// Customize display name
-$display_name = apply_filters( 'bbirthdays_get_name_to_display', $display, $user_info );
-
-// Date format customization
-$format = apply_filters( 'bbirthdays_date_format', 'md' );
+// Note: Currently no custom action hooks are implemented
+// The plugin uses BuddyPress hooks internally for cache invalidation:
+// - xprofile_data_after_save
+// - friends_friendship_accepted
+// - friends_friendship_deleted
+// - delete_user
+// - user_register
+// - bp_follow_start_following
+// - bp_follow_stop_following
 ```
 
 ### Custom Extensions
 
-**Example: Custom Birthday Actions**
+**Example: Custom Name Display**:
 ```php
-// Add custom birthday action
-add_action( 'bb_after_birthday_calculations', 'my_birthday_notifications' );
+// Modify birthday display name
+add_filter( 'bbirthdays_get_name_to_display', 'my_custom_name_format', 10, 2 );
 
-function my_birthday_notifications( $birthdays ) {
-    foreach ( $birthdays as $user_id => $data ) {
-        if ( $data['is_today'] ) {
-            // Send email notification
-            // Log birthday event
-            // Trigger webhooks
-        }
-    }
+function my_custom_name_format( $display, $user_info ) {
+    $user = get_userdata( $user_info->user_id );
+    return $user->display_name . ' 🎂';
 }
 ```
 
-**Example: Custom Display Format**
-```php
-// Modify birthday display
-add_filter( 'bb_birthday_data', 'my_custom_birthday_format', 10, 2 );
-
-function my_custom_birthday_format( $data, $user_id ) {
-    // Add zodiac sign
-    $data['zodiac'] = calculate_zodiac( $data['datetime'] );
-    
-    // Add custom messaging
-    $data['custom_message'] = get_user_meta( $user_id, 'birthday_message', true );
-    
-    return $data;
-}
-```
+---
 
 ## Compatibility Matrix
 
