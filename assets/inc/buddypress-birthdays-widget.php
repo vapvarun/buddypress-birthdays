@@ -416,7 +416,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 					$query = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND $date_where";
 					$users_with_birthday = $wpdb->get_col(
-						$wpdb->prepare( $query, $field_id )
+						$wpdb->prepare( $query, $field_id ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $date_where is built from DateTime::format(), not user input.
+
 					);
 				} else {
 					// No limit, fetch all

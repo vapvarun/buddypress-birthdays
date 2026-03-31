@@ -71,6 +71,7 @@ function bb_dependent_plugin_notice() {
 
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking if parameter exists to hide activation notice.
 	if ( isset( $_GET['activate'] ) ) {
+		$activate = sanitize_text_field( wp_unslash( $_GET['activate'] ) );
 		unset( $_GET['activate'] );
 	}
 }

@@ -8,6 +8,9 @@
  */
 
 // If this file is called directly, abort.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 if ( ! defined( 'WPINC' ) ) {
 	die;
 }
@@ -288,7 +291,7 @@ function bb_birthdays_shortcode( $atts ) {
 	// If field_name is not provided or empty, find the first available date field.
 	if ( empty( $atts['field_name'] ) ) {
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$atts['field_name'] = $wpdb->get_var(
 			"SELECT id FROM {$wpdb->prefix}bp_xprofile_fields WHERE type IN ('datebox', 'birthdate') LIMIT 1"
 		);
@@ -424,8 +427,8 @@ function bb_birthdays_ajax_handler() {
 
 	switch ( $action ) {
 		case 'refresh_widget':
-			// Only allow logged-in users to refresh cache.
-			if ( ! is_user_logged_in() ) {
+			// Only allow logged-in users with read capability to refresh cache.
+			if ( ! is_user_logged_in() || ! current_user_can( 'read' ) ) {
 				wp_send_json_error( 'Authentication required' );
 				break;
 			}

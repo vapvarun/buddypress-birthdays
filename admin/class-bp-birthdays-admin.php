@@ -592,6 +592,7 @@ class BP_Birthdays_Admin {
 			return $fields;
 		}
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$results = $wpdb->get_results(
 			"SELECT id, name, type FROM {$wpdb->prefix}bp_xprofile_fields WHERE type IN ('datebox', 'birthdate') ORDER BY name",
 			ARRAY_A
