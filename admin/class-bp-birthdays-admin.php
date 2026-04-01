@@ -32,23 +32,23 @@ class BP_Birthdays_Admin {
 	 */
 	private $defaults = array(
 		// General.
-		'default_field_id'    => '',
-		'cache_duration'      => 30,
+		'default_field_id'          => '',
+		'cache_duration'            => 30,
 		// Email Notifications (content is managed in BP Emails).
-		'email_enabled'       => false,
-		'email_send_time'     => '09:00',
-		'admin_email_enabled' => false,
-		'admin_email'         => '',
+		'email_enabled'             => false,
+		'email_send_time'           => '09:00',
+		'admin_email_enabled'       => false,
+		'admin_email'               => '',
 		// Activity Feed.
-		'activity_enabled'    => false,
-		'activity_message'    => "Today is {name}'s birthday! Send your wishes!",
+		'activity_enabled'          => false,
+		'activity_message'          => "Today is {name}'s birthday! Send your wishes!",
 		// BP Notifications.
-		'notification_enabled' => false,
+		'notification_enabled'      => false,
 		'notification_friends_only' => false,
-		'notification_text'   => "It's {name}'s birthday today!",
+		'notification_text'         => "It's {name}'s birthday today!",
 		// Display Extras.
-		'confetti_enabled'    => false,
-		'zodiac_enabled'      => false,
+		'confetti_enabled'          => false,
+		'zodiac_enabled'            => false,
 	);
 
 	/**
@@ -240,23 +240,23 @@ class BP_Birthdays_Admin {
 
 			<nav class="nav-tab-wrapper">
 				<a href="<?php echo esc_url( add_query_arg( 'tab', 'general' ) ); ?>"
-				   class="nav-tab <?php echo 'general' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					class="nav-tab <?php echo 'general' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'General', 'buddypress-birthdays' ); ?>
 				</a>
 				<a href="<?php echo esc_url( add_query_arg( 'tab', 'email' ) ); ?>"
-				   class="nav-tab <?php echo 'email' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					class="nav-tab <?php echo 'email' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Email Notifications', 'buddypress-birthdays' ); ?>
 				</a>
 				<a href="<?php echo esc_url( add_query_arg( 'tab', 'activity' ) ); ?>"
-				   class="nav-tab <?php echo 'activity' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					class="nav-tab <?php echo 'activity' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Activity Feed', 'buddypress-birthdays' ); ?>
 				</a>
 				<a href="<?php echo esc_url( add_query_arg( 'tab', 'notifications' ) ); ?>"
-				   class="nav-tab <?php echo 'notifications' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					class="nav-tab <?php echo 'notifications' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Notifications', 'buddypress-birthdays' ); ?>
 				</a>
 				<a href="<?php echo esc_url( add_query_arg( 'tab', 'display' ) ); ?>"
-				   class="nav-tab <?php echo 'display' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					class="nav-tab <?php echo 'display' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Display', 'buddypress-birthdays' ); ?>
 				</a>
 			</nav>
@@ -315,12 +315,12 @@ class BP_Birthdays_Admin {
 				</th>
 				<td>
 					<input type="number"
-						   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cache_duration]"
-						   id="cache_duration"
-						   value="<?php echo esc_attr( $settings['cache_duration'] ); ?>"
-						   min="1"
-						   max="1440"
-						   class="small-text"> <?php esc_html_e( 'minutes', 'buddypress-birthdays' ); ?>
+							name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cache_duration]"
+							id="cache_duration"
+							value="<?php echo esc_attr( $settings['cache_duration'] ); ?>"
+							min="1"
+							max="1440"
+							class="small-text"> <?php esc_html_e( 'minutes', 'buddypress-birthdays' ); ?>
 					<p class="description">
 						<?php esc_html_e( 'How long to cache birthday data. Lower values mean more database queries.', 'buddypress-birthdays' ); ?>
 					</p>
@@ -346,9 +346,9 @@ class BP_Birthdays_Admin {
 					<label>
 						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[email_enabled]" value="0">
 						<input type="checkbox"
-							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[email_enabled]"
-							   value="1"
-							   <?php checked( $settings['email_enabled'] ); ?>>
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[email_enabled]"
+								value="1"
+								<?php checked( $settings['email_enabled'] ); ?>>
 						<?php esc_html_e( 'Send automatic birthday greeting emails to members', 'buddypress-birthdays' ); ?>
 					</label>
 				</td>
@@ -358,9 +358,9 @@ class BP_Birthdays_Admin {
 				<td>
 					<p>
 						<?php
-						printf(	
-							/* translators: %s: URL to BuddyPress Emails admin */
+						printf(
 							wp_kses(
+								/* translators: %s: URL to BuddyPress Emails admin page. */
 								__( 'Birthday email content is managed in <a href="%s">BuddyPress Emails</a>. Look for <strong>"Birthday Greeting"</strong> to customize the subject and message.', 'buddypress-birthdays' ),
 								array(
 									'a'      => array( 'href' => array() ),
@@ -382,9 +382,9 @@ class BP_Birthdays_Admin {
 				</th>
 				<td>
 					<input type="time"
-						   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[email_send_time]"
-						   id="email_send_time"
-						   value="<?php echo esc_attr( $settings['email_send_time'] ); ?>">
+							name="<?php echo esc_attr( self::OPTION_NAME ); ?>[email_send_time]"
+							id="email_send_time"
+							value="<?php echo esc_attr( $settings['email_send_time'] ); ?>">
 					<p class="description">
 						<?php
 						printf(
@@ -402,17 +402,17 @@ class BP_Birthdays_Admin {
 					<label>
 						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[admin_email_enabled]" value="0">
 						<input type="checkbox"
-							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[admin_email_enabled]"
-							   value="1"
-							   <?php checked( $settings['admin_email_enabled'] ); ?>>
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[admin_email_enabled]"
+								value="1"
+								<?php checked( $settings['admin_email_enabled'] ); ?>>
 						<?php esc_html_e( 'Send daily summary of birthdays to admin', 'buddypress-birthdays' ); ?>
 					</label>
 					<br><br>
 					<input type="email"
-						   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[admin_email]"
-						   value="<?php echo esc_attr( $settings['admin_email'] ); ?>"
-						   placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>"
-						   class="regular-text">
+							name="<?php echo esc_attr( self::OPTION_NAME ); ?>[admin_email]"
+							value="<?php echo esc_attr( $settings['admin_email'] ); ?>"
+							placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>"
+							class="regular-text">
 					<p class="description">
 						<?php esc_html_e( 'Leave empty to use site admin email.', 'buddypress-birthdays' ); ?>
 					</p>
@@ -443,10 +443,10 @@ class BP_Birthdays_Admin {
 					<label>
 						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[activity_enabled]" value="0">
 						<input type="checkbox"
-							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[activity_enabled]"
-							   value="1"
-							   <?php checked( $settings['activity_enabled'] ); ?>
-							   <?php disabled( ! $activity_active ); ?>>
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[activity_enabled]"
+								value="1"
+								<?php checked( $settings['activity_enabled'] ); ?>
+								<?php disabled( ! $activity_active ); ?>>
 						<?php esc_html_e( 'Automatically post to activity feed on member birthdays', 'buddypress-birthdays' ); ?>
 					</label>
 				</td>
@@ -457,10 +457,10 @@ class BP_Birthdays_Admin {
 				</th>
 				<td>
 					<input type="text"
-						   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[activity_message]"
-						   id="activity_message"
-						   value="<?php echo esc_attr( $settings['activity_message'] ); ?>"
-						   class="large-text">
+							name="<?php echo esc_attr( self::OPTION_NAME ); ?>[activity_message]"
+							id="activity_message"
+							value="<?php echo esc_attr( $settings['activity_message'] ); ?>"
+							class="large-text">
 					<p class="description">
 						<?php esc_html_e( 'Available placeholders: {name}, {age}, {profile_url}', 'buddypress-birthdays' ); ?>
 					</p>
@@ -491,10 +491,10 @@ class BP_Birthdays_Admin {
 					<label>
 						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[notification_enabled]" value="0">
 						<input type="checkbox"
-							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[notification_enabled]"
-							   value="1"
-							   <?php checked( $settings['notification_enabled'] ); ?>
-							   <?php disabled( ! $notifications_active ); ?>>
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[notification_enabled]"
+								value="1"
+								<?php checked( $settings['notification_enabled'] ); ?>
+								<?php disabled( ! $notifications_active ); ?>>
 						<?php esc_html_e( 'Send BuddyPress notifications about member birthdays', 'buddypress-birthdays' ); ?>
 					</label>
 				</td>
@@ -505,9 +505,9 @@ class BP_Birthdays_Admin {
 					<label>
 						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[notification_friends_only]" value="0">
 						<input type="checkbox"
-							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[notification_friends_only]"
-							   value="1"
-							   <?php checked( $settings['notification_friends_only'] ); ?>>
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[notification_friends_only]"
+								value="1"
+								<?php checked( $settings['notification_friends_only'] ); ?>>
 						<?php esc_html_e( 'Only notify friends of the birthday member', 'buddypress-birthdays' ); ?>
 					</label>
 					<p class="description">
@@ -521,10 +521,10 @@ class BP_Birthdays_Admin {
 				</th>
 				<td>
 					<input type="text"
-						   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[notification_text]"
-						   id="notification_text"
-						   value="<?php echo esc_attr( $settings['notification_text'] ); ?>"
-						   class="large-text">
+							name="<?php echo esc_attr( self::OPTION_NAME ); ?>[notification_text]"
+							id="notification_text"
+							value="<?php echo esc_attr( $settings['notification_text'] ); ?>"
+							class="large-text">
 					<p class="description">
 						<?php esc_html_e( 'Available placeholders: {name}', 'buddypress-birthdays' ); ?>
 					</p>
@@ -548,9 +548,9 @@ class BP_Birthdays_Admin {
 					<label>
 						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[confetti_enabled]" value="0">
 						<input type="checkbox"
-							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[confetti_enabled]"
-							   value="1"
-							   <?php checked( $settings['confetti_enabled'] ); ?>>
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[confetti_enabled]"
+								value="1"
+								<?php checked( $settings['confetti_enabled'] ); ?>>
 						<?php esc_html_e( 'Show confetti animation for today\'s birthdays', 'buddypress-birthdays' ); ?>
 					</label>
 					<p class="description">
@@ -564,9 +564,9 @@ class BP_Birthdays_Admin {
 					<label>
 						<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[zodiac_enabled]" value="0">
 						<input type="checkbox"
-							   name="<?php echo esc_attr( self::OPTION_NAME ); ?>[zodiac_enabled]"
-							   value="1"
-							   <?php checked( $settings['zodiac_enabled'] ); ?>>
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[zodiac_enabled]"
+								value="1"
+								<?php checked( $settings['zodiac_enabled'] ); ?>>
 						<?php esc_html_e( 'Display zodiac sign next to birthday', 'buddypress-birthdays' ); ?>
 					</label>
 					<p class="description">
@@ -592,6 +592,7 @@ class BP_Birthdays_Admin {
 			return $fields;
 		}
 
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$results = $wpdb->get_results(
 			"SELECT id, name, type FROM {$wpdb->prefix}bp_xprofile_fields WHERE type IN ('datebox', 'birthdate') ORDER BY name",
 			ARRAY_A

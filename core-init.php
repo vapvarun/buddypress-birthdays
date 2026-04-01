@@ -8,16 +8,19 @@
  */
 
 // If this file is called directly, abort.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
 // Define Our Constants.
-define( 'BB_CORE_INC', dirname( __FILE__ ) . '/assets/inc/' );
+define( 'BB_CORE_INC', __DIR__ . '/assets/inc/' );
 define( 'BB_CORE_IMG', plugins_url( 'assets/img/', __FILE__ ) );
 define( 'BB_CORE_CSS', plugins_url( 'assets/css/', __FILE__ ) );
 define( 'BB_CORE_JS', plugins_url( 'assets/js/', __FILE__ ) );
-define( 'BB_CORE_VERSION', '2.0.0' ); // Add version for cache busting
+define( 'BB_CORE_VERSION', '2.0.0' ); // Add version for cache busting.
 
 /**
  * Global flag to track if assets are loaded
@@ -76,7 +79,7 @@ function bb_register_core_js() {
 		// Enhanced localization.
 		// Determine confetti setting from saved options (don't rely on admin class being loaded).
 		$confetti_enabled = false;
-		$bb_opts = get_option( 'bp_birthdays_settings', array() );
+		$bb_opts          = get_option( 'bp_birthdays_settings', array() );
 		if ( is_array( $bb_opts ) && isset( $bb_opts['confetti_enabled'] ) ) {
 			$confetti_enabled = (bool) $bb_opts['confetti_enabled'];
 		}
@@ -102,9 +105,9 @@ function bb_register_core_js() {
 					'tomorrow'       => __( 'Tomorrow', 'buddypress-birthdays' ),
 				),
 				'settings'   => array(
-					'animation_speed' => apply_filters( 'bb_birthdays_animation_speed', 300 ),
-					'tooltip_delay'   => apply_filters( 'bb_birthdays_tooltip_delay', 300 ),
-					'cache_duration'  => apply_filters( 'bb_birthdays_cache_duration', 1800 ), // 30 minutes.
+					'animation_speed'  => apply_filters( 'bb_birthdays_animation_speed', 300 ),
+					'tooltip_delay'    => apply_filters( 'bb_birthdays_tooltip_delay', 300 ),
+					'cache_duration'   => apply_filters( 'bb_birthdays_cache_duration', 1800 ), // 30 minutes.
 					// Frontend toggle for confetti animation (from admin settings).
 					'confetti_enabled' => $confetti_enabled,
 				),
@@ -273,7 +276,8 @@ function bb_birthdays_shortcode( $atts ) {
 			'show_birthdays_of'   => 'all',
 			'display_name_type'   => 'user_name',
 			'emoji'               => 'balloon',
-			'field_name'          => get_option( 'bb_birthdays_default_field', 'datebox' ),
+			'field_name'          => '',
+			'birthdays_per_page'  => 10,
 		),
 		$atts,
 		'bp_birthdays'
@@ -284,21 +288,31 @@ function bb_birthdays_shortcode( $atts ) {
 		return '<p>' . __( 'Birthday widget not available.', 'buddypress-birthdays' ) . '</p>';
 	}
 
+	// If field_name is not provided or empty, find the first available date field.
+	if ( empty( $atts['field_name'] ) ) {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$atts['field_name'] = $wpdb->get_var(
+			"SELECT id FROM {$wpdb->prefix}bp_xprofile_fields WHERE type IN ('datebox', 'birthdate') LIMIT 1"
+		);
+	}
+
 	// Create widget instance.
 	$widget = new Widget_Buddypress_Birthdays();
 
 	// Convert shortcode atts to widget instance format.
 	$instance = array(
-		'title'                    => $atts['title'],
-		'birthdays_to_display'     => (int) $atts['limit'],
-		'display_age'              => $atts['show_age'],
-		'birthday_send_message'    => $atts['show_message_button'],
-		'birthday_date_format'     => $atts['date_format'],
-		'birthdays_range_limit'    => $atts['range_limit'],
-		'show_birthdays_of'        => $atts['show_birthdays_of'],
-		'display_name_type'        => $atts['display_name_type'],
-		'emoji'                    => $atts['emoji'],
-		'birthday_field_name'      => $atts['field_name'],
+		'title'                 => $atts['title'],
+		'birthdays_to_display'  => (int) $atts['limit'],
+		'display_age'           => $atts['show_age'],
+		'birthday_send_message' => $atts['show_message_button'],
+		'birthday_date_format'  => $atts['date_format'],
+		'birthdays_range_limit' => $atts['range_limit'],
+		'show_birthdays_of'     => $atts['show_birthdays_of'],
+		'display_name_type'     => $atts['display_name_type'],
+		'emoji'                 => $atts['emoji'],
+		'birthday_field_name'   => (int) $atts['field_name'],
+		'birthdays_per_page'    => (int) $atts['birthdays_per_page'],
 	);
 
 	$args = array(
@@ -413,8 +427,8 @@ function bb_birthdays_ajax_handler() {
 
 	switch ( $action ) {
 		case 'refresh_widget':
-			// Only allow logged-in users to refresh cache.
-			if ( ! is_user_logged_in() ) {
+			// Only allow logged-in users with read capability to refresh cache.
+			if ( ! is_user_logged_in() || ! current_user_can( 'read' ) ) {
 				wp_send_json_error( 'Authentication required' );
 				break;
 			}

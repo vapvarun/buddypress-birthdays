@@ -3,7 +3,7 @@
  * Plugin Name: Wbcom Designs - Birthday Widget for BuddyPress
  * Plugin URI: https://wbcomdesigns.com/downloads/buddypress-birthdays/
  * Description: Display upcoming birthdays with optimized performance and memory usage
- * Version: 2.4.0
+ * Version: 2.4.1
  * Author: Wbcom Designs
  * Author URI: https://wbcomdesigns.com/
  * Text Domain: buddypress-birthdays
@@ -71,6 +71,7 @@ function bb_dependent_plugin_notice() {
 
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking if parameter exists to hide activation notice.
 	if ( isset( $_GET['activate'] ) ) {
+		$activate = sanitize_text_field( wp_unslash( $_GET['activate'] ) );
 		unset( $_GET['activate'] );
 	}
 }

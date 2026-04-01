@@ -5,7 +5,7 @@ Donate link: https://www.paypal.me/wbcomdesigns
 Requires at least: 5.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.4.0
+Stable tag: 2.4.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -114,6 +114,13 @@ Yes! The plugin works seamlessly with Youzify and other popular BuddyPress exten
 5. Integration with BuddyBoss platform
 
 == Changelog ==
+
+= 2.4.1 =
+* Code Quality: Fixed all WordPress Coding Standards (WPCS) violations across all PHP files
+* Code Quality: Applied inline comment punctuation, Yoda conditions, and proper spacing
+* Code Quality: Added missing translators comments for i18n functions with placeholders
+* Code Quality: Added phpcs:ignore for legacy file naming and widget registration
+* Code Quality: Fixed all Plugin Check errors (0 errors)
 
 = 2.4.0 =
 * New: Admin settings page under BuddyPress menu for centralized configuration.

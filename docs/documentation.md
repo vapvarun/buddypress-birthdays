@@ -1,6 +1,6 @@
 # BuddyPress Birthday Widget - Documentation
 
-**Version:** 2.4.0
+**Version:** 2.4.1
 **Requires WordPress:** 5.0+
 **Requires PHP:** 7.4+
 **Requires:** BuddyPress 5.0+
@@ -181,6 +181,7 @@ Visual enhancements for birthday displays.
 | **Birthday Range** | Time range to show | Weekly / Monthly / No Limit |
 | **Show Birthdays Of** | Filter by relationship | All Members / Friends / Followers |
 | **Number to Display** | Max birthdays to show | Number (e.g., 5) |
+| **Birthdays Per Page** | Enable pagination | Number (e.g., 10) - leave empty for no pagination |
 | **Emoji Style** | Decorative emoji | Cake / Balloon / Party / None |
 | **Send Wishes Button** | Enable wish button | Yes / No |
 | **Display Name Type** | Name format | Username / Nickname / First Name |
@@ -209,12 +210,17 @@ Visual enhancements for birthday displays.
 
 | Attribute | Description | Default |
 |-----------|-------------|---------|
+| `title` | Widget title | Upcoming Birthdays |
 | `limit` | Number of birthdays to show | 5 |
 | `show_age` | Display age (yes/no) | yes |
+| `show_message_button` | Show send wish button (yes/no) | yes |
 | `date_format` | PHP date format | F d |
 | `range_limit` | Time range (weekly/monthly/no_limit) | no_limit |
-| `show_of` | Filter (all/friends/followers) | all |
-| `field_id` | Specific xProfile field ID | — |
+| `show_birthdays_of` | Filter (all/friends/followers) | all |
+| `display_name_type` | Name format (user_name/nickname/first_name) | user_name |
+| `emoji` | Emoji style (cake/balloon/party/none) | balloon |
+| `field_name` | xProfile field ID | — |
+| `birthdays_per_page` | Number of birthdays per page (for pagination) | — |
 
 ### Examples
 
@@ -235,12 +241,27 @@ Visual enhancements for birthday displays.
 
 **Friends' birthdays only:**
 ```
-[bp_birthdays show_of="friends" limit="5"]
+[bp_birthdays show_birthdays_of="friends" limit="5"]
 ```
 
 **Specific birthday field:**
 ```
-[bp_birthdays field_id="123"]
+[bp_birthdays field_name="123"]
+```
+
+**With pagination (10 per page):**
+```
+[bp_birthdays limit="10" birthdays_per_page="10"]
+```
+
+**Custom name display (first name):**
+```
+[bp_birthdays display_name_type="first_name"]
+```
+
+**With emoji:**
+```
+[bp_birthdays emoji="cake"]
 ```
 
 ### Using in Templates
@@ -276,19 +297,10 @@ add_filter( 'bb_birthdays_cache_duration', function( $duration ) {
 add_filter( 'bb_core_load_assets', '__return_true' );
 ```
 
-#### Actions
-
-**After Birthday Email Sent**
+**Filter Birthday Name Display**
 ```php
-add_action( 'bp_birthdays_email_sent', function( $user_id, $birthday_data ) {
-    // Custom logic after email sent
-}, 10, 2 );
-```
-
-**After Activity Posted**
-```php
-add_action( 'bp_birthdays_activity_posted', function( $activity_id, $user_id ) {
-    // Custom logic after activity posted
+add_filter( 'bbirthdays_get_name_to_display', function( $display, $user_info ) {
+    return $display; // Modify the name display
 }, 10, 2 );
 ```
 
@@ -351,6 +363,10 @@ BP_Birthdays_Notifications::trigger_now();
 |----------|-------------|
 | `BIRTHDAY_WIDGET_PLUGIN_URL` | Plugin URL path |
 | `BIRTHDAY_WIDGET_PLUGIN_PATH` | Plugin file path |
+| `BB_CORE_INC` | Include files directory path |
+| `BB_CORE_CSS` | CSS assets URL |
+| `BB_CORE_JS` | JavaScript assets URL |
+| `BB_CORE_IMG` | Image assets URL |
 
 ---
 
@@ -515,4 +531,4 @@ Then visit: `yoursite.com/?test_birthday_emails=1`
 
 ---
 
-*Last Updated: December 2025 | Version 2.4.0*
+*Last Updated: March 2026 | Version 2.4.1*
