@@ -66,6 +66,15 @@ Transform your BuddyPress community with the Birthday Widget! Know the upcoming 
 * Screen reader friendly
 * Reduced motion support
 
+**Supercharge Your BuddyPress Community**
+
+Love Birthday Widget? Check out our other free community plugins:
+
+* **[Jetonomy - Token Economy for BuddyPress](https://wordpress.org/plugins/jetonomy/)** — Reward members with tokens for activity, engagement, and milestones. Create a thriving token-based economy in your community.
+* **[WPMediaVerse - Media Management for Communities](https://wordpress.org/plugins/jetonomy/)** — Complete media management for BuddyPress communities. Albums, galleries, and media sharing made easy.
+
+Visit [Wbcom Designs](https://wbcomdesigns.com/) for more BuddyPress add-ons and the [BuddyPress Community Bundle](https://wbcomdesigns.com/downloads/buddypress-community-bundle/).
+
 == Installation ==
 
 1. Upload the plugin files to `/wp-content/plugins/buddypress-birthdays/` directory
