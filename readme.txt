@@ -70,10 +70,10 @@ Transform your BuddyPress community with the Birthday Widget! Know the upcoming 
 
 Love Birthday Widget? Check out our other free community plugins:
 
-* **[Jetonomy - Token Economy for BuddyPress](https://wordpress.org/plugins/jetonomy/)** — Reward members with tokens for activity, engagement, and milestones. Create a thriving token-based economy in your community.
-* **[WPMediaVerse - Media Management for Communities](https://wordpress.org/plugins/jetonomy/)** — Complete media management for BuddyPress communities. Albums, galleries, and media sharing made easy.
+* **[Jetonomy](https://store.wbcomdesigns.com/)** — Next-gen discussion platform for WordPress — forums, Q&A, ideas, voting, trust levels. Free forever. [GitHub](https://github.com/vapvarun/jetonomy)
+* **[WPMediaVerse](https://store.wbcomdesigns.com/)** — A general-purpose WordPress media platform plugin. Albums, galleries, and media sharing. [GitHub](https://github.com/vapvarun/wpmediaverse)
 
-Visit [Wbcom Designs](https://wbcomdesigns.com/) for more BuddyPress add-ons and the [BuddyPress Community Bundle](https://wbcomdesigns.com/downloads/buddypress-community-bundle/).
+Visit [store.wbcomdesigns.com](https://store.wbcomdesigns.com/) for more products and the [BuddyPress Community Bundle](https://wbcomdesigns.com/downloads/buddypress-community-bundle/).
 
 == Installation ==
 
