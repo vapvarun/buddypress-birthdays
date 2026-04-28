@@ -813,12 +813,12 @@
 })(jQuery);
 
 // Performance monitoring (development only)
-if (typeof performance !== 'undefined' && console.time) {
+if (typeof bbBirthdays !== 'undefined' && bbBirthdays.debug && typeof performance !== 'undefined' && console.time) {
     console.time('BP Birthdays Init');
-    
+
     jQuery(document).ready(function() {
         console.timeEnd('BP Birthdays Init');
-        
+
         if (window.BPBirthdays) {
             console.log('BP Birthdays Widget loaded successfully');
             console.log('Today\'s birthdays:', window.BPBirthdays.getTodaysBirthdays());
