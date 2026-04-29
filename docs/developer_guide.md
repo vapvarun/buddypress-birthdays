@@ -1,8 +1,8 @@
-# BuddyPress Birthday Widget - Developer Guide
+# BuddyPress Birthdays - Developer Guide
 
 ## Architecture Overview
 
-The BuddyPress Birthday Widget is built with performance, security, and extensibility in mind. It follows WordPress coding standards and integrates seamlessly with BuddyPress, BuddyBoss, and Youzify platforms.
+The BuddyPress Birthdays plugin is built with performance, security, and extensibility in mind. It follows WordPress coding standards and integrates seamlessly with BuddyPress, BuddyBoss, and Youzify platforms.
 
 ## File Structure
 
@@ -51,10 +51,12 @@ buddypress-birthdays/
 
 **Key Features**:
 - **Conditional Asset Loading**: Only loads CSS/JS when widget is active
-- **Smart Caching**: 30-minute transient cache with automatic invalidation  
+- **Smart Caching**: 60-minute cache with automatic invalidation  
 - **Shortcode Support**: `[bp_birthdays]` with full attribute support
 - **AJAX Handlers**: Birthday actions and cache management
 - **Performance Monitoring**: Debug mode for development
+- **Visual Effects**: Confetti animation and zodiac sign display
+- **Email Integration**: BuddyPress Emails system integration
 
 **Critical Functions**:
 
@@ -140,7 +142,7 @@ Age Calculation & Data Structure
     ↓
 Sorting (by celebration date)
     ↓
-Cache Storage (wp_cache_set - 30 min)
+Cache Storage (wp_cache_set - 60 min)
     ↓
 Template Rendering
     ↓
@@ -167,8 +169,8 @@ if ( false === $birthdays ) {
     // Fetch and process data
     $birthdays = $this->bbirthdays_get_array( $instance );
     
-    // Store for 30 minutes using object cache
-    wp_cache_set( $cache_key, $birthdays, $cache_group, 30 * MINUTE_IN_SECONDS );
+    // Store for 60 minutes using object cache
+    wp_cache_set( $cache_key, $birthdays, $cache_group, 60 * MINUTE_IN_SECONDS );
 }
 
 // Cache invalidation on settings change
@@ -331,9 +333,9 @@ add_filter( 'bb_birthdays_tooltip_delay', function( $delay ) {
     return 500;
 } );
 
-// Customize cache duration (default: 1800 seconds = 30 minutes)
+// Customize cache duration (default: 3600 seconds = 60 minutes)
 add_filter( 'bb_birthdays_cache_duration', function( $duration ) {
-    return 3600; // 1 hour
+    return 7200; // 2 hours
 } );
 
 // Force asset loading

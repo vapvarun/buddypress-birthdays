@@ -1,7 +1,7 @@
-# QA Checklist - BuddyPress Birthday Widget
+# QA Checklist - BuddyPress Birthdays
 
 **Version:** 2.4.1
-**Date:** March 2026
+**Date:** April 2026
 
 ---
 
@@ -41,8 +41,10 @@
 - [ ] `birthdays_per_page` parameter works
 - [ ] `title` parameter works
 - [ ] `show_message_button` parameter works
+- [ ] `confetti` parameter works (overrides global setting)
+- [ ] `zodiac` parameter works (overrides global setting)
 
-### 4. Admin Settings (Settings > Birthday Settings)
+### 4. Admin Settings (Settings > BuddyPress Birthdays)
 - [ ] Settings page accessible under BuddyPress menu (or Settings menu)
 - [ ] Setup wizard runs without errors
 - [ ] General tab saves correctly
@@ -51,8 +53,6 @@
 - [ ] Email notifications tab saves correctly
   - [ ] Enable birthday emails toggle works
   - [ ] Email send time configuration works
-  - [ ] Admin email enabled option works
-  - [ ] Admin email address saves correctly
 - [ ] Activity feed tab saves correctly
   - [ ] Enable activity posts toggle works
   - [ ] Activity message saves correctly
@@ -66,10 +66,10 @@
 
 ### 5. Notifications
 - [ ] Birthday email sends correctly
-- [ ] Email placeholders replaced correctly ({name}, {first_name}, {age}, etc.)
+- [ ] Email placeholders replaced correctly ({{{recipient.name}}}, {{{birthday.age}}}, {{{site.name}}})
 - [ ] Activity feed post works
 - [ ] BuddyPress notification works
-- [ ] Admin daily summary works
+- [ ] Email content customization works via BuddyPress Emails
 - [ ] Send time configuration works
 
 ### 6. Privacy & Visibility
@@ -112,7 +112,7 @@
 
 ### Original Bug: Username A-D Filter Issue
 - [ ] Users with usernames starting with e-z display correctly
-- [ ] No artificial limit (200) on user query
+- [ ] No artificial limit on user query
 - [ ] All birthday users show regardless of username
 
 ### Pagination Feature
@@ -120,6 +120,36 @@
 - [ ] Previous/Next buttons work
 - [ ] Page URL parameter updates correctly
 - [ ] Works with all filter combinations
+
+### New Features: Confetti Animation
+- [ ] Confetti animation displays for today's birthdays
+- [ ] Confetti only shows when enabled in settings
+- [ ] Confetti works with shortcode `confetti="yes"`
+- [ ] Confetti animation triggers correctly in browser
+- [ ] No JavaScript errors when confetti loads
+- [ ] Confetti respects global setting when not overridden
+
+### New Features: Zodiac Signs
+- [ ] Zodiac signs display next to birthdays
+- [ ] All 12 zodiac symbols show correctly (♈ ♉ ♊ ♋ ♌ ♍ ♎ ♏ ♐ ♑ ♒ ♓)
+- [ ] Zodiac calculation works for leap years
+- [ ] Zodiac works with shortcode `zodiac="yes"`
+- [ ] Zodiac signs respect global setting when not overridden
+- [ ] Zodiac tooltips show correct sign names
+
+### Email System Integration
+- [ ] Birthday emails sent via BuddyPress Emails system
+- [ ] Email template "Birthday Greeting" exists in BP Emails
+- [ ] Email customization works in BP Emails admin
+- [ ] Email tokens work correctly in templates
+- [ ] Email send time respects timezone settings
+
+### Cache Performance
+- [ ] Cache duration set to 60 minutes by default
+- [ ] Cache invalidation works on profile updates
+- [ ] Cache invalidation works on friendship changes
+- [ ] Cache invalidation works on settings changes
+- [ ] Object cache works with Redis/Memcached
 
 ---
 

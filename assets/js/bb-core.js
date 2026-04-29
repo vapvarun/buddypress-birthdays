@@ -811,18 +811,3 @@
         .appendTo('head');
 
 })(jQuery);
-
-// Performance monitoring (development only)
-if (typeof performance !== 'undefined' && console.time) {
-    console.time('BP Birthdays Init');
-    
-    jQuery(document).ready(function() {
-        console.timeEnd('BP Birthdays Init');
-        
-        if (window.BPBirthdays) {
-            console.log('BP Birthdays Widget loaded successfully');
-            console.log('Today\'s birthdays:', window.BPBirthdays.getTodaysBirthdays());
-            console.log('Upcoming birthdays:', window.BPBirthdays.getUpcomingBirthdays());
-        }
-    });
-}
