@@ -206,5 +206,6 @@ module.exports = function (grunt) {
     grunt.registerTask('build', ['checktextdomain', 'minify', 'makepot']);
     grunt.registerTask('release', ['clean:dist', 'build', 'copy:dist', 'compress:dist', 'clean:temp']);
     grunt.registerTask('zip', ['release']);
+    grunt.registerTask('dist', ['release']);
     grunt.registerTask('default', ['checktextdomain', 'makepot']);
 };

@@ -5,7 +5,7 @@ Donate link: https://www.paypal.me/wbcomdesigns
 Requires at least: 5.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.4.1
+Stable tag: 2.4.2
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -123,6 +123,11 @@ Yes! The plugin works seamlessly with Youzify and other popular BuddyPress exten
 5. Integration with BuddyBoss platform
 
 == Changelog ==
+
+= 2.4.2 =
+* Fix: Birthday celebration activities were showing empty content in the activity feed.
+* Fix: Removed leftover console logging from production code.
+* Update: Refreshed POT file for translations.
 
 = 2.4.1 =
 * Code Quality: Fixed all WordPress Coding Standards (WPCS) violations across all PHP files
