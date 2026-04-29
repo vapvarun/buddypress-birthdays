@@ -1,4 +1,4 @@
-# BuddyPress Birthday Widget - Architecture
+# BuddyPress Birthdays - Architecture
 
 **Version:** 2.4.1
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-BuddyPress Birthday Widget is a WordPress plugin that displays upcoming birthdays of BuddyPress members. It uses a widget-based architecture with shortcode support.
+BuddyPress Birthdays is a WordPress plugin that displays upcoming birthdays of BuddyPress members. It uses a widget-based architecture with shortcode support, featuring email notifications, activity feed posts, BuddyPress notifications, confetti animations, and zodiac sign displays.
 
 ---
 
@@ -77,7 +77,7 @@ buddypress-birthdays/
 
 ### 5. Notifications (`class-bp-birthdays-notifications.php`)
 - Singleton pattern
-- Email sending via `wp_mail`
+- Email sending via BuddyPress Emails system (with customizable templates)
 - BuddyPress activity posting
 - BuddyPress notifications
 - WP-Cron scheduling for daily checks
@@ -136,7 +136,7 @@ buddypress-birthdays/
 - Uses WordPress object cache API (`wp_cache_get`/`wp_cache_set`)
 - Cache group: `bp_birthdays`
 - Cache key: MD5 hash of widget instance
-- Duration: 30 minutes (configurable)
+- Duration: 60 minutes (configurable)
 
 ### Cache Invalidation Events
 - `xprofile_data_after_save` - profile updated
@@ -164,8 +164,6 @@ array(
     'cache_duration' => int,
     'email_enabled' => bool,
     'email_send_time' => string,
-    'admin_email_enabled' => bool,
-    'admin_email' => string,
     'activity_enabled' => bool,
     'activity_message' => string,
     'notification_enabled' => bool,
@@ -257,7 +255,7 @@ None - uses existing BuddyPress tables
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 2.4.1 | March 2026 | WPCS fixes, code quality |
+| 2.4.1 | April 2026 | Documentation updates, WPCS fixes |
 | 2.4.0 | Dec 2025 | Admin settings, notifications |
 | 2.3.0 | Mid 2025 | Widget fixes, object cache |
 | 2.2.0 | Early 2025 | UI redesign |

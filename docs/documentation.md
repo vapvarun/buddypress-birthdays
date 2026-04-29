@@ -1,9 +1,10 @@
-# BuddyPress Birthday Widget - Documentation
+# BuddyPress Birthdays - Documentation
 
 **Version:** 2.4.1
 **Requires WordPress:** 5.0+
 **Requires PHP:** 7.4+
-**Requires:** BuddyPress 5.0+
+**Requires:** BuddyPress (latest stable version)
+**Tested up to:** WordPress 6.9
 
 ---
 
@@ -26,7 +27,7 @@
 
 - WordPress 5.0 or higher
 - PHP 7.4 or higher
-- BuddyPress 5.0+ (required)
+- BuddyPress (latest stable version)
 - BuddyPress Extended Profile component enabled
 
 ### Method 1: WordPress Dashboard
@@ -50,7 +51,7 @@
 After activation:
 
 1. Ensure you have a date field in BuddyPress Extended Profile
-2. Go to **Settings > Birthday Settings** (or **BuddyPress > Birthday Settings**)
+2. Go to **Settings > BuddyPress Birthdays**
 3. Select your birthday field in the General tab
 4. Configure notifications as desired
 
@@ -70,7 +71,7 @@ If you don't already have a birthday field:
 
 ### Step 2: Configure Plugin
 
-1. Go to **Settings > Birthday Settings**
+1. Go to **Settings > BuddyPress Birthdays**
 2. Select your birthday field from the dropdown
 3. Enable any notifications you want
 4. Save changes
@@ -87,16 +88,16 @@ If you don't already have a birthday field:
 
 ## Settings Configuration
 
-Access settings at **Settings > Birthday Settings** or **BuddyPress > Birthday Settings**
+Access settings at **Settings > BuddyPress Birthdays**
 
 ### General Tab
 
 | Setting | Description | Default |
 |---------|-------------|---------|
 | **Default Birthday Field** | Select the xProfile field containing member birthdays | — |
-| **Cache Duration** | How long to cache birthday data (1-1440 minutes) | 30 minutes |
+| **Cache Duration** | How long to cache birthday data (1-1440 minutes) | 60 minutes |
 
-> **Tip:** Lower cache values mean fresher data but more database queries. 30 minutes is recommended for most sites.
+> **Tip:** Lower cache values mean fresher data but more database queries. 60-120 minutes is recommended for most sites.
 
 ### Email Notifications Tab
 
@@ -105,24 +106,20 @@ Send automatic birthday greeting emails to members on their special day.
 | Setting | Description | Default |
 |---------|-------------|---------|
 | **Enable Birthday Emails** | Turn on/off automatic birthday emails | Off |
-| **Email Subject** | Subject line for birthday emails | "Happy Birthday, {name}!" |
-| **Email Message** | HTML body of the birthday email | Default template |
+| **Customize Email Content** | Email content is managed in BuddyPress Emails | — |
 | **Send Time** | Time to send emails (site timezone) | 09:00 |
-| **Admin Summary** | Send daily summary to admin | Off |
-| **Admin Email** | Email for summary (blank = site admin) | — |
 
-**Available Email Placeholders:**
+> **Note:** Email content is customized in **BuddyPress Emails**. Look for "Birthday Greeting" email template.
+
+**Available Email Placeholders (in BuddyPress Emails):**
 
 | Placeholder | Replacement |
 |-------------|-------------|
-| `{name}` | Member's display name |
-| `{first_name}` | Member's first name |
-| `{age}` | Member's new age |
-| `{site_name}` | Site title |
-| `{site_url}` | Site URL |
-| `{profile_url}` | Member's profile URL |
+| `{{{recipient.name}}}` | Member's display name |
+| `{{{birthday.age}}}` | Member's new age |
+| `{{{site.name}}}` | Site title |
 
-**Example Subject:** `Happy {age}th Birthday, {first_name}!`
+**Example Subject:** `Happy Birthday, {{{recipient.name}}}!`
 
 ### Activity Feed Tab
 
@@ -131,7 +128,7 @@ Automatically post to the BuddyPress activity feed when a member has a birthday.
 | Setting | Description | Default |
 |---------|-------------|---------|
 | **Enable Activity Posts** | Auto-post birthday announcements | Off |
-| **Activity Message** | Message template for activity posts | "Today is {name}'s birthday! Send your wishes!" |
+| **Activity Message** | Message template for activity posts | "🎂 Happy {age}th birthday {name}! 🎉" |
 
 > **Note:** Requires BuddyPress Activity component to be active.
 
@@ -144,8 +141,8 @@ Send BuddyPress notifications to members about birthdays.
 | Setting | Description | Default |
 |---------|-------------|---------|
 | **Enable Notifications** | Send BP notifications about birthdays | Off |
-| **Only Notify Friends** | Only send to friends of birthday member | Off |
-| **Notification Text** | Text shown in notification | "It's {name}'s birthday today!" |
+| **Notify Friends Only** | Only send to friends of birthday member | Off |
+| **Notification Text** | Text shown in notification | "🎂 {name} is celebrating their birthday today!" |
 
 > **Note:** Requires BuddyPress Notifications component to be active.
 
@@ -165,7 +162,7 @@ Visual enhancements for birthday displays.
 ### Adding the Widget
 
 1. Go to **Appearance > Widgets**
-2. Find "BuddyPress Birthdays" in available widgets
+2. Find "(BuddyPress) Birthdays" in available widgets
 3. Drag to your sidebar or use the "Add Widget" button
 4. Configure options (see below)
 5. Click **Save**
@@ -184,7 +181,7 @@ Visual enhancements for birthday displays.
 | **Birthdays Per Page** | Enable pagination | Number (e.g., 10) - leave empty for no pagination |
 | **Emoji Style** | Decorative emoji | Cake / Balloon / Party / None |
 | **Send Wishes Button** | Enable wish button | Yes / No |
-| **Display Name Type** | Name format | Username / Nickname / First Name |
+| **Display Name Type** | Name format | User name / Nickname / First Name |
 
 ### Date Format Examples
 
@@ -221,6 +218,8 @@ Visual enhancements for birthday displays.
 | `emoji` | Emoji style (cake/balloon/party/none) | balloon |
 | `field_name` | xProfile field ID | — |
 | `birthdays_per_page` | Number of birthdays per page (for pagination) | — |
+| `confetti` | Show confetti animation (yes/no) | Uses global setting |
+| `zodiac` | Show zodiac signs (yes/no) | Uses global setting |
 
 ### Examples
 
@@ -262,6 +261,27 @@ Visual enhancements for birthday displays.
 **With emoji:**
 ```
 [bp_birthdays emoji="cake"]
+```
+
+**With confetti animation:**
+```
+[bp_birthdays confetti="yes"]
+```
+
+**With zodiac signs:**
+```
+[bp_birthdays zodiac="yes"]
+```
+
+**Complete example with all features:**
+```
+[bp_birthdays 
+    title="Team Birthdays" 
+    limit="10" 
+    confetti="yes" 
+    zodiac="yes" 
+    emoji="cake"
+]
 ```
 
 ### Using in Templates
@@ -385,8 +405,9 @@ BP_Birthdays_Notifications::trigger_now();
    - Set "Show Birthdays Of" to "All Members"
 
 3. **Clear Cache**
-   - Birthdays are cached for 30 minutes by default
+   - Birthdays are cached for 60 minutes by default
    - Wait for cache to refresh or use object cache flush
+   - Save widget settings to force cache refresh
 
 ### Emails Not Sending
 
@@ -434,13 +455,35 @@ BP_Birthdays_Notifications::trigger_now();
    - Plugin requires BuddyPress to be active
    - Check for BuddyPress errors
 
+### Confetti Animation Not Working
+
+1. **Check Settings**
+   - Verify "Confetti Animation" is enabled in plugin settings
+   - Ensure you're viewing today's birthdays (confetti only shows for today)
+
+2. **Check Browser**
+   - Ensure JavaScript is enabled
+   - Check browser console for errors
+   - Try different browser if needed
+
+### Zodiac Signs Not Showing
+
+1. **Check Settings**
+   - Verify "Zodiac Sign" is enabled in plugin settings
+   - Ensure birthday data includes full date (year, month, day)
+
+2. **Check Data**
+   - Verify users have complete birth dates in their profile
+   - Incomplete dates may not calculate zodiac correctly
+
 ### Performance Issues
 
 For sites with many users:
 
-1. Increase cache duration in settings
+1. Increase cache duration in settings (60-120 minutes)
 2. Consider using object caching (Redis/Memcached)
 3. Limit birthdays displayed to 5-10
+4. Use friends/followers filter for large communities
 
 ---
 
@@ -531,4 +574,4 @@ Then visit: `yoursite.com/?test_birthday_emails=1`
 
 ---
 
-*Last Updated: March 2026 | Version 2.4.1*
+*Last Updated: April 2026 | Version 2.4.1*
