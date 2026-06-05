@@ -68,8 +68,26 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		if ( false === $birthdays ) {
 			$birthdays = $this->bbirthdays_get_array( $instance );
-			// Cache for 30 minutes using object cache.
-			wp_cache_set( $cache_key, $birthdays, $cache_group, 30 * MINUTE_IN_SECONDS );
+
+			// Honour the admin-configured cache duration (in minutes)
+			// instead of a hardcoded 30 minutes. Previously the "Cache
+			// Duration" setting was a ghost control — it saved but the
+			// TTL was fixed at 30 * MINUTE_IN_SECONDS, so changing it had
+			// no effect (WRAPPER-AUDIT finding #1, MED). Read the saved
+			// value, clamp to a sane range (1..1440 minutes, matching the
+			// admin field's min/max), and fall back to 30 if the class or
+			// value is unavailable.
+			$cache_minutes = 30;
+			if ( class_exists( 'BP_Birthdays_Admin' ) ) {
+				$saved = (int) BP_Birthdays_Admin::get_settings( 'cache_duration' );
+				if ( $saved > 0 ) {
+					$cache_minutes = $saved;
+				}
+			}
+			$cache_minutes = max( 1, min( 1440, $cache_minutes ) );
+			$cache_ttl     = $cache_minutes * MINUTE_IN_SECONDS;
+
+			wp_cache_set( $cache_key, $birthdays, $cache_group, $cache_ttl );
 		}
 
 		// Don't render widget at all if there are no birthdays to display.

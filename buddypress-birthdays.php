@@ -3,7 +3,7 @@
  * Plugin Name: Wbcom Designs - Birthday Widget for BuddyPress
  * Plugin URI: https://wbcomdesigns.com/downloads/buddypress-birthdays/
  * Description: Display upcoming birthdays with optimized performance and memory usage
- * Version: 2.4.1
+ * Version: 2.5.0
  * Author: Wbcom Designs
  * Author URI: https://wbcomdesigns.com/
  * Text Domain: buddypress-birthdays
@@ -23,6 +23,7 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
+define( 'BIRTHDAY_WIDGET_VERSION', '2.5.0' );
 define( 'BIRTHDAY_WIDGET_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BIRTHDAY_WIDGET_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
@@ -31,9 +32,22 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'core-init.php' ) ) {
 	require_once plugin_dir_path( __FILE__ ) . 'core-init.php';
 }
 
-// Load admin settings page.
-if ( is_admin() && file_exists( plugin_dir_path( __FILE__ ) . 'admin/class-bp-birthdays-admin.php' ) ) {
-	require_once plugin_dir_path( __FILE__ ) . 'admin/class-bp-birthdays-admin.php';
+// Load admin: the card-panel controller (menu, enqueue, render) plus the
+// legacy settings class which is retained ONLY for its sanitizer +
+// settings getter/defaults (its menu/enqueue/render are no longer hooked).
+if ( is_admin() ) {
+	if ( file_exists( plugin_dir_path( __FILE__ ) . 'admin/class-bp-birthdays-admin.php' ) ) {
+		require_once plugin_dir_path( __FILE__ ) . 'admin/class-bp-birthdays-admin.php';
+	}
+	if ( file_exists( plugin_dir_path( __FILE__ ) . 'includes/admin/class-bp-birthdays-admin-panel.php' ) ) {
+		require_once plugin_dir_path( __FILE__ ) . 'includes/admin/class-bp-birthdays-admin-panel.php';
+		add_action(
+			'plugins_loaded',
+			function () {
+				( new BP_Birthdays_Admin_Panel() )->register();
+			}
+		);
+	}
 }
 
 // Load helper functions.

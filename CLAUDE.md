@@ -13,13 +13,17 @@ All plugin work follows the **`/wp-plugin-development`** skill (backend architec
 - **Extends**: null (standalone; requires BuddyPress)
 - **Repo**: vapvarun/buddypress-birthdays
 
-## Admin UI wrapper: NONE
-This plugin uses a **self-contained WordPress Settings API tabbed page** (`BP_Birthdays_Admin`, `admin/class-bp-birthdays-admin.php`). It does NOT use any Wbcom shared admin wrapper:
-- OLD (`admin/wbcom/wbcom-admin-settings.php`) — absent
-- INTERMEDIATE (`includes/shared-admin/class-wbcom-shared-dashboard.php`) — absent
-- NEW (`includes/admin/views/shell.php`) — absent
+## Admin UI wrapper: NEW (card-panel under wbcomplugins) — as of 2.5.0
+The admin migrated to the **Wbcom card-panel pattern** under the shared `wbcomplugins` hub (mirrors `buddypress-contact-me`):
+- Controller: `BP_Birthdays_Admin_Panel` (`includes/admin/class-bp-birthdays-admin-panel.php`) — menu, enqueue, render router, hub takeover (pri 999).
+- Views: `includes/admin/views/{shell,hub,overview,settings-general,settings-email,settings-activity,settings-notifications,settings-display}.php`.
+- Assets: `assets/css/admin.css` (`--bbd-admin-*` tokens), `assets/js/admin.js` (`bbdToast`/`bbdConfirm` + dependent-field toggles).
 
-Menu: `add_submenu_page` parent `bp-settings` (BuddyPress) with fallback to `options-general.php`, slug `bp-birthday-settings`, cap `manage_options`, on `admin_menu` @20. Page hook suffix: `buddypress_page_bp-birthday-settings` or `settings_page_bp-birthday-settings`. Single stored option `bp_birthdays_settings` (group `bp_birthdays_settings_group`).
+Menu: `add_menu_page('wbcomplugins', …)` (if not present) + `add_submenu_page('wbcomplugins', …, 'bp-birthday-settings', …)`. Slug `bp-birthday-settings` **preserved** for URL continuity. Cap `manage_options` (filter `bp_birthdays_admin_capability`). Page hook suffix: `wbcomplugins_page_bp-birthday-settings`. The old `bp-settings`/`options-general.php` registration was dropped.
+
+`BP_Birthdays_Admin` (`admin/class-bp-birthdays-admin.php`) is now a **legacy service class** retained ONLY for `$defaults`, `get_instance()`, `sanitize_settings()`, `get_settings()` — its UI methods were deleted. The panel's `register_setting` delegates sanitization to it, so the save contract is byte-identical.
+
+Single stored option `bp_birthdays_settings` (group `bp_birthdays_settings_group`) — unchanged. Multi-tab saves are guarded by the legacy sanitizer's merge-on-stored + a `bp_birthdays_tab_rendered_keys` sentinel (Playbook 7.1).
 
 ## Key entry points
 - Bootstrap: `buddypress-birthdays.php` (constants, BP dependency check, requires)
@@ -46,4 +50,6 @@ Menu: `add_submenu_page` parent `bp-settings` (BuddyPress) with fallback to `opt
 ## Recent changes
 | Date | Type | Description | Files |
 |---|---|---|---|
+| 2026-06-05 | refactor | Migrated admin to card-panel under `wbcomplugins` hub (v2.5.0). New `BP_Birthdays_Admin_Panel` + views + token CSS/JS; legacy class trimmed to sanitizer/getter only; dropped `bp-settings`/options-general registration. Option key + 13 subkeys preserved. | `includes/admin/*`, `assets/css/admin.css`, `assets/js/admin.js`, `admin/class-bp-birthdays-admin.php`, `buddypress-birthdays.php` |
+| 2026-06-05 | bug-fix | Cache TTL now honours saved `cache_duration` (was hardcoded 30 min ghost control). | `assets/inc/buddypress-birthdays-widget.php` |
 | 2026-06-05 | onboard | Generated audit/ inventory + reports + graph + wppqa baseline; READ-FIRST CLAUDE.md | audit/*, CLAUDE.md |
