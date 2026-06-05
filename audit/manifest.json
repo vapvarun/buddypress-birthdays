@@ -1,0 +1,190 @@
+{
+  "$schema": "https://wpmediaverse.com/schemas/wp-plugin-manifest-v2.json",
+  "plugin": {
+    "slug": "buddypress-birthdays",
+    "name": "Wbcom Designs - Birthday Widget for BuddyPress",
+    "version": "2.4.1",
+    "namespace": "(none — global functions + BP_Birthdays_* classes, prefix bb_/BP_Birthdays_)",
+    "main_file": "buddypress-birthdays.php",
+    "text_domain": "buddypress-birthdays",
+    "extends": null,
+    "extension_hook_consumed": null,
+    "extension_hook_fired": null
+  },
+  "rest": { "namespace": null, "endpoints": [] },
+  "ajax": [
+    {
+      "action": "bb_birthdays_action",
+      "handler": "core-init.php::bb_birthdays_ajax_handler",
+      "nonce": "bb_birthdays_nonce",
+      "capability": "read (for refresh_widget sub-action only); mark_wished requires logged-in user",
+      "purpose": "Dispatcher: 'refresh_widget' clears birthday object cache (logged-in + read cap), 'mark_wished' records that current user wished a birthday user (user meta bb_birthday_wished_users)",
+      "registered_at": "core-init.php:469-470",
+      "nopriv": true
+    }
+  ],
+  "admin_pages": [
+    {
+      "title": "Birthday Settings",
+      "slug": "bp-birthday-settings",
+      "parent": "bp-settings (BuddyPress menu) with fallback to options-general.php (Settings menu)",
+      "capability": "manage_options",
+      "menu_hook": "admin_menu @ priority 20",
+      "page_hook_suffix": "buddypress_page_bp-birthday-settings OR settings_page_bp-birthday-settings",
+      "render": "BP_Birthdays_Admin::render_settings_page",
+      "tabs": ["general", "email", "activity", "notifications", "display"],
+      "source": "admin/class-bp-birthdays-admin.php:85-104"
+    }
+  ],
+  "settings": [
+    { "key": "bp_birthdays_settings", "group": "bp_birthdays_settings_group", "type": "array (single option, all sub-keys below)", "default": "see defaults map", "controls": "All admin settings", "registered_at": "admin/class-bp-birthdays-admin.php:110", "sanitize_callback": "BP_Birthdays_Admin::sanitize_settings" },
+    { "key": "bp_birthdays_settings.default_field_id", "type": "absint", "default": "''", "controls": "Default xProfile date field id used by cron + shortcode + widget fallback", "tab": "general" },
+    { "key": "bp_birthdays_settings.cache_duration", "type": "absint (minutes)", "default": "30", "controls": "Display-only; actual widget object cache is hardcoded 30 min", "tab": "general" },
+    { "key": "bp_birthdays_settings.email_enabled", "type": "bool", "default": "false", "controls": "Send birthday greeting emails via cron", "tab": "email" },
+    { "key": "bp_birthdays_settings.email_send_time", "type": "text HH:MM", "default": "'09:00'", "controls": "Cron schedule time for daily birthday check", "tab": "email" },
+    { "key": "bp_birthdays_settings.admin_email_enabled", "type": "bool", "default": "false", "controls": "Daily admin summary email", "tab": "email" },
+    { "key": "bp_birthdays_settings.admin_email", "type": "sanitize_email", "default": "''", "controls": "Recipient for admin summary (falls back to site admin_email)", "tab": "email" },
+    { "key": "bp_birthdays_settings.activity_enabled", "type": "bool", "default": "false", "controls": "Auto-post to BP activity feed on birthdays", "tab": "activity" },
+    { "key": "bp_birthdays_settings.activity_message", "type": "sanitize_text_field", "default": "Today is {name}'s birthday! Send your wishes!", "controls": "Activity post template ({name}/{age}/{profile_url})", "tab": "activity" },
+    { "key": "bp_birthdays_settings.notification_enabled", "type": "bool", "default": "false", "controls": "Send BP notifications about birthdays", "tab": "notifications" },
+    { "key": "bp_birthdays_settings.notification_friends_only", "type": "bool", "default": "false", "controls": "Restrict notifications to friends of birthday user", "tab": "notifications" },
+    { "key": "bp_birthdays_settings.notification_text", "type": "sanitize_text_field", "default": "It's {name}'s birthday today!", "controls": "BP notification text template ({name})", "tab": "notifications" },
+    { "key": "bp_birthdays_settings.confetti_enabled", "type": "bool", "default": "false", "controls": "Frontend confetti animation (localized to bbBirthdays.settings.confetti_enabled)", "tab": "display" },
+    { "key": "bp_birthdays_settings.zodiac_enabled", "type": "bool", "default": "false", "controls": "Show zodiac symbol next to birthday in widget", "tab": "display" },
+    { "key": "bp_birthdays_emails_installed", "type": "bool flag (not in settings UI)", "default": "false", "controls": "One-time guard so BP email posts are only created once", "written_at": "includes/class-bp-birthdays-notifications.php:307" },
+    { "key": "bp_birthdays_last_check_date", "type": "Y-m-d (not in settings UI)", "default": "''", "controls": "Daily rollover detection for sent-tracking reset", "written_at": "includes/class-bp-birthdays-notifications.php:381" },
+    { "key": "bp_birthdays_sent_today", "type": "array user_id=>timestamp (not in settings UI)", "default": "[]", "controls": "Per-day dedupe so a user is processed once per cron day", "written_at": "includes/class-bp-birthdays-notifications.php:422" }
+  ],
+  "shortcodes": [
+    { "tag": "bp_birthdays", "handler": "core-init.php::bb_birthdays_shortcode", "attrs": ["title", "limit", "show_age", "show_message_button", "date_format", "range_limit", "show_birthdays_of", "display_name_type", "emoji", "field_name", "birthdays_per_page"], "registered_at": "core-init.php:329" }
+  ],
+  "blocks": [],
+  "post_types": [],
+  "taxonomies": [],
+  "tables": [],
+  "external_tables_read": [
+    { "name": "{prefix}bp_xprofile_data", "purpose": "Read member birthday values (BuddyPress-owned, read-only)" },
+    { "name": "{prefix}bp_xprofile_fields", "purpose": "Discover datebox/birthdate field ids (BuddyPress-owned, read-only)" },
+    { "name": "{prefix}bp_xprofile_meta", "purpose": "Read field date_format meta (BuddyPress-owned, read-only)" },
+    { "name": "{users}", "purpose": "Join for display_name/user_email in cron birthday query (WP core, read-only)" },
+    { "name": "{usermeta}", "purpose": "Read bb_birthday_wished_users in daily cleanup (WP core)" }
+  ],
+  "user_meta": [
+    { "key": "bb_birthday_wished_users", "purpose": "Per-user record of which birthday users were wished today; cleaned after 7 days", "read_at": "core-init.php:446", "written_at": "core-init.php:458" },
+    { "key": "activation_key", "purpose": "Skip unactivated members in widget render (read-only)", "read_at": "assets/inc/buddypress-birthdays-widget.php:125" },
+    { "key": "nickname / first_name", "purpose": "Display-name resolution in widget (read-only)", "read_at": "assets/inc/buddypress-birthdays-widget.php:183-185" }
+  ],
+  "capabilities": [
+    { "cap": "manage_options", "default_roles": ["administrator"], "registered_at": "n/a (WP core cap)", "enforced_at": ["admin/class-bp-birthdays-admin.php:101", "includes/class-bp-birthdays-helpers.php:836"], "enforcement_count": 2, "meta": false, "requires_context": "none" },
+    { "cap": "read", "default_roles": ["subscriber", "contributor", "author", "editor", "administrator"], "registered_at": "n/a (WP core cap)", "enforced_at": ["core-init.php:431"], "enforcement_count": 1, "meta": false, "requires_context": "none" }
+  ],
+  "services": [
+    { "key": "BP_Birthdays_Admin", "class": "BP_Birthdays_Admin (singleton)", "added": "2.4.0" },
+    { "key": "BP_Birthdays_Notifications", "class": "BP_Birthdays_Notifications (singleton)", "added": "2.4.0" },
+    { "key": "BP_Birthdays_Helpers", "class": "BP_Birthdays_Helpers (static utils)", "added": "2.4.0" },
+    { "key": "Widget_Buddypress_Birthdays", "class": "Widget_Buddypress_Birthdays (WP_Widget)", "added": "1.0.0" }
+  ],
+  "hooks_fired": [
+    { "name": "bb_birthdays_animation_speed", "type": "filter", "args_count": 1, "args_signature": ["int $speed=300"], "where": "core-init.php:108", "consumed_by": [] },
+    { "name": "bb_birthdays_tooltip_delay", "type": "filter", "args_count": 1, "args_signature": ["int $delay=300"], "where": "core-init.php:109", "consumed_by": [] },
+    { "name": "bb_birthdays_cache_duration", "type": "filter", "args_count": 1, "args_signature": ["int $seconds=1800"], "where": "core-init.php:110", "consumed_by": [] },
+    { "name": "bb_core_load_assets", "type": "filter", "args_count": 1, "args_signature": ["bool $load=false"], "where": "core-init.php:216", "consumed_by": [] },
+    { "name": "bbirthdays_get_name_to_display", "type": "filter", "args_count": 2, "args_signature": ["string $display", "WP_User $user_info"], "where": "includes/class-bp-birthdays-helpers.php:874", "consumed_by": [] }
+  ],
+  "hooks_listened": [
+    { "hook": "admin_init", "callback": "bb_check_bp_active", "where": "buddypress-birthdays.php:58", "purpose": "Deactivate self if BuddyPress missing" },
+    { "hook": "wp_enqueue_scripts", "callback": "bb_register_core_css / bb_register_core_js", "where": "core-init.php:56,118" },
+    { "hook": "wp_footer", "callback": "bb_footer_asset_check (5) / bb_debug_widget_loading (999)", "where": "core-init.php:154,414" },
+    { "hook": "wp_ajax_bb_birthdays_action / wp_ajax_nopriv_bb_birthdays_action", "callback": "bb_birthdays_ajax_handler", "where": "core-init.php:469-470" },
+    { "hook": "bb_cleanup_old_wishes", "callback": "bb_cleanup_old_wishes + bb_daily_cache_clear", "where": "core-init.php:507,609", "purpose": "Daily cron: prune wished-users meta >7d + flush cache" },
+    { "hook": "xprofile_data_after_save", "callback": "bb_clear_cache_on_xprofile_update", "where": "core-init.php:535" },
+    { "hook": "friends_friendship_accepted/deleted/withdrawn", "callback": "cache clear", "where": "core-init.php:547,559,569" },
+    { "hook": "delete_user / wpmu_delete_user / user_register", "callback": "cache clear", "where": "core-init.php:579-590" },
+    { "hook": "bp_follow_start_following / bp_follow_stop_following", "callback": "bb_clear_cache_on_follow_change", "where": "core-init.php:600-601" },
+    { "hook": "widgets_init", "callback": "buddypress_birthdays_register_widget", "where": "assets/inc/buddypress-birthdays-widget.php:1087" },
+    { "hook": "admin_menu (20)", "callback": "BP_Birthdays_Admin::add_admin_menu", "where": "admin/class-bp-birthdays-admin.php:77" },
+    { "hook": "admin_init", "callback": "BP_Birthdays_Admin::register_settings", "where": "admin/class-bp-birthdays-admin.php:78" },
+    { "hook": "admin_enqueue_scripts", "callback": "BP_Birthdays_Admin::enqueue_admin_assets", "where": "admin/class-bp-birthdays-admin.php:79" },
+    { "hook": "bp_birthdays_daily_check (CRON_HOOK)", "callback": "BP_Birthdays_Notifications::process_daily_birthdays", "where": "includes/class-bp-birthdays-notifications.php:79" },
+    { "hook": "bp_setup_globals / bp_register_activity_actions / bp_core_install_emails", "callback": "notification component + activity + emails", "where": "includes/class-bp-birthdays-notifications.php:85,92,100" },
+    { "hook": "bp_notifications_get_registered_components / bp_notifications_get_notifications_for_user", "callback": "register + format notifications", "where": "includes/class-bp-birthdays-notifications.php:88-89" },
+    { "hook": "bp_email_get_schema / bp_email_get_type_schema", "callback": "register email types", "where": "includes/class-bp-birthdays-notifications.php:93-94" }
+  ],
+  "interactivity": [],
+  "ui_activation": [],
+  "static_analysis": {
+    "dead_listeners": [],
+    "cap_context_mismatches": [],
+    "extensibility_gaps": [
+      { "list_at": "assets/inc/buddypress-birthdays-widget.php:105-283", "injecting_action": "(none)", "injecting_action_at": "n/a", "suggested_filter": "Widget render loop emits no apply_filters around the per-item markup or the final birthday list; site owners cannot alter output without forking. Consider a bbirthdays_widget_item filter." }
+    ],
+    "js_only_activation": [],
+    "rest_hang_risks": [],
+    "visual_required_no_enforcement": [],
+    "grid_track_overflow_risks": [],
+    "hook_signature_drift": [],
+    "adapter_undefined_calls": [],
+    "registry_bypasses": [],
+    "suppressed_baseline_inventory": { "stub_class_missing": { "count": 0, "action": "n/a" }, "stub_const_missing": { "count": 0, "action": "n/a" }, "undef_var_risk": { "count": 0, "action": "n/a" }, "real_type_debt": { "count": 0, "action": "n/a" }, "phpcs_excludes": { "count": 9, "action": "Per-line phpcs:ignore on intentional direct $wpdb xprofile reads + EscapeOutput on widget before/after markup — review during any refactor" } },
+    "registry_strategy": [],
+    "notes": [
+      "BB-1 (high): assets/inc/buddypress-birthdays-widget.php:81,84 echo $args['before_widget'] / before_title + esc_html(title) + $args['after_title'] are emitted with EscapeOutput suppressed. before/after_widget/title come from register_sidebar and are trusted, but the line 84 concatenation mixes trusted wrappers with escaped title — acceptable, flagged for awareness.",
+      "BB-2 (medium): core-init.php:294-297 and admin/class-bp-birthdays-admin.php:596-599 run direct $wpdb queries against {prefix}bp_xprofile_fields with NoCaching; on large member sites the widget/shortcode field-discovery query and the cron get_todays_birthdays full-table DATE_FORMAT scan (notifications.php:454-466) are unindexed (DATE_FORMAT(d.value,...) is non-sargable) — full xprofile_data scan per cron run. Document as scale risk.",
+      "BB-3 (medium): assets/inc/buddypress-birthdays-widget.php:373-435 'all members' path selects ALL user_ids with the field set (no LIMIT), then loops every member doing per-user xprofile + visibility lookups (N+1). On 2000+ member sites the widget render is O(members). birthdays_to_display only trims AFTER the full fetch+sort. Big-site readiness gap.",
+      "BB-4 (low): send_bp_notifications (notifications.php:628-635) caps non-friends recipients at number=500 via get_users — silently truncates notification fan-out on larger communities."
+    ]
+  },
+  "buddypress_integration": {
+    "enabled_when": "class_exists('BuddyPress'); plugin self-deactivates on admin_init if absent",
+    "manager": "BP_Birthdays_Notifications (bp_loaded) + Widget_Buddypress_Birthdays",
+    "sub_classes": ["BP_Birthdays_Notifications", "Widget_Buddypress_Birthdays", "BP_Birthdays_Helpers"],
+    "components_used": ["xprofile (required)", "activity (optional)", "notifications (optional)", "friends (optional)", "messages (optional)", "follow/BP-Follow (optional)", "emails"]
+  },
+  "frontend_assets": {
+    "js": [
+      { "handle": "bb-core", "src": "assets/js/bb-core.js", "deps": ["jquery"], "localized": "bbBirthdays", "where": "core-init.php:71" },
+      { "handle": "bp-birthdays-admin", "src": "admin/js/admin-settings.js", "deps": ["jquery"], "where": "admin/class-bp-birthdays-admin.php:219" }
+    ],
+    "css": [
+      { "handle": "bb-core", "src": "assets/css/bb-core.css", "where": "core-init.php:45" },
+      { "handle": "bp-birthdays-admin", "src": "admin/css/admin-settings.css", "where": "admin/class-bp-birthdays-admin.php:212" }
+    ]
+  },
+  "cron": [
+    { "hook": "bb_cleanup_old_wishes", "interval": "daily", "handler": "core-init.php::bb_cleanup_old_wishes (+ bb_daily_cache_clear)", "scheduled_at": "core-init.php:505", "purpose": "Prune bb_birthday_wished_users meta older than 7 days; daily cache flush" },
+    { "hook": "bp_birthdays_daily_check", "interval": "daily", "handler": "BP_Birthdays_Notifications::process_daily_birthdays", "scheduled_at": "includes/class-bp-birthdays-notifications.php:368", "purpose": "Find today's birthdays; send greeting emails / activity posts / BP notifications / admin summary per settings" }
+  ],
+  "wp_cli": [],
+  "storage_drivers": [],
+  "security": {
+    "uploads_gate": "n/a",
+    "signing_entry_points": [],
+    "always_sign_filter": null,
+    "rate_limit_middleware": "none",
+    "ajax_nonce": "bb_birthdays_nonce (verified in bb_birthdays_ajax_handler before dispatch)",
+    "notes": "Public nopriv AJAX action bb_birthdays_action is registered; its refresh_widget sub-action gates on is_user_logged_in()+current_user_can('read'), mark_wished requires get_current_user_id(); default branch returns error. wppqa nonce-no-cap heuristic does not understand nopriv endpoints and may false-positive here — pre-triaged as FALSE POSITIVE."
+  },
+  "ci_guards": { "script": ".github/workflows/ci.yml", "url_emission_regex": null, "storage_internal_marker": null, "phpstan_level": "see phpstan.neon" },
+  "coding_rules": [],
+  "build_commands": { "release": "grunt (see gruntfile.js) — builds dist/buddypress-birthdays-<ver>.zip", "ci_local": "composer (see composer.json) / phpstan.neon" },
+  "category_sources": {
+    "ajax": ["core-init.php"],
+    "admin_pages": ["admin/**/*.php"],
+    "settings": ["admin/**/*.php", "core-init.php", "includes/**/*.php"],
+    "shortcodes": ["core-init.php"],
+    "hooks_fired": ["**/*.php"],
+    "cron": ["core-init.php", "includes/**/*.php"],
+    "frontend_assets": ["core-init.php", "admin/**/*.php", "assets/**/*.{js,css}"]
+  },
+  "generated": {
+    "at": "2026-06-05T00:00:00+05:30",
+    "from": "wp-plugin-onboard skill (onboarding-only, no scaffold)",
+    "branch": "2.5.0",
+    "source_commit": "3f530d4341fab4132715e802b716bbd033443bd9",
+    "schema_version": "v2.2",
+    "scan_scope": "fallback_defaults (excluded dist/, node_modules/, vendor/)",
+    "php_file_count": 6,
+    "size_class": "Small",
+    "admin_wrapper": "NONE (self-contained WP Settings API tab page; no Wbcom OLD/INTERMEDIATE/NEW wrapper)"
+  }
+}
