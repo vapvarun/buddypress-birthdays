@@ -15,6 +15,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Widget_Buddypress_Birthdays extends WP_Widget {
 
 	/**
+	 * Batch-primed map of raw birthday values, keyed "field_id:user_id".
+	 *
+	 * Populated by prime_birthday_values() so the per-member render loop can
+	 * avoid an N+1 of two DB queries (meta + value) per user. A value of false
+	 * means "primed, but this user has no value" (distinct from "not primed").
+	 *
+	 * @var array<string,mixed>
+	 */
+	private $primed_values = array();
+
+	/**
+	 * Batch-primed field date formats, keyed by field_id.
+	 *
+	 * @var array<int,string>
+	 */
+	private $primed_date_formats = array();
+
+	/**
 	 * Set up optional widget args.
 	 */
 	public function __construct() {
@@ -394,7 +412,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			if ( $field_id ) {
 				global $wpdb;
 
-				// Get field date format
+				// Get field date format.
 				$field_date_format = $wpdb->get_var(
 					$wpdb->prepare(
 						"SELECT meta_value FROM {$wpdb->prefix}bp_xprofile_meta WHERE object_id = %d AND object_type = 'field' AND meta_key = 'date_format'",
@@ -403,17 +421,84 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				);
 
 				if ( ! $field_date_format ) {
-					$field_date_format = 'Y-m-d'; // default
+					$field_date_format = 'Y-m-d'; // Default.
 				}
 
 				// Define date range.
 				$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
 
+				/*
+				 * BB-3 scale fix: bound the candidate pool in SQL.
+				 *
+				 * Previously the "all members" path selected EVERY user_id with
+				 * the field set (no LIMIT) and then looped all of them doing
+				 * per-user xProfile + visibility lookups (O(members) N+1), only
+				 * trimming to the configured display count AFTER the full fetch
+				 * and sort. On 2000+ member sites that is unusable.
+				 *
+				 * The widget never shows more than `birthdays_to_display`
+				 * members, and the final order is "soonest upcoming birthday
+				 * first". So we only need the N members whose next birthday is
+				 * closest to today. We compute that ordering directly in SQL
+				 * (same STR_TO_DATE/DATE_FORMAT semantics already used for the
+				 * weekly/monthly window) and LIMIT to a bounded pool. The pool
+				 * is `birthdays_to_display * candidate_multiplier` so that rows
+				 * later dropped by visibility / activation / self-exclusion
+				 * still leave enough to fill the display. Result + order are
+				 * preserved for realistic sizes; the cap is filterable.
+				 */
+				$display_count = isset( $data['birthdays_to_display'] ) ? absint( $data['birthdays_to_display'] ) : 5;
+				if ( $display_count < 1 ) {
+					$display_count = 5;
+				}
+
+				/**
+				 * Filter the multiplier applied to the display count to size the
+				 * SQL candidate pool for the "all members" widget path.
+				 *
+				 * The candidate pool = display_count * multiplier. A higher value
+				 * tolerates more rows being dropped by visibility/activation
+				 * filtering before the display is short; a lower value is faster.
+				 *
+				 * @param int   $multiplier Default 4.
+				 * @param array $data       Widget instance settings.
+				 */
+				$candidate_multiplier = (int) apply_filters( 'bb_birthdays_widget_candidate_multiplier', 4, $data );
+				if ( $candidate_multiplier < 1 ) {
+					$candidate_multiplier = 1;
+				}
+
+				/**
+				 * Filter the absolute cap on the "all members" widget candidate
+				 * pool size (the SQL LIMIT). This is the hard upper bound on how
+				 * many rows the widget will pull + iterate per render, protecting
+				 * very large communities regardless of the configured display
+				 * count.
+				 *
+				 * @param int   $cap  Default 200.
+				 * @param array $data Widget instance settings.
+				 */
+				$candidate_cap = (int) apply_filters( 'bb_birthdays_widget_candidate_cap', 200, $data );
+				if ( $candidate_cap < 1 ) {
+					$candidate_cap = 1;
+				}
+
+				$candidate_limit = min( $candidate_cap, max( $display_count, $display_count * $candidate_multiplier ) );
+
+				// Use standard DateTime with WordPress timezone for the window.
+				$wp_timezone = wp_timezone();
+				$today       = new DateTime( 'now', $wp_timezone );
+				$start_md    = $today->format( 'm-d' );
+
+				$parsed_date_sql = "STR_TO_DATE(value, '$field_date_format')";
+				$month_day_sql   = "DATE_FORMAT($parsed_date_sql, '%m-%d')";
+
+				// Order by distance from today's month-day so the LIMIT keeps the
+				// members whose birthdays are soonest -- the same members the PHP
+				// sort would surface and display.
+				$order_by_sql = "CASE WHEN $month_day_sql >= '$start_md' THEN 0 ELSE 1 END ASC, $month_day_sql ASC";
+
 				if ( 'monthly' === $birthdays_limit || 'weekly' === $birthdays_limit ) {
-					// Use standard DateTime with WordPress timezone.
-					$wp_timezone = wp_timezone();
-					$today = new DateTime( 'now', $wp_timezone );
-					$start_md = $today->format( 'm-d' );
 					$end_date = clone $today;
 
 					if ( 'monthly' === $birthdays_limit ) {
@@ -423,8 +508,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					}
 
 					$end_md = $end_date->format( 'm-d' );
-					$parsed_date_sql = "STR_TO_DATE(value, '$field_date_format')";
-					$month_day_sql = "DATE_FORMAT($parsed_date_sql, '%m-%d')";
 
 					if ( $end_md >= $start_md ) {
 						$date_where = "$month_day_sql BETWEEN '$start_md' AND '$end_md'";
@@ -432,18 +515,18 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 						$date_where = "($month_day_sql BETWEEN '$start_md' AND '12-31' OR $month_day_sql BETWEEN '01-01' AND '$end_md')";
 					}
 
-					$query = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND $date_where";
+					// field_id is indexed; the DATE_FORMAT predicate only runs on
+					// this field's rows. ORDER BY + LIMIT bound the result set.
+					$query = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND $date_where ORDER BY $order_by_sql LIMIT %d";
 					$users_with_birthday = $wpdb->get_col(
-						$wpdb->prepare( $query, $field_id ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $date_where is built from DateTime::format(), not user input.
-
+						$wpdb->prepare( $query, $field_id, $candidate_limit ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $date_where/$order_by_sql are built from DateTime::format() + field date_format meta, not user input; values are parameterised.
 					);
 				} else {
-					// No limit, fetch all
+					// No range limit: instead of fetching every member, order by
+					// upcoming-birthday proximity and pull only the bounded pool.
+					$query = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' ORDER BY $order_by_sql LIMIT %d";
 					$users_with_birthday = $wpdb->get_col(
-						$wpdb->prepare(
-							"SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != ''",
-							$field_id
-						)
+						$wpdb->prepare( $query, $field_id, $candidate_limit ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $order_by_sql is built from DateTime::format() + field date_format meta, not user input; values are parameterised.
 					);
 				}
 
@@ -482,6 +565,14 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		}
 
 		$end_date_end->setTime( 23, 59, 59 );
+
+		// BB-3 scale fix: batch-prime the per-user birthday values + the field
+		// date format in a single query so the foreach below does NOT run two
+		// SQL queries (meta + value) per member. get_user_birthday_data()
+		// reads this primed map first and only falls back to per-user queries
+		// for any id not covered here. The pool is already bounded by the SQL
+		// LIMIT above, so this prime is itself bounded.
+		$this->prime_birthday_values( absint( $field_id ), array_map( 'absint', (array) $members ) );
 
 		foreach ( $members as $user_id ) {
 			// Skip current user.
@@ -604,6 +695,85 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	}
 
 	/**
+	 * Batch-prime birthday values + date format for a bounded set of users.
+	 *
+	 * Runs ONE query for the field's date_format meta and ONE query for the
+	 * raw values of all the given user ids, populating $this->primed_values
+	 * and $this->primed_date_formats. This replaces the per-user N+1 (two
+	 * queries each) that get_user_birthday_data() would otherwise incur inside
+	 * the render loop. Safe to call repeatedly; only un-primed ids are fetched.
+	 *
+	 * @param int   $field_id The xProfile field id.
+	 * @param int[] $user_ids Bounded list of candidate user ids.
+	 * @return void
+	 */
+	private function prime_birthday_values( $field_id, array $user_ids ) {
+		$field_id = absint( $field_id );
+
+		if ( ! $field_id ) {
+			return;
+		}
+
+		global $wpdb;
+
+		// Prime the field date format once per field.
+		if ( ! isset( $this->primed_date_formats[ $field_id ] ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time field metadata read, primed for the whole render.
+			$field_date_format = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT meta_value FROM {$wpdb->prefix}bp_xprofile_meta WHERE object_id = %d AND object_type = 'field' AND meta_key = 'date_format'",
+					$field_id
+				)
+			);
+
+			$this->primed_date_formats[ $field_id ] = ! empty( $field_date_format ) ? $field_date_format : 'Y-m-d';
+		}
+
+		// Only fetch ids not already primed.
+		$user_ids = array_values( array_unique( array_filter( array_map( 'absint', $user_ids ) ) ) );
+		$to_fetch = array();
+
+		foreach ( $user_ids as $uid ) {
+			if ( ! array_key_exists( $field_id . ':' . $uid, $this->primed_values ) ) {
+				$to_fetch[] = $uid;
+			}
+		}
+
+		if ( empty( $to_fetch ) ) {
+			return;
+		}
+
+		$placeholders = implode( ',', array_fill( 0, count( $to_fetch ), '%d' ) );
+		$params       = array_merge( array( $field_id ), $to_fetch );
+
+		// Build the IN() clause from a generated list of %d tokens (one per id),
+		// then bind every value via prepare(). The only interpolation is the
+		// placeholder list itself, which contains no user input.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $placeholders is a generated list of %d tokens, not user input.
+		$sql = "SELECT user_id, value FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND user_id IN ($placeholders)";
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Bounded batch prime; all values parameterised via $params.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare( $sql, $params ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql uses %d placeholders bound by $params.
+			ARRAY_A
+		);
+
+		// Seed every requested id as false (no value) so a missing row is
+		// recorded as "primed, empty" rather than re-queried per user.
+		foreach ( $to_fetch as $uid ) {
+			$this->primed_values[ $field_id . ':' . $uid ] = false;
+		}
+
+		if ( $rows ) {
+			foreach ( $rows as $row ) {
+				$uid = absint( $row['user_id'] );
+				$val = $row['value'];
+				$this->primed_values[ $field_id . ':' . $uid ] = ( '' === $val || null === $val ) ? false : $val;
+			}
+		}
+	}
+
+	/**
 	 * Get user birthday data with multiple fallback methods
 	 *
 	 * @param string $field_id The field ID.
@@ -614,18 +784,42 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$birthday_string = '';
 		$date_format     = 'Y-m-d'; // Default format.
 
-		// Get the configured date format from field metadata.
-		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time query for field metadata.
-		$field_date_format = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT meta_value FROM {$wpdb->prefix}bp_xprofile_meta WHERE object_id = %d AND object_type = 'field' AND meta_key = 'date_format'",
-				$field_id
-			)
-		);
+		$field_id_int = absint( $field_id );
+		$user_id_int  = absint( $user_id );
+		$prime_key    = $field_id_int . ':' . $user_id_int;
 
-		if ( ! empty( $field_date_format ) ) {
-			$date_format = $field_date_format;
+		// BB-3 scale fix: serve from the batch-primed map when available so we
+		// skip the per-user meta + value queries. prime_birthday_values()
+		// populates both maps for the bounded candidate pool in one query each.
+		if ( isset( $this->primed_date_formats[ $field_id_int ] ) ) {
+			$date_format = $this->primed_date_formats[ $field_id_int ];
+		}
+
+		if ( array_key_exists( $prime_key, $this->primed_values ) ) {
+			$primed = $this->primed_values[ $prime_key ];
+
+			return array(
+				'raw_data'    => ( false === $primed ) ? '' : maybe_unserialize( $primed ),
+				'date_format' => $date_format,
+			);
+		}
+
+		// Not primed (or primed map missed this id) -- fall back to per-user
+		// lookups. This keeps the method correct outside the bounded loop.
+		global $wpdb;
+
+		if ( ! isset( $this->primed_date_formats[ $field_id_int ] ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time query for field metadata.
+			$field_date_format = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT meta_value FROM {$wpdb->prefix}bp_xprofile_meta WHERE object_id = %d AND object_type = 'field' AND meta_key = 'date_format'",
+					$field_id
+				)
+			);
+
+			if ( ! empty( $field_date_format ) ) {
+				$date_format = $field_date_format;
+			}
 		}
 
 		// Method 1: Standard BP XProfile method.

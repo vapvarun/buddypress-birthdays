@@ -450,11 +450,32 @@ class BP_Birthdays_Notifications {
 
 		$today_month_day = wp_date( 'm-d' );
 
+		/*
+		 * BB-2 scale fix: scope the scan to the configured birthday field_id,
+		 * which is indexed on {prefix}bp_xprofile_data (the `field_id` key).
+		 *
+		 * The `d.field_id = %d` predicate is sargable and lets MySQL use the
+		 * field_id index, so the non-sargable `DATE_FORMAT(d.value,'%m-%d')`
+		 * comparison only runs on THIS field's rows (one row per member who set
+		 * a birthday) -- not a full scan of every xProfile value in the table.
+		 * USE INDEX (field_id) is an explicit hint so a stale optimizer can't
+		 * fall back to a full table scan.
+		 *
+		 * Residual cost: DATE_FORMAT still runs per candidate row because DOB is
+		 * stored as a free-form date string in `value` (format varies per field
+		 * via the date_format meta), so there is no stored month-day column to
+		 * index against. A fully sargable rewrite would require a generated
+		 * column or a parallel index table, which is out of scope here and would
+		 * change BuddyPress-owned storage. The field_id scoping keeps the per-run
+		 * cost proportional to "members with a birthday set", not "all xProfile
+		 * data rows". Date-match semantics (timezone via wp_date, leap-day) are
+		 * unchanged.
+		 */
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT d.user_id, d.value, u.display_name, u.user_email
-				FROM {$wpdb->prefix}bp_xprofile_data d
+				FROM {$wpdb->prefix}bp_xprofile_data d USE INDEX (field_id)
 				JOIN {$wpdb->users} u ON d.user_id = u.ID
 				WHERE d.field_id = %d
 				AND d.value != ''
@@ -610,6 +631,22 @@ class BP_Birthdays_Notifications {
 	}
 
 	/**
+	 * Log a diagnostic message (debug builds only).
+	 *
+	 * Used to surface non-fatal scale conditions (e.g. notification fan-out
+	 * truncation) without adding noise to production sites.
+	 *
+	 * @param string $message Message to log.
+	 * @return void
+	 */
+	private function log( $message ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug-gated diagnostic.
+			error_log( $message );
+		}
+	}
+
+	/**
 	 * Send BuddyPress notifications about birthday.
 	 *
 	 * @param int   $user_id User ID.
@@ -625,13 +662,48 @@ class BP_Birthdays_Notifications {
 		if ( $friends_only && function_exists( 'friends_get_friend_user_ids' ) ) {
 			$recipients = friends_get_friend_user_ids( $user_id );
 		} else {
+			/**
+			 * Filter the maximum number of recipients for the non-friends
+			 * birthday notification fan-out.
+			 *
+			 * BB-4: previously hard-capped at 500 with no notice. The cap still
+			 * exists to protect against unbounded notification writes on very
+			 * large communities, but it is now adjustable and the truncation is
+			 * logged below instead of being silent.
+			 *
+			 * @param int $limit   Default 500. Use 0 / -1 for no cap (unbounded).
+			 * @param int $user_id The birthday user whose birthday is being announced.
+			 */
+			$recipient_limit = (int) apply_filters( 'bb_birthdays_notification_recipient_limit', 500, $user_id );
+			$query_number    = ( $recipient_limit > 0 ) ? $recipient_limit : -1;
+
 			$recipients = get_users(
 				array(
 					'fields'  => 'ID',
-					'number'  => 500,
+					'number'  => $query_number,
 					'exclude' => array( $user_id ),
 				)
 			);
+
+			// Surface the truncation rather than silently dropping recipients.
+			// Gated on WP_DEBUG up front so the count_users() call below (which
+			// is itself expensive on large sites) only runs on debug builds.
+			if ( $recipient_limit > 0 && count( $recipients ) >= $recipient_limit
+				&& defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				$total_members = (int) count_users()['total_users'];
+
+				if ( $total_members - 1 > $recipient_limit ) {
+					$this->log(
+						sprintf(
+							/* translators: 1: cap, 2: total candidate members, 3: birthday user id */
+							'BP Birthdays: non-friends notification fan-out truncated to %1$d of %2$d eligible members for birthday user %3$d. Raise via the "bb_birthdays_notification_recipient_limit" filter.',
+							$recipient_limit,
+							max( 0, $total_members - 1 ),
+							$user_id
+						)
+					);
+				}
+			}
 		}
 
 		if ( empty( $recipients ) ) {

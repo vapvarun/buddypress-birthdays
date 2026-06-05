@@ -180,3 +180,125 @@ browser pass after activation before release.
   site, so this was deferred per the no-activate constraint.
 - Confirm 2.5.0 version bump is intended for this release (README.txt
   `Stable tag` was not in scope here — verify before tagging).
+
+---
+
+# PERF — big-site-readiness scale pass (branch 2.5.0)
+
+**Date:** 2026-06-05
+**Scope:** Resolve the three scale findings (BB-2, BB-3, BB-4) that were
+logged "out of scope" in the wrapper-migration pass above. Scale refactor
+only — behavior and output preserved. NOT committed / pushed. No DB writes,
+no activation toggles. The card-panel wrapper + `cache_duration` TTL fix from
+the migration pass remain intact and untouched.
+
+## Files + lines changed
+
+| File | Lines (post-edit) | Finding |
+|---|---|---|
+| `assets/inc/buddypress-birthdays-widget.php` | 17-31 (new primed-map props), 409-519 ("all members" bounded query), 549-557 (batch-prime call before render loop), 698-770 (`prime_birthday_values()` method), 780-846 (`get_user_birthday_data()` primed-map fast path) | BB-3 |
+| `includes/class-bp-birthdays-notifications.php` | 451-486 (cron query: field_id scoping comment + `USE INDEX (field_id)`), 633-647 (`log()` helper), 657-695 (filterable recipient cap + truncation log) | BB-2, BB-4 |
+
+## Approach — BB-3 (widget "all members", HIGH)
+
+The widget never displays more than `birthdays_to_display` members, and the
+final order is "soonest upcoming birthday first". The old code fetched EVERY
+user_id with the field set (no `LIMIT`), looped all of them with two DB
+queries each (xProfile meta + value) plus a per-user visibility call
+(O(members) N+1), then trimmed to the display count only AFTER the full
+fetch + sort.
+
+Fix, three parts:
+
+1. **Bound the query.** The "all members" SQL (both the weekly/monthly window
+   branch and the previously-unbounded "no limit" branch) now `ORDER BY` the
+   distance from today's month-day (`CASE WHEN month_day >= today THEN 0 ELSE
+   1 END, month_day`) and `LIMIT` to a bounded candidate pool. Because the
+   order matches the existing PHP "today/soonest first, then chronological"
+   sort, the `LIMIT` keeps the *same members* that would actually be
+   displayed — output + order preserved for realistic sizes. Verified against
+   the live DB: today 06-05 → first row 06-06, ascending through the year,
+   wrapping to 01-01 after 12-12.
+2. **Filterable cap.** Pool size = `birthdays_to_display * multiplier`,
+   clamped to an absolute cap. Both are filterable:
+   `bb_birthdays_widget_candidate_multiplier` (default 4) and
+   `bb_birthdays_widget_candidate_cap` (default 200). The multiplier gives
+   headroom for rows later dropped by visibility/activation/self-exclusion;
+   the cap is the hard upper bound on rows pulled + iterated per render.
+3. **Kill the N+1.** New `prime_birthday_values( $field_id, $user_ids )` runs
+   ONE query for the field `date_format` meta and ONE `WHERE field_id = %d AND
+   user_id IN (…)` query for all candidate values, into per-instance maps.
+   `get_user_birthday_data()` now reads those maps first and only falls back
+   to per-user queries for ids the prime missed (correctness outside the
+   bounded loop). Missing rows are primed as `false` ("primed, empty") so they
+   are not re-queried. Primed values come from the same `value` column that
+   the old Method-2 fallback read, and `clean_birthday_string()` handles the
+   serialized/array forms identically — so resolution is byte-compatible.
+   The whole result remains wrapped by the existing object-cache
+   (`cache_duration`-driven TTL) — cache path untouched.
+
+Net: render cost drops from O(all members with field) with 2N+1 queries to a
+bounded pool (≤ cap) with 2 priming queries + the bounded visibility calls.
+
+## Approach — BB-2 (cron full scan, MED)
+
+`get_todays_birthdays()` already constrained on `d.field_id = %d` (the indexed
+column), so MySQL was already able to narrow to the field's rows before the
+non-sargable `DATE_FORMAT(d.value,'%m-%d')` ran. A fully sargable rewrite is
+impractical: DOB is stored as a free-form date string in `value` (format
+varies per field via `date_format` meta), so there is no stored month-day
+column to index. Per the brief's fallback, I (a) added `USE INDEX (field_id)`
+so a stale optimizer cannot pick a full scan, and (b) added a code comment
+documenting the residual per-candidate `DATE_FORMAT` cost and why a generated
+column / parallel index table is out of scope (would change BP-owned storage).
+Date-match semantics (`wp_date` timezone, leap-day) unchanged. `EXPLAIN`
+verified: `key = field_id`, type `ref`, rows = field's rows only (25 here),
+user join `eq_ref` on PRIMARY — no full table scan.
+
+## Approach — BB-4 (silent 500 fan-out cap, LOW)
+
+The non-friends `get_users( number => 500 )` cap is retained (it protects
+against unbounded notification writes) but is now (a) filterable via
+`bb_birthdays_notification_recipient_limit` (default 500; `0`/`-1` = no cap),
+and (b) no longer silent — when the result hits the cap and more eligible
+members exist, a new debug-gated `log()` helper records the truncation and
+points to the filter. The `count_users()` confirmation only runs on
+`WP_DEBUG` builds (gated up front) so production pays nothing.
+
+## Verification
+
+- `php -l` — both files: **no syntax errors**.
+- WPCS (`wpcs_check_file`):
+  - widget: **0 errors**, 20 warnings — all pre-existing categories
+    (assignment alignment, `$_GET` pagination nonce-recommended, intentional
+    direct xProfile reads / NoCaching that the plugin already accepts and
+    documents). No NEW errors.
+  - notifications: **0 errors**, 3 warnings — all pre-existing and unrelated
+    to this change (unused params on other methods, `$default` reserved-word
+    param). No NEW errors.
+- PHP compatibility (`wpcs_check_php_compatibility` 7.4–8.4): both **PASSED**.
+- Widget query **bounded + batched + cached**: SQL now carries `ORDER BY …
+  LIMIT`; per-user lookups replaced by 2 priming queries; result still stored
+  via the existing `wp_cache_set` with the `cache_duration` TTL.
+- Cron query **scoped to field_id**: `EXPLAIN` confirms `key = field_id`
+  (type `ref`), no full scan; `USE INDEX (field_id)` hint applied.
+- Fan-out cap **filterable**: `bb_birthdays_notification_recipient_limit` +
+  truncation logged.
+
+## New filters introduced
+
+| Filter | Default | Purpose |
+|---|---|---|
+| `bb_birthdays_widget_candidate_multiplier` | `4` | Sizes the "all members" SQL candidate pool (× display count). |
+| `bb_birthdays_widget_candidate_cap` | `200` | Hard upper bound on the candidate pool / SQL `LIMIT`. |
+| `bb_birthdays_notification_recipient_limit` | `500` | Non-friends notification fan-out cap (`0`/`-1` = unbounded). |
+
+## Needs human eyes
+
+- Functional QA on a seeded 2000+ member / 500+ birthday dataset to confirm
+  the bounded widget output matches the old unbounded output for the default
+  display counts (plugin is inactive on this site; not seeded here per the
+  no-activate constraint).
+- If a site sets very large `birthdays_to_display` with deep pagination, the
+  candidate cap (200) may clip the long tail — raise via
+  `bb_birthdays_widget_candidate_cap` for those sites.
