@@ -214,6 +214,90 @@ class BP_Birthdays_Helpers {
 	}
 
 	/**
+	 * Convert a PHP date format string to its MySQL DATE_FORMAT / STR_TO_DATE
+	 * equivalent.
+	 *
+	 * BuddyPress stores a datebox field's `date_format` meta as a PHP date
+	 * format (e.g. `Y-m-d`). MySQL's STR_TO_DATE()/DATE_FORMAT() use their own
+	 * `%`-prefixed specifiers (e.g. `%Y-%m-%d`), so passing the PHP format
+	 * straight into SQL makes STR_TO_DATE() return NULL for every row.
+	 *
+	 * Tokens without a MySQL equivalent (ordinal suffix `S`, timezone tokens)
+	 * are dropped; backslash-escaped characters become literals; a literal `%`
+	 * is escaped as `%%` for MySQL.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param string $php_format PHP date format (e.g. 'Y-m-d', 'd/m/Y').
+	 * @return string MySQL format string (e.g. '%Y-%m-%d', '%d/%m/%Y').
+	 */
+	public static function php_to_mysql_date_format( $php_format ) {
+		$map = array(
+			// Day.
+			'd' => '%d',
+			'j' => '%e',
+			'D' => '%a',
+			'l' => '%W',
+			'N' => '%w',
+			'w' => '%w',
+			'z' => '%j',
+			'S' => '', // Ordinal suffix — no standalone MySQL token.
+			// Month.
+			'm' => '%m',
+			'n' => '%c',
+			'M' => '%b',
+			'F' => '%M',
+			// Year.
+			'Y' => '%Y',
+			'y' => '%y',
+			'o' => '%Y',
+			// Time.
+			'H' => '%H',
+			'G' => '%k',
+			'h' => '%h',
+			'g' => '%l',
+			'i' => '%i',
+			's' => '%s',
+			'A' => '%p',
+			'a' => '%p',
+			'u' => '%f',
+			// No MySQL equivalent — dropped.
+			'v' => '',
+			'e' => '',
+			'T' => '',
+			'P' => '',
+			'O' => '',
+			'U' => '',
+		);
+
+		$php_format = (string) $php_format;
+		$mysql      = '';
+		$length     = strlen( $php_format );
+
+		for ( $i = 0; $i < $length; $i++ ) {
+			$char = $php_format[ $i ];
+
+			// A backslash escapes the next character to a literal in PHP formats.
+			if ( '\\' === $char && $i + 1 < $length ) {
+				++$i;
+				$literal = $php_format[ $i ];
+				$mysql  .= ( '%' === $literal ) ? '%%' : $literal;
+				continue;
+			}
+
+			if ( isset( $map[ $char ] ) ) {
+				$mysql .= $map[ $char ];
+			} elseif ( '%' === $char ) {
+				$mysql .= '%%';
+			} else {
+				$mysql .= $char;
+			}
+		}
+
+		return $mysql;
+	}
+
+	/**
 	 * Get days until next birthday.
 	 *
 	 * @param string $date Birth date string.

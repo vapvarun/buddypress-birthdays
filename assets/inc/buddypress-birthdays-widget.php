@@ -493,13 +493,44 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				$today       = new DateTime( 'now', $wp_timezone );
 				$start_md    = $today->format( 'm-d' );
 
-				$parsed_date_sql = "STR_TO_DATE(value, '$field_date_format')";
-				$month_day_sql   = "DATE_FORMAT($parsed_date_sql, '%m-%d')";
+				/*
+				 * The field's `date_format` meta is a PHP date format (that is
+				 * what BuddyPress stores, e.g. 'Y-m-d'), but STR_TO_DATE()
+				 * needs MySQL '%'-specifiers ('%Y-%m-%d'). Interpolating the
+				 * PHP format directly made STR_TO_DATE() return NULL for every
+				 * row, breaking the weekly/monthly window and the upcoming-
+				 * birthday ordering. Convert it before it reaches SQL.
+				 *
+				 * When the meta is missing, BuddyPress stores datebox values as
+				 * 'Y-m-d H:i:s'; STR_TO_DATE() with '%Y-%m-%d' parses the date
+				 * part and ignores the trailing time component, so the default
+				 * covers both plain-date and datetime stored values.
+				 */
+				$mysql_date_format = class_exists( 'BP_Birthdays_Helpers' )
+					? BP_Birthdays_Helpers::php_to_mysql_date_format( $field_date_format )
+					: '%Y-%m-%d';
+				if ( '' === $mysql_date_format ) {
+					$mysql_date_format = '%Y-%m-%d';
+				}
+
+				/*
+				 * Build the query with real wpdb placeholders. The format
+				 * strings and month-day boundaries are bound as %s values (so
+				 * their '%' characters are data, not placeholders) and the
+				 * literal DATE_FORMAT mask is written as '%%m-%%d' so
+				 * wpdb::prepare() reads it as an escaped literal. Previously
+				 * the raw '%m-%d' masks were interpolated into the prepared
+				 * string, so prepare() miscounted placeholders and raised
+				 * "incorrect number of placeholders (4) for 2 arguments",
+				 * rejecting the query entirely.
+				 */
+				$month_day_sql = "DATE_FORMAT(STR_TO_DATE(value, %s), '%%m-%%d')";
 
 				// Order by distance from today's month-day so the LIMIT keeps the
 				// members whose birthdays are soonest -- the same members the PHP
 				// sort would surface and display.
-				$order_by_sql = "CASE WHEN $month_day_sql >= '$start_md' THEN 0 ELSE 1 END ASC, $month_day_sql ASC";
+				$order_by_sql  = "CASE WHEN {$month_day_sql} >= %s THEN 0 ELSE 1 END ASC, {$month_day_sql} ASC";
+				$order_by_args = array( $mysql_date_format, $start_md, $mysql_date_format );
 
 				if ( 'monthly' === $birthdays_limit || 'weekly' === $birthdays_limit ) {
 					$end_date = clone $today;
@@ -513,25 +544,27 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					$end_md = $end_date->format( 'm-d' );
 
 					if ( $end_md >= $start_md ) {
-						$date_where = "$month_day_sql BETWEEN '$start_md' AND '$end_md'";
+						$date_where      = "{$month_day_sql} BETWEEN %s AND %s";
+						$date_where_args = array( $mysql_date_format, $start_md, $end_md );
 					} else {
-						$date_where = "($month_day_sql BETWEEN '$start_md' AND '12-31' OR $month_day_sql BETWEEN '01-01' AND '$end_md')";
+						$date_where      = "({$month_day_sql} BETWEEN %s AND '12-31' OR {$month_day_sql} BETWEEN '01-01' AND %s)";
+						$date_where_args = array( $mysql_date_format, $start_md, $mysql_date_format, $end_md );
 					}
 
 					// field_id is indexed; the DATE_FORMAT predicate only runs on
 					// this field's rows. ORDER BY + LIMIT bound the result set.
-					$query = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND $date_where ORDER BY $order_by_sql LIMIT %d";
-					$users_with_birthday = $wpdb->get_col(
-						$wpdb->prepare( $query, $field_id, $candidate_limit ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $date_where/$order_by_sql are built from DateTime::format() + field date_format meta, not user input; values are parameterised.
-					);
+					$query      = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND {$date_where} ORDER BY {$order_by_sql} LIMIT %d";
+					$query_args = array_merge( array( $field_id ), $date_where_args, $order_by_args, array( $candidate_limit ) );
 				} else {
 					// No range limit: instead of fetching every member, order by
 					// upcoming-birthday proximity and pull only the bounded pool.
-					$query = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' ORDER BY $order_by_sql LIMIT %d";
-					$users_with_birthday = $wpdb->get_col(
-						$wpdb->prepare( $query, $field_id, $candidate_limit ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $order_by_sql is built from DateTime::format() + field date_format meta, not user input; values are parameterised.
-					);
+					$query      = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' ORDER BY {$order_by_sql} LIMIT %d";
+					$query_args = array_merge( array( $field_id ), $order_by_args, array( $candidate_limit ) );
 				}
+
+				$users_with_birthday = $wpdb->get_col(
+					$wpdb->prepare( $query, $query_args ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is assembled from static SQL fragments; every dynamic value (format strings, month-day bounds, ids, limit) is bound via %s/%d placeholders in $query_args.
+				);
 
 				$members = array_filter( array_map( 'absint', $users_with_birthday ) );
 			} else {
