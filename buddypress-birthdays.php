@@ -27,6 +27,18 @@ define( 'BIRTHDAY_WIDGET_VERSION', '2.5.0' );
 define( 'BIRTHDAY_WIDGET_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'BIRTHDAY_WIDGET_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 
+/**
+ * Load the plugin textdomain from the bundled languages/ directory.
+ *
+ * Required for this self-hosted (EDD) distribution: WordPress only
+ * auto-loads translations for plugins hosted on WordPress.org, so without
+ * this call the bundled .mo files are never loaded.
+ */
+function bb_birthdays_load_textdomain() {
+	load_plugin_textdomain( 'buddypress-birthdays', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+}
+add_action( 'init', 'bb_birthdays_load_textdomain' );
+
 // Let's Initialize Everything.
 if ( file_exists( plugin_dir_path( __FILE__ ) . 'core-init.php' ) ) {
 	require_once plugin_dir_path( __FILE__ ) . 'core-init.php';
