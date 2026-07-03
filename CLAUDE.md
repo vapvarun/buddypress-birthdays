@@ -50,6 +50,10 @@ Single stored option `bp_birthdays_settings` (group `bp_birthdays_settings_group
 ## Recent changes
 | Date | Type | Description | Files |
 |---|---|---|---|
+| 2026-07-03 | bug-fix | Widget "all members" SQL: convert PHP date_format meta to MySQL specifiers for STR_TO_DATE (was NULL for every row), prepare-safe `%%m-%%d` masks + bound args (was wpdb::prepare placeholder-count notice + rejected query). New `BP_Birthdays_Helpers::php_to_mysql_date_format()`. | `assets/inc/buddypress-birthdays-widget.php`, `includes/class-bp-birthdays-helpers.php` |
+| 2026-07-03 | bug-fix | Cache duration honoured on frontend: read `bp_birthdays_settings` option directly (admin class only loads in `is_admin()`, so TTL always fell back to 30 min). | `assets/inc/buddypress-birthdays-widget.php` |
+| 2026-07-03 | bug-fix | Birthday email templates now install: replaced dead `bp_get_email_post()` guard (function never existed in BP) with real post-type/taxonomy checks + idempotent per-type existence lookup. | `includes/class-bp-birthdays-notifications.php` |
+| 2026-07-03 | bug-fix | Docs link corrected to singular `/docs/buddypress-birthday/` slug. | `includes/admin/views/shell.php` |
 | 2026-06-05 | refactor | Migrated admin to card-panel under `wbcomplugins` hub (v2.5.0). New `BP_Birthdays_Admin_Panel` + views + token CSS/JS; legacy class trimmed to sanitizer/getter only; dropped `bp-settings`/options-general registration. Option key + 13 subkeys preserved. | `includes/admin/*`, `assets/css/admin.css`, `assets/js/admin.js`, `admin/class-bp-birthdays-admin.php`, `buddypress-birthdays.php` |
 | 2026-06-05 | bug-fix | Cache TTL now honours saved `cache_duration` (was hardcoded 30 min ghost control). | `assets/inc/buddypress-birthdays-widget.php` |
 | 2026-06-05 | onboard | Generated audit/ inventory + reports + graph + wppqa baseline; READ-FIRST CLAUDE.md | audit/*, CLAUDE.md |
