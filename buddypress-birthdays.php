@@ -61,6 +61,34 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'includes/class-bp-birthdays-not
 }
 
 /**
+ * Activation: schedule the plugin's daily cron events.
+ *
+ * Both events also self-heal while the plugin is active (core-init.php and
+ * BP_Birthdays_Notifications::schedule_cron() re-schedule on init if
+ * missing), but activation is the canonical point so the pair with the
+ * deactivation cleanup below is complete.
+ */
+function bb_birthdays_activate() {
+	if ( ! wp_next_scheduled( 'bb_cleanup_old_wishes' ) ) {
+		wp_schedule_event( time(), 'daily', 'bb_cleanup_old_wishes' );
+	}
+
+	if ( class_exists( 'BP_Birthdays_Notifications' ) ) {
+		BP_Birthdays_Notifications::get_instance()->schedule_cron();
+	}
+}
+register_activation_hook( __FILE__, 'bb_birthdays_activate' );
+
+/**
+ * Deactivation: clear BOTH daily cron events so no orphaned cron persists.
+ */
+function bb_birthdays_deactivate() {
+	wp_clear_scheduled_hook( 'bb_cleanup_old_wishes' );
+	wp_clear_scheduled_hook( 'bp_birthdays_daily_check' );
+}
+register_deactivation_hook( __FILE__, 'bb_birthdays_deactivate' );
+
+/**
  * Check BuddyPress is not activated.
  */
 function bb_check_bp_active() {
