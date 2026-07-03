@@ -86,7 +86,7 @@ $bbd_version = defined( 'BIRTHDAY_WIDGET_VERSION' ) ? BIRTHDAY_WIDGET_VERSION : 
 
 				<div class="bbd-snav-divider" role="separator"></div>
 				<p class="bbd-snav-section-label"><?php esc_html_e( 'Resources', 'buddypress-birthdays' ); ?></p>
-				<a href="https://docs.wbcomdesigns.com/docs/buddypress-birthdays/" class="bbd-snav-link" target="_blank" rel="noopener noreferrer">
+				<a href="https://docs.wbcomdesigns.com/docs/buddypress-birthday/" class="bbd-snav-link" target="_blank" rel="noopener noreferrer">
 					<span class="dashicons dashicons-book" aria-hidden="true"></span>
 					<?php esc_html_e( 'Documentation', 'buddypress-birthdays' ); ?>
 					<span class="dashicons dashicons-external bbd-snav-link__ext" aria-hidden="true"></span>
