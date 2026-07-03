@@ -415,17 +415,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			if ( $field_id ) {
 				global $wpdb;
 
-				// Get field date format.
-				$field_date_format = $wpdb->get_var(
-					$wpdb->prepare(
-						"SELECT meta_value FROM {$wpdb->prefix}bp_xprofile_meta WHERE object_id = %d AND object_type = 'field' AND meta_key = 'date_format'",
-						$field_id
-					)
-				);
-
-				if ( ! $field_date_format ) {
-					$field_date_format = 'Y-m-d'; // Default.
-				}
+				// Get field date format (cached in $this->primed_date_formats).
+				$field_date_format = $this->get_field_date_format( $field_id );
 
 				// Define date range.
 				$birthdays_limit = isset( $data['birthdays_range_limit'] ) ? $data['birthdays_range_limit'] : '';
@@ -450,43 +441,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				 * still leave enough to fill the display. Result + order are
 				 * preserved for realistic sizes; the cap is filterable.
 				 */
-				$display_count = isset( $data['birthdays_to_display'] ) ? absint( $data['birthdays_to_display'] ) : 5;
-				if ( $display_count < 1 ) {
-					$display_count = 5;
-				}
-
-				/**
-				 * Filter the multiplier applied to the display count to size the
-				 * SQL candidate pool for the "all members" widget path.
-				 *
-				 * The candidate pool = display_count * multiplier. A higher value
-				 * tolerates more rows being dropped by visibility/activation
-				 * filtering before the display is short; a lower value is faster.
-				 *
-				 * @param int   $multiplier Default 4.
-				 * @param array $data       Widget instance settings.
-				 */
-				$candidate_multiplier = (int) apply_filters( 'bb_birthdays_widget_candidate_multiplier', 4, $data );
-				if ( $candidate_multiplier < 1 ) {
-					$candidate_multiplier = 1;
-				}
-
-				/**
-				 * Filter the absolute cap on the "all members" widget candidate
-				 * pool size (the SQL LIMIT). This is the hard upper bound on how
-				 * many rows the widget will pull + iterate per render, protecting
-				 * very large communities regardless of the configured display
-				 * count.
-				 *
-				 * @param int   $cap  Default 200.
-				 * @param array $data Widget instance settings.
-				 */
-				$candidate_cap = (int) apply_filters( 'bb_birthdays_widget_candidate_cap', 200, $data );
-				if ( $candidate_cap < 1 ) {
-					$candidate_cap = 1;
-				}
-
-				$candidate_limit = min( $candidate_cap, max( $display_count, $display_count * $candidate_multiplier ) );
+				$candidate_limit = $this->get_candidate_limit( $data );
 
 				// Use standard DateTime with WordPress timezone for the window.
 				$wp_timezone = wp_timezone();
@@ -570,6 +525,23 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			} else {
 				$members = array();
 			}
+		}
+
+		/*
+		 * BB-3 scale fix (friends/followers path): friends_get_friend_user_ids()
+		 * and bp_follow_get_following() return EVERY friend/follower id, so a
+		 * member with thousands of connections would re-trigger the same
+		 * O(members) prime + iterate pattern the "all members" path was just
+		 * bounded against. Trim the id list to the same filterable candidate
+		 * pool, ordered by upcoming-birthday proximity in SQL, so both paths
+		 * share one bound.
+		 */
+		if ( isset( $data['show_birthdays_of'] ) && in_array( $data['show_birthdays_of'], array( 'friends', 'followers' ), true ) ) {
+			$members = $this->bound_members_by_upcoming_birthday(
+				array_values( array_filter( array_map( 'absint', (array) $members ) ) ),
+				isset( $data['birthday_field_name'] ) ? absint( $data['birthday_field_name'] ) : 0,
+				$data
+			);
 		}
 
 		$members_birthdays = array();
@@ -753,17 +725,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		global $wpdb;
 
 		// Prime the field date format once per field.
-		if ( ! isset( $this->primed_date_formats[ $field_id ] ) ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time field metadata read, primed for the whole render.
-			$field_date_format = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT meta_value FROM {$wpdb->prefix}bp_xprofile_meta WHERE object_id = %d AND object_type = 'field' AND meta_key = 'date_format'",
-					$field_id
-				)
-			);
-
-			$this->primed_date_formats[ $field_id ] = ! empty( $field_date_format ) ? $field_date_format : 'Y-m-d';
-		}
+		$this->get_field_date_format( $field_id );
 
 		// Only fetch ids not already primed.
 		$user_ids = array_values( array_unique( array_filter( array_map( 'absint', $user_ids ) ) ) );
@@ -807,6 +769,141 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				$this->primed_values[ $field_id . ':' . $uid ] = ( '' === $val || null === $val ) ? false : $val;
 			}
 		}
+	}
+
+	/**
+	 * Get the field's configured date format (a PHP date format string).
+	 *
+	 * Cached in $this->primed_date_formats so the meta row is read at most
+	 * once per field per render, whichever code path asks first.
+	 *
+	 * @param int $field_id The xProfile field id.
+	 * @return string PHP date format (defaults to 'Y-m-d').
+	 */
+	private function get_field_date_format( $field_id ) {
+		$field_id = absint( $field_id );
+
+		if ( ! $field_id ) {
+			return 'Y-m-d';
+		}
+
+		if ( ! isset( $this->primed_date_formats[ $field_id ] ) ) {
+			global $wpdb;
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-time field metadata read, cached for the whole render.
+			$field_date_format = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT meta_value FROM {$wpdb->prefix}bp_xprofile_meta WHERE object_id = %d AND object_type = 'field' AND meta_key = 'date_format'",
+					$field_id
+				)
+			);
+
+			$this->primed_date_formats[ $field_id ] = ! empty( $field_date_format ) ? $field_date_format : 'Y-m-d';
+		}
+
+		return $this->primed_date_formats[ $field_id ];
+	}
+
+	/**
+	 * Compute the bounded candidate-pool size for a widget render.
+	 *
+	 * The widget never displays more than `birthdays_to_display` members, so
+	 * every fetch path only needs a bounded pool of the members whose next
+	 * birthday is soonest. Pool = display_count * multiplier (headroom for
+	 * rows later dropped by visibility/activation/self-exclusion), hard-capped.
+	 *
+	 * @param array $data Widget instance settings.
+	 * @return int Candidate pool size (>= 1).
+	 */
+	private function get_candidate_limit( $data ) {
+		$display_count = isset( $data['birthdays_to_display'] ) ? absint( $data['birthdays_to_display'] ) : 5;
+		if ( $display_count < 1 ) {
+			$display_count = 5;
+		}
+
+		/**
+		 * Filter the multiplier applied to the display count to size the
+		 * SQL candidate pool for the widget fetch paths.
+		 *
+		 * The candidate pool = display_count * multiplier. A higher value
+		 * tolerates more rows being dropped by visibility/activation
+		 * filtering before the display is short; a lower value is faster.
+		 *
+		 * @param int   $multiplier Default 4.
+		 * @param array $data       Widget instance settings.
+		 */
+		$candidate_multiplier = (int) apply_filters( 'bb_birthdays_widget_candidate_multiplier', 4, $data );
+		if ( $candidate_multiplier < 1 ) {
+			$candidate_multiplier = 1;
+		}
+
+		/**
+		 * Filter the absolute cap on the widget candidate pool size (the SQL
+		 * LIMIT). This is the hard upper bound on how many rows the widget
+		 * will pull + iterate per render, protecting very large communities
+		 * regardless of the configured display count.
+		 *
+		 * @param int   $cap  Default 200.
+		 * @param array $data Widget instance settings.
+		 */
+		$candidate_cap = (int) apply_filters( 'bb_birthdays_widget_candidate_cap', 200, $data );
+		if ( $candidate_cap < 1 ) {
+			$candidate_cap = 1;
+		}
+
+		return min( $candidate_cap, max( $display_count, $display_count * $candidate_multiplier ) );
+	}
+
+	/**
+	 * Bound a member-id list to the candidate pool, ordered by upcoming birthday.
+	 *
+	 * Used by the friends/followers paths: their BP APIs return every
+	 * connection id, so this trims the list in SQL (same STR_TO_DATE /
+	 * DATE_FORMAT proximity ordering as the "all members" path) to the
+	 * filterable candidate pool before the per-member PHP loop runs.
+	 *
+	 * @param int[] $members  Candidate user ids (already absint-filtered).
+	 * @param int   $field_id The birthday xProfile field id.
+	 * @param array $data     Widget instance settings.
+	 * @return int[] Bounded list of user ids.
+	 */
+	private function bound_members_by_upcoming_birthday( array $members, $field_id, $data ) {
+		$field_id        = absint( $field_id );
+		$candidate_limit = $this->get_candidate_limit( $data );
+
+		if ( ! $field_id || count( $members ) <= $candidate_limit ) {
+			return $members;
+		}
+
+		global $wpdb;
+
+		$mysql_date_format = class_exists( 'BP_Birthdays_Helpers' )
+			? BP_Birthdays_Helpers::php_to_mysql_date_format( $this->get_field_date_format( $field_id ) )
+			: '%Y-%m-%d';
+		if ( '' === $mysql_date_format ) {
+			$mysql_date_format = '%Y-%m-%d';
+		}
+
+		$start_md = ( new DateTime( 'now', wp_timezone() ) )->format( 'm-d' );
+
+		// Same prepare-safe fragments as the "all members" path: the format
+		// string and month-day boundary are bound as %s values and the literal
+		// DATE_FORMAT mask is escaped as '%%m-%%d'.
+		$month_day_sql = "DATE_FORMAT(STR_TO_DATE(value, %s), '%%m-%%d')";
+		$order_by_sql  = "CASE WHEN {$month_day_sql} >= %s THEN 0 ELSE 1 END ASC, {$month_day_sql} ASC";
+
+		$in_placeholders = implode( ',', array_fill( 0, count( $members ), '%d' ) );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in_placeholders is a generated list of %d tokens; every dynamic value is bound via $query_args.
+		$query      = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND user_id IN ($in_placeholders) ORDER BY {$order_by_sql} LIMIT %d";
+		$query_args = array_merge( array( $field_id ), $members, array( $mysql_date_format, $start_md, $mysql_date_format, $candidate_limit ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bounded per-render trim; results feed the widget's own object cache.
+		$bounded = $wpdb->get_col(
+			$wpdb->prepare( $query, $query_args ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Static SQL fragments; all values bound via %s/%d placeholders in $query_args.
+		);
+
+		return array_values( array_filter( array_map( 'absint', (array) $bounded ) ) );
 	}
 
 	/**
