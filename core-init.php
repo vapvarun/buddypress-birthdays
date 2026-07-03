@@ -438,8 +438,10 @@ function bb_birthdays_ajax_handler() {
 			break;
 
 		case 'mark_wished':
-			// Mark that user has been wished.
-			$user_id         = filter_input( INPUT_POST, 'user_id', FILTER_SANITIZE_NUMBER_INT );
+			// Mark that user has been wished. Fired (fire-and-forget) by
+			// bb-core.js recordWish() when a member clicks the send-wishes
+			// button, before the browser navigates to the compose screen.
+			$user_id         = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
 			$current_user_id = get_current_user_id();
 
 			if ( $user_id && $current_user_id ) {
@@ -453,13 +455,15 @@ function bb_birthdays_ajax_handler() {
 					$wished_users[ $today ] = array();
 				}
 
-				if ( ! in_array( $user_id, $wished_users[ $today ], true ) ) {
+				if ( ! in_array( $user_id, array_map( 'absint', $wished_users[ $today ] ), true ) ) {
 					$wished_users[ $today ][] = $user_id;
 					update_user_meta( $current_user_id, 'bb_birthday_wished_users', $wished_users );
 				}
 
 				wp_send_json_success( array( 'message' => 'Wish recorded' ) );
 			}
+
+			wp_send_json_error( 'Authentication required' );
 			break;
 
 		default:

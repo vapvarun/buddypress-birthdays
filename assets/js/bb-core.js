@@ -76,16 +76,58 @@
 
             // Add loading state without changing button dimensions
             $button.addClass('loading').attr('aria-disabled', 'true');
-            
+
+            // Record the wish server-side (fire-and-forget) before the
+            // browser navigates to the private-message compose screen.
+            this.recordWish($button);
+
             // Optional: Track analytics
             this.trackWishEvent($button);
-            
+
             // No redirect message - let the browser handle navigation naturally
             
             // Remove loading state after navigation starts
             setTimeout(() => {
                 $button.removeClass('loading').removeAttr('aria-disabled');
             }, 1000);
+        },
+
+        recordWish: function($button) {
+            // Fire-and-forget: persist "current user wished this member today"
+            // via the mark_wished AJAX sub-action. Uses sendBeacon so the
+            // request survives the imminent navigation to the compose screen;
+            // falls back to a keepalive fetch, then jQuery POST.
+            if (typeof bbBirthdays === 'undefined' || !bbBirthdays.ajaxurl || !bbBirthdays.nonce) {
+                return;
+            }
+
+            const userId = parseInt($button.data('user-id'), 10);
+            if (!userId) {
+                return;
+            }
+
+            const data = new FormData();
+            data.append('action', 'bb_birthdays_action');
+            data.append('birthday_action', 'mark_wished');
+            data.append('user_id', userId);
+            data.append('nonce', bbBirthdays.nonce);
+
+            if (navigator.sendBeacon && navigator.sendBeacon(bbBirthdays.ajaxurl, data)) {
+                return;
+            }
+
+            if (window.fetch) {
+                fetch(bbBirthdays.ajaxurl, { method: 'POST', body: data, keepalive: true, credentials: 'same-origin' })
+                    .catch(function() { /* fire-and-forget */ });
+                return;
+            }
+
+            $.post(bbBirthdays.ajaxurl, {
+                action: 'bb_birthdays_action',
+                birthday_action: 'mark_wished',
+                user_id: userId,
+                nonce: bbBirthdays.nonce
+            });
         },
 
         initTooltips: function() {
