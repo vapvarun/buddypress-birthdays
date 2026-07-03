@@ -1,0 +1,63 @@
+# Audit Verdict: buddypress-birthdays
+
+**Branch audited:** `2.5.0` (HEAD `2b8a751`, "Docs: record 2026-07-03 QA bug fixes...") — 8 commits ahead of the `master`/`2.5.0` common ancestor `3f530d4`. Static-only audit (no browser, no code changes).
+
+## Shippable? NO — WITH FIXES
+The recent QA-card fixes (widget SQL fix, cache-duration fix, email-install fix) are well-reasoned and correctly implemented. But the release itself is not shippable as-is: `readme.txt` was never bumped for 2.5.0 (stable tag still says 2.4.1, no changelog entry), the branch's 8 commits have **never been run through CI** (workflow only triggers on `master`), and the plugin's core "wish tracking" AJAX feature (nonce + cron cleanup + user-meta store, all fully built) has **no frontend entry point that ever calls it** — dead weight shipping as a "feature."
+
+## Sellable? WITH POLISH
+The new card-panel admin UI and the BB-2/BB-3 scale fixes are genuinely good engineering (bounded SQL candidate pool, batch-priming to kill N+1, filterable caps). What holds it back from "sellable as premium": missing `:focus-visible` on 4 admin-UI outline:none rules, Dashicons instead of the plugin's own Lucide-based admin views, no uninstall cleanup (options + user-meta orphaned forever after removal), no `load_plugin_textdomain()` (translations never load on this self-hosted distribution), and the friends/followers widget path lacking the same big-site bounding just added to the "all members" path.
+
+## Findings (ranked: Blocker → Major → Minor → Polish)
+
+| # | Severity | Lens | Finding | File:line | Suggested journey to fix |
+|---|----------|------|---------|-----------|--------------------------|
+| 1 | Blocker | Release/contract | `readme.txt` Stable tag is `2.4.1`, plugin header is `2.5.0`, and there is **no 2.5.0 changelog entry** at all — breaks WP.org-style validation and will confuse/break any self-hosted EDD update check that compares header vs. readme metadata. | `readme.txt:8,125-134`, `buddypress-birthdays.php:6` | fix (release-prep) |
+| 2 | Blocker | Process/CI | `.github/workflows/ci.yml` triggers only on push/PR to `master` (`branches: [master]`). All 8 commits on `2.5.0` — including the "Fix widget all-members SQL" and "Fix cache duration" commits — have **never run PHP-Lint or PHPStan**. No PR is open; `git run list` shows the last CI run was against `master` on 2026-04-29. | `.github/workflows/ci.yml:4-7` | fix (open a PR / retarget CI before merge) |
+| 3 | Blocker | Contract audit / 3-entry-points | The `mark_wished` AJAX sub-action (+ nonce `bb_birthdays_nonce`, + `bb_birthday_wished_users` user-meta store, + the daily `bb_cleanup_old_wishes` cron that prunes that meta) is **fully implemented on the backend but never called from any JS**. The only frontend "wishes" control, `.bp-send-wishes`, just navigates to a BP private-message compose URL (`handleWishesClick` in bb-core.js) — it never fires the AJAX call. Confirmed by `wppqa_scan_plugin` (`dead-handler`) and qa-coverage (`Uncovered AJAX: wp_ajax_bb_birthdays_action`). Net effect: a whole subsystem (endpoint + cron + meta store) ships with zero frontend entry point. | `core-init.php:440-467`; `assets/js/bb-core.js:36-42,57-89` | fix (wire the button to the AJAX call, or remove the dead subsystem) |
+| 4 | Major | Lifecycle/uninstall | No `register_activation_hook()`, `register_deactivation_hook()`, or `register_uninstall_hook()`/`uninstall.php` anywhere in the plugin (confirmed: zero matches repo-wide). Both cron jobs (`bb_cleanup_old_wishes`, `bp_birthdays_daily_check`) are scheduled unconditionally on every `init`/file-load and are **never cleared on deactivation** — orphaned cron persists indefinitely once deactivated. No cleanup of `bp_birthdays_settings`, `bp_birthdays_emails_installed`, `bp_birthdays_last_check_date`, `bp_birthdays_sent_today` options or `bb_birthday_wished_users` user-meta on uninstall. | `core-init.php:503-507`; `includes/class-bp-birthdays-notifications.php:400-412` | fix |
+| 5 | Major | i18n | No `load_plugin_textdomain()` call anywhere in the plugin. Automatic textdomain loading (WP 4.6+) only applies to plugins hosted on WordPress.org with a matching slug; this plugin is distributed self-hosted via EDD (per project memory), so every `__()`/`esc_html__()` string will render in English regardless of site locale despite the bundled `languages/buddypress-birthdays.pot`. | whole plugin (no bootstrap call) | fix |
+| 6 | Major | A11y (ux-audit) | 4 `outline:none` rules in the new card-panel admin CSS strip the keyboard focus indicator with **no `:focus-visible` replacement**: `.bbd-snav-link`, `.bbd-card .form-table select`, `.bbd-link`, `.bbd-hub-card`. Keyboard users lose visible focus across the settings nav, form controls, links, and hub cards. | `assets/css/admin.css:242-243, 395-396, 465-466, 938-939` | improve |
+| 7 | Major | Performance / big-site checklist | The "all members" widget path was just fixed (SQL `LIMIT` + candidate-pool filters `bb_birthdays_widget_candidate_multiplier`/`_cap`) — good. But the **friends/followers path has no equivalent bound**: `friends_get_friend_user_ids()` / `bp_follow_get_following()` returns every friend/follower id, all of which get batch-primed and iterated in PHP before trimming to `birthdays_to_display`. A member with thousands of friends/followers re-triggers the same O(n) pattern the team just fixed next door. | `assets/inc/buddypress-birthdays-widget.php:388-411` | fix |
+| 8 | Major | Release process | `2.5.0` and `master` have diverged: `master` is 2 commits ahead (bumped to **2.4.2**, not 2.4.1), `2.5.0` is 8 commits ahead of the common ancestor `3f530d4` and still declares itself **2.5.0**. No PR exists to reconcile; merging as-is needs a manual version decision, not an auto-fast-forward. | git history (`origin/master` vs `origin/2.5.0`) | fix (release-prep) |
+| 9 | Minor | UX-token drift | New card-panel admin views use raw Dashicons instead of the plugin's Lucide icon set (per `ux-guidelines` check: 14 errors, mostly this class). | `includes/admin/views/hub.php:63,89,101,109`; `includes/admin/views/overview.php:53,182,186` | improve |
+| 10 | Minor | Dead code | `bbdAdmin.ajaxUrl` is localized to `admin.js` but never read (admin.js only uses `bbdAdmin.i18n`). Harmless but wasted wiring. | `includes/admin/class-bp-birthdays-admin-panel.php:229-243`; `assets/js/admin.js:13` | improve |
+| 11 | Minor | Hook ordering | Two callbacks registered on `wp_enqueue_scripts` at the same default priority (`bb_register_core_css`, `bb_register_core_js`) and two on `bb_cleanup_old_wishes` (`bb_cleanup_old_wishes`, `bb_daily_cache_clear`) — order is technically unpredictable, though current code doesn't depend on it. | `core-init.php:56,118,507,609` | improve |
+| 12 | Minor | Supply chain | 4 open Dependabot alerts (3 high, 1 medium) — see dedicated section below. All are npm **devDependencies** (build toolchain only), not shipped in the plugin runtime/dist zip. | `package-lock.json` | fix (bump grunt toolchain) |
+| 13 | Polish | Tooling/CI signal | `wpcs_phpstan_check` in this environment reports 787 "Function X not found" errors — these are false positives: `vendor/` is not installed locally (no `composer install` run), so the `szepeviktor/phpstan-wordpress` WP stubs aren't loaded. The plugin's actual CI does install deps + run PHPStan level 5 correctly (see Blocker #2 for why it hasn't run on this branch). Not a code defect; re-run after `composer install`. | phpstan.neon / CI | n/a (tooling note) |
+| 14 | Polish | i18n cosmetic | readme.txt short description is 249 chars (WP.org convention: under 150). | `readme.txt` | improve |
+
+### Pre-triaged false positives (for transparency, not counted above)
+- `wppqa_cross_reference_data` flags `bp_birthdays_settings` and core `admin_email` as "stale-read / writers: []". **False positive**: `bp_birthdays_settings` is written via the WordPress Settings API (`register_setting()` + `options.php` POST — WP core calls `update_option()` internally, which the static scanner can't trace); `admin_email` is WP core's own option, correctly read read-only as a placeholder default.
+- `wpcs_code_analysis` flags `BP_Birthdays_Notifications` as an "unused class". **False positive**: it's bootstrapped via `add_action( 'bp_loaded', array( 'BP_Birthdays_Notifications', 'get_instance' ) )` at `includes/class-bp-birthdays-notifications.php:960`, which the tool's static-call heuristic doesn't recognize as instantiation.
+- The plugin's own manifest already pre-triages the nonce-no-cap heuristic on `bb_birthdays_action` as a false positive (nopriv registration is intentional; both sub-actions gate correctly) — confirmed correct on review, no new issue here beyond Finding #3 (dead handler).
+
+## Dependabot alerts (4 open, 3 high) — identified
+
+All 4 open alerts are in `package-lock.json`, **scope: development** (Grunt build toolchain only — not bundled in the shipped plugin/dist zip):
+
+| # | Package | Severity | GHSA | Issue | Installed | First patched | Pulled in by |
+|---|---------|----------|------|-------|-----------|----------------|--------------|
+| 34 | `tmp` | High | GHSA-ph9p-34f9-6g65 | Path traversal via unsanitized prefix/postfix | 0.2.5 | 0.2.6 | transitive (grunt toolchain) |
+| 32 | `lodash` | High | GHSA-r5fr-rjxr-66jc | Code injection via `_.template` imports key names | 4.17.23 | 4.18.0 | transitive (grunt-contrib-* chain) |
+| 31 | `lodash` | Medium | GHSA-f23m-r3pf-42rh | Prototype pollution via array path bypass in `_.unset`/`_.omit` | 4.17.23 | 4.18.0 | transitive (grunt-contrib-* chain) |
+| 23 | `minimatch` | High | GHSA-7r86-cg39-jmmj | ReDoS: matchOne() combinatorial backtracking | 3.0.8 | 3.1.3 | transitive (grunt-legacy-util / glob@7 chain) |
+
+No direct customer-facing risk (devDependencies never ship in the plugin), but this is unpatched supply-chain debt sitting in the repo. Recommend `npm audit fix` / upgrading the Grunt toolchain (`grunt-contrib-*`, `node-wp-i18n`) before the next release — several other now-`fixed`/`auto_dismissed` alerts in the same manifest (picomatch, minimatch x3, braces, cross-spawn, glob, js-yaml, ip, tar) suggest the lockfile has not been refreshed in a while.
+
+## Scores
+
+| Lens | Grade | Notes |
+|------|-------|-------|
+| Security | B+ | Nonce + capability checks are correct on the one real AJAX endpoint; direct `$wpdb` queries are all properly `prepare()`-bound (including the just-fixed widget SQL). No XSS/SQLi found. Docked for the dead AJAX handler (unused attack surface) and 4 supply-chain alerts. |
+| Performance | B | BB-2/BB-3 scale fixes (SQL `LIMIT` + candidate cap, batch-priming to remove N+1) are correctly implemented for the "all members" path. Docked for the unbounded friends/followers path (Finding #7) and the still non-sargable `DATE_FORMAT`/`STR_TO_DATE` predicate on `bp_xprofile_data` (unindexed scan, though now bounded by field_id + LIMIT). |
+| UX / design system | C+ | Card-panel admin migration is structurally solid (tokenized CSS, `bbdToast`/`bbdConfirm`, dependent-field toggles per project standards). Docked for missing `:focus-visible` (Finding #6) and leftover Dashicons instead of Lucide (Finding #9). |
+| QA suite | C | `qa-coverage` flags the AJAX handler as uncovered — correctly, since it's also dead code. `enum-consistency`, `rest-js-contract`, `template-contract` all pass clean (no REST routes, no template dir). Feature-maturity scan flags missing activation/deactivation/uninstall hooks as a "critical gap." |
+| Standards (WPCS/PHPStan) | B (per plugin's own CI signal) | Raw `wpcs_check_directory` over the whole tree is dominated by `gruntfile.js`/minified-asset noise (2025 errors), not representative of the PHP source the plugin's own `composer lint` scopes to. PHPStan could not be validated locally (no `vendor/`) — must be re-verified via the plugin's actual CI once it runs on this branch (Blocker #2). |
+
+## Top 5 findings (severity)
+1. **Blocker** — `readme.txt` stable tag (2.4.1) vs plugin header (2.5.0) mismatch, no 2.5.0 changelog entry.
+2. **Blocker** — 8 commits on `2.5.0` never ran through CI (workflow only triggers on `master`; no PR open).
+3. **Blocker** — `mark_wished`/`refresh_widget` AJAX subsystem (endpoint + nonce + cron cleanup + user-meta store) has zero frontend entry point; fully dead code shipping as a feature.
+4. **Major** — No activation/deactivation/uninstall hooks: two daily crons persist forever after deactivation; no data cleanup on uninstall.
+5. **Major** — No `load_plugin_textdomain()`; translations never load for this self-hosted (non-WP.org) distribution despite the bundled `.pot` file.
