@@ -280,6 +280,15 @@ class BP_Birthdays_Notifications {
 
 	/**
 	 * Maybe install emails if they don't exist.
+	 *
+	 * Previously this guarded on function_exists( 'bp_get_email_post' ) —
+	 * a function that does not exist in any supported BuddyPress version
+	 * (BP exposes bp_get_email_post_type() / bp_get_email()), so the guard
+	 * always returned early and the birthday email posts were never
+	 * created. Emails appeared enabled in settings but silently never
+	 * fired. We now check the real prerequisites (the bp-email post type
+	 * and its taxonomy) and detect existing templates via a taxonomy
+	 * lookup, which is how BuddyPress itself resolves email types.
 	 */
 	public function maybe_install_emails() {
 		// Check if already installed.
@@ -287,24 +296,59 @@ class BP_Birthdays_Notifications {
 			return;
 		}
 
-		// Check if BP email functions exist.
-		if ( ! function_exists( 'bp_get_email_post' ) ) {
+		// Check the BP email APIs this install path actually uses.
+		if ( ! function_exists( 'bp_get_email_post_type' ) || ! function_exists( 'bp_get_email_tax_type' ) ) {
+			return;
+		}
+
+		// The bp-email post type is registered on bp_init; bail (and retry on
+		// the next admin_init) if it is not available yet.
+		if ( ! post_type_exists( bp_get_email_post_type() ) || ! taxonomy_exists( bp_get_email_tax_type() ) ) {
 			return;
 		}
 
 		// Install birthday greeting email.
-		$birthday_email = bp_get_email_post( self::EMAIL_TYPE_BIRTHDAY );
-		if ( ! $birthday_email ) {
+		if ( ! $this->email_post_exists( self::EMAIL_TYPE_BIRTHDAY ) ) {
 			$this->create_email_post( self::EMAIL_TYPE_BIRTHDAY );
 		}
 
 		// Install admin summary email.
-		$admin_email = bp_get_email_post( self::EMAIL_TYPE_ADMIN_SUMMARY );
-		if ( ! $admin_email ) {
+		if ( ! $this->email_post_exists( self::EMAIL_TYPE_ADMIN_SUMMARY ) ) {
 			$this->create_email_post( self::EMAIL_TYPE_ADMIN_SUMMARY );
 		}
 
 		update_option( 'bp_birthdays_emails_installed', true );
+	}
+
+	/**
+	 * Check whether a published bp-email post exists for the given email type.
+	 *
+	 * Mirrors how BuddyPress resolves an email type: a published post of the
+	 * bp-email post type assigned the type's term in the bp-email-type
+	 * taxonomy.
+	 *
+	 * @param string $email_type Email type slug (e.g. 'birthday-greeting').
+	 * @return bool True if a template post exists.
+	 */
+	private function email_post_exists( $email_type ) {
+		$posts = get_posts(
+			array(
+				'post_type'        => bp_get_email_post_type(),
+				'post_status'      => 'publish',
+				'numberposts'      => 1,
+				'fields'           => 'ids',
+				'suppress_filters' => false,
+				'tax_query'        => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Single bounded lookup on a tiny post type, mirrors BP core's own email resolution.
+					array(
+						'taxonomy' => bp_get_email_tax_type(),
+						'field'    => 'slug',
+						'terms'    => $email_type,
+					),
+				),
+			)
+		);
+
+		return ! empty( $posts );
 	}
 
 	/**
