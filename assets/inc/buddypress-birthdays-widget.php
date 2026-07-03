@@ -91,16 +91,19 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			// instead of a hardcoded 30 minutes. Previously the "Cache
 			// Duration" setting was a ghost control — it saved but the
 			// TTL was fixed at 30 * MINUTE_IN_SECONDS, so changing it had
-			// no effect (WRAPPER-AUDIT finding #1, MED). Read the saved
-			// value, clamp to a sane range (1..1440 minutes, matching the
-			// admin field's min/max), and fall back to 30 if the class or
-			// value is unavailable.
+			// no effect (WRAPPER-AUDIT finding #1, MED).
+			//
+			// Read the saved value straight from the option: the
+			// BP_Birthdays_Admin class is only loaded in is_admin()
+			// context (buddypress-birthdays.php), so a class_exists()
+			// gate here made the setting silently fall back to 30 on
+			// every frontend render. Clamp to a sane range (1..1440
+			// minutes, matching the admin field's min/max) and fall back
+			// to 30 if the value is unavailable.
 			$cache_minutes = 30;
-			if ( class_exists( 'BP_Birthdays_Admin' ) ) {
-				$saved = (int) BP_Birthdays_Admin::get_settings( 'cache_duration' );
-				if ( $saved > 0 ) {
-					$cache_minutes = $saved;
-				}
+			$bp_settings   = get_option( 'bp_birthdays_settings', array() );
+			if ( isset( $bp_settings['cache_duration'] ) && (int) $bp_settings['cache_duration'] > 0 ) {
+				$cache_minutes = (int) $bp_settings['cache_duration'];
 			}
 			$cache_minutes = max( 1, min( 1440, $cache_minutes ) );
 			$cache_ttl     = $cache_minutes * MINUTE_IN_SECONDS;
