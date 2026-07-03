@@ -41,7 +41,7 @@ Single stored option `bp_birthdays_settings` (group `bp_birthdays_settings_group
 
 ## Known scale risks (see manifest static_analysis.notes)
 - BB-2: cron `get_todays_birthdays` uses non-sargable `DATE_FORMAT(value,'%m-%d')` full scan of `bp_xprofile_data`.
-- BB-3: widget "all members" path is O(members) with per-user N+1 visibility/date lookups and no SQL `LIMIT` (trim happens after full fetch+sort). Address before claiming 2000+ member readiness.
+- BB-3: RESOLVED 2026-07-03 — all widget paths (all members, friends, followers) now trim to a bounded SQL candidate pool (`bb_birthdays_widget_candidate_multiplier`/`_cap` filters, default cap 200) ordered by upcoming-birthday proximity, with batch-primed values (no per-user N+1). The `DATE_FORMAT` predicate is still non-sargable but bounded by `field_id` + `LIMIT`.
 - BB-4: BP-notification non-friends fan-out silently capped at `number=500`.
 
 ## CSS selectors (for testing)
@@ -50,6 +50,10 @@ Single stored option `bp_birthdays_settings` (group `bp_birthdays_settings_group
 ## Recent changes
 | Date | Type | Description | Files |
 |---|---|---|---|
+| 2026-07-03 | feature | Wired dead `mark_wished` subsystem: `.bp-send-wishes` now emits `data-user-id` and `recordWish()` fires the AJAX (sendBeacon fire-and-forget) before compose navigation; handler reads `user_id` from `$_POST` and always responds. | `assets/js/bb-core.js`, `assets/inc/buddypress-birthdays-widget.php`, `core-init.php` |
+| 2026-07-03 | feature | Lifecycle: activation schedules both daily crons, deactivation clears both, new `uninstall.php` removes 4 options + `bb_birthday_wished_users` meta. `load_plugin_textdomain()` on init (self-hosted EDD, bundled languages/). | `buddypress-birthdays.php`, `uninstall.php` |
+| 2026-07-03 | refactor | Friends/followers widget path bounded like all-members: `bound_members_by_upcoming_birthday()` trims connection ids in SQL to the filterable candidate pool; extracted shared `get_candidate_limit()` + `get_field_date_format()`. | `assets/inc/buddypress-birthdays-widget.php` |
+| 2026-07-03 | release-prep | CI now triggers on semver branches (`N.N.N`) not just master; readme stable tag bumped to 2.5.0 + full 2.5.0 changelog; explicit `:focus-visible` outline on admin form controls. | `.github/workflows/ci.yml`, `readme.txt`, `assets/css/admin.css` |
 | 2026-07-03 | bug-fix | Widget "all members" SQL: convert PHP date_format meta to MySQL specifiers for STR_TO_DATE (was NULL for every row), prepare-safe `%%m-%%d` masks + bound args (was wpdb::prepare placeholder-count notice + rejected query). New `BP_Birthdays_Helpers::php_to_mysql_date_format()`. | `assets/inc/buddypress-birthdays-widget.php`, `includes/class-bp-birthdays-helpers.php` |
 | 2026-07-03 | bug-fix | Cache duration honoured on frontend: read `bp_birthdays_settings` option directly (admin class only loads in `is_admin()`, so TTL always fell back to 30 min). | `assets/inc/buddypress-birthdays-widget.php` |
 | 2026-07-03 | bug-fix | Birthday email templates now install: replaced dead `bp_get_email_post()` guard (function never existed in BP) with real post-type/taxonomy checks + idempotent per-type existence lookup. | `includes/class-bp-birthdays-notifications.php` |
