@@ -5,7 +5,7 @@ Donate link: https://www.paypal.me/wbcomdesigns
 Requires at least: 5.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.4.1
+Stable tag: 2.5.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -55,7 +55,7 @@ Transform your BuddyPress community with the Birthday Widget! Know the upcoming 
 * WPCS compliant code
 
 **Performance Optimized**
-* 30-minute smart caching system
+* Smart caching system with configurable duration
 * Conditional asset loading
 * Minimal database queries
 * Zero Cumulative Layout Shift (CLS)
@@ -103,7 +103,7 @@ Yes! If BuddyPress private messaging is enabled, members can click the wish butt
 Yes! The widget is built with a mobile-first approach and works perfectly on all devices and screen sizes.
 
 = Does it cache birthday data? =
-Yes! The plugin includes smart caching that refreshes every 30 minutes for optimal performance while keeping data current.
+Yes! The plugin includes smart caching for optimal performance. The refresh interval is configurable in the admin settings (default 30 minutes).
 
 = Can I customize the date format? =
 Yes! You can set custom date formats like "January 15", "Jan 15", "15 Jan", etc. in the widget settings.
@@ -123,6 +123,22 @@ Yes! The plugin works seamlessly with Youzify and other popular BuddyPress exten
 5. Integration with BuddyBoss platform
 
 == Changelog ==
+
+= 2.5.0 - July 2026 =
+
+Redesigned admin settings, big-community performance bounds, and a batch of widget and notification fixes.
+
+* New      - Redesigned admin settings: card-panel interface under the WB Plugins menu with an overview dashboard and grouped settings tabs. The settings page URL and stored option are unchanged.
+* New      - Birthday wish tracking: clicking the send-wishes button now records the wish before opening the compose screen, and records older than 7 days are cleaned up daily.
+* Improve  - Large-community performance: every widget mode (all members, friends, followers) now fetches a bounded, batch-primed candidate pool instead of iterating every member. Tune via the bb_birthdays_widget_candidate_multiplier and bb_birthdays_widget_candidate_cap filters.
+* Improve  - Plugin lifecycle: cron events are scheduled on activation, cleared on deactivation, and all plugin options and wish-tracking user meta are removed on uninstall.
+* Improve  - Translations now load from the bundled languages folder for self-hosted installs.
+* Improve  - Keyboard focus visibility on admin form controls.
+* Fix      - Widget birthday query: the field date format is now converted to MySQL specifiers, so weekly and monthly ranges and upcoming-birthday ordering work again.
+* Fix      - Database placeholder notice raised by the widget birthday query.
+* Fix      - Cache Duration setting is now honoured on frontend renders instead of a fixed 30 minutes.
+* Fix      - Birthday email templates now install correctly instead of being skipped by a dead guard.
+* Fix      - Documentation link now points to the correct docs page.
 
 = 2.4.1 =
 * Code Quality: Fixed all WordPress Coding Standards (WPCS) violations across all PHP files
