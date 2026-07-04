@@ -66,14 +66,15 @@ Transform your BuddyPress community with the Birthday Widget! Know the upcoming 
 * Screen reader friendly
 * Reduced motion support
 
-**Supercharge Your BuddyPress Community**
+== More Free Tools from Wbcom Designs ==
 
-Love Birthday Widget? Check out our other free community plugins:
+Remembering birthdays is a small gesture that keeps members feeling seen and coming back. These other free Wbcom Designs plugins give your community more reasons to show up, post, and stay engaged all year round.
 
-* **[Jetonomy](https://store.wbcomdesigns.com/)** — Next-gen discussion platform for WordPress — forums, Q&A, ideas, voting, trust levels. Free forever. [GitHub](https://github.com/vapvarun/jetonomy)
-* **[WPMediaVerse](https://store.wbcomdesigns.com/)** — A general-purpose WordPress media platform plugin. Albums, galleries, and media sharing. [GitHub](https://github.com/vapvarun/wpmediaverse)
-
-Visit [store.wbcomdesigns.com](https://store.wbcomdesigns.com/) for more products and the [BuddyPress Community Bundle](https://wbcomdesigns.com/downloads/buddypress-community-bundle/).
+* **[BuddyNext](https://wbcomdesigns.com/downloads/buddynext/)** - Run a complete free community with activity feeds, member spaces, profiles, private messaging, and directories.
+* **[Jetonomy](https://wbcomdesigns.com/downloads/jetonomy/)** - Add free forums, Q&A, and idea boards with trust-level moderation proven across more than 100,000 topics.
+* **[Mediaverse](https://wbcomdesigns.com/downloads/mediaverse/)** - Let members build photo and video albums, react, follow each other, and message privately with AI moderation built in.
+* **[Listora](https://wbcomdesigns.com/downloads/listora/)** - Publish searchable directories across ten listing types with reviews, maps, and frontend submissions.
+* **[Learnomy](https://wbcomdesigns.com/downloads/learnomy/)** - Turn your community into a free learning hub that sells courses, grades quizzes, issues certificates, and takes payments.
 
 == Installation ==
 
