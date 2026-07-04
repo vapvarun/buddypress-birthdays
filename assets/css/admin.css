@@ -902,9 +902,82 @@
 		padding-bottom: 4px;
 	}
 
-	.bbd-stats-grid {
+	.bbd-stats-grid,
+	.bbd-discover-grid {
 		grid-template-columns: 1fr;
 	}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Discover tab - ecosystem cross-promotion cards
+   Token-driven, matches the hub/overview card language. Responsive:
+   auto-fill collapses to 1 column on mobile, 2-3 columns on desktop.
+   ═══════════════════════════════════════════════════════════ */
+
+.bbd-discover-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: var(--bbd-admin-gap-md);
+}
+
+.bbd-discover-card {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 20px;
+	background: var(--bbd-admin-white);
+	border: 1px solid var(--bbd-admin-border);
+	border-radius: var(--bbd-admin-radius);
+	box-shadow: var(--bbd-admin-shadow);
+	transition: box-shadow 0.12s, border-color 0.12s, transform 0.12s;
+}
+
+.bbd-discover-card:hover {
+	border-color: var(--bbd-admin-border-strong);
+	box-shadow: var(--bbd-admin-shadow-hover);
+	transform: translateY(-1px);
+}
+
+.bbd-discover-card__logo {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	height: 52px;
+}
+
+.bbd-discover-card__logo img {
+	width: 52px;
+	height: 52px;
+	display: block;
+	border-radius: var(--bbd-admin-radius-sm);
+}
+
+.bbd-discover-card__title {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--bbd-admin-text);
+	line-height: 1.2;
+	margin: 0;
+}
+
+.bbd-discover-card__desc {
+	font-size: 13px;
+	color: var(--bbd-admin-text-3);
+	line-height: 1.5;
+	margin: 0;
+	flex: 1 1 auto;
+}
+
+.bbd-discover-card__cta {
+	margin-top: 4px;
+}
+
+.bbd-discover-card__cta .dashicons {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
 }
 
 /* ═══════════════════════════════════════════════════════════

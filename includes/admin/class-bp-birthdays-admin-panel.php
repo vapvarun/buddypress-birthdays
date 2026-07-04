@@ -79,7 +79,21 @@ class BP_Birthdays_Admin_Panel {
 				'group' => 'settings',
 			),
 		);
-		return apply_filters( 'bp_birthdays_admin_tabs', $tabs );
+
+		$tabs = apply_filters( 'bp_birthdays_admin_tabs', $tabs );
+
+		/*
+		 * Discover - ecosystem cross-promotion (read-only display view).
+		 * Appended after the filter round-trip so a third-party filter can
+		 * never accidentally drop it, mirroring the sibling plugins.
+		 */
+		$tabs['discover'] = array(
+			'label' => __( 'Discover', 'buddypress-birthdays' ),
+			'icon'  => 'dashicons-products',
+			'group' => 'discover',
+		);
+
+		return $tabs;
 	}
 
 	/**
@@ -302,6 +316,7 @@ class BP_Birthdays_Admin_Panel {
 			'activity'      => 'settings-activity',
 			'notifications' => 'settings-notifications',
 			'display'       => 'settings-display',
+			'discover'      => 'discover',
 		);
 		$view                = isset( $view_map[ $active ] ) ? $view_map[ $active ] : 'overview';
 		$in_settings_group   = isset( $bbd_tabs[ $active ]['group'] ) && 'settings' === $bbd_tabs[ $active ]['group'];

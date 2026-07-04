@@ -65,6 +65,7 @@ $bbd_version = defined( 'BIRTHDAY_WIDGET_VERSION' ) ? BIRTHDAY_WIDGET_VERSION : 
 				$bbd_printed_groups = array();
 				$bbd_group_labels   = array(
 					'settings' => esc_html__( 'Settings', 'buddypress-birthdays' ),
+					'discover' => esc_html__( 'More Tools', 'buddypress-birthdays' ),
 				);
 				foreach ( $bbd_tabs as $bbd_slug => $bbd_tab ) {
 					$bbd_group = isset( $bbd_tab['group'] ) ? $bbd_tab['group'] : 'main';
