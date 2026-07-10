@@ -118,11 +118,10 @@ Yes! The plugin works seamlessly with Youzify and other popular BuddyPress exten
 
 == Screenshots ==
 
-1. Birthday widget display showing upcoming birthdays with user avatars
-2. Widget configuration options in WordPress admin
-3. Mobile responsive layout on smaller screens
-4. Today's birthday special highlighting
-5. Integration with BuddyBoss platform
+1. Upcoming Birthdays list on the front end, with member avatars, ages and "send wishes" buttons.
+2. Member Settings > General, showing the per-member "Hide my birthday" opt-out checkbox.
+3. Admin overview dashboard with birthday-field stats and current channel configuration.
+4. Discover tab linking to other free Wbcom Designs community plugins.
 
 == Changelog ==
 
