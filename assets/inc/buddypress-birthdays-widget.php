@@ -637,6 +637,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					$birth_year       = (int) $birth_date->format( 'Y' );
 					$years_old        = $celebration_year - $birth_year;
 
+					// GDPR: skip members who opted out of showing their birthday.
+					if ( class_exists( 'BP_Birthdays_Helpers' ) && BP_Birthdays_Helpers::is_user_opted_out( $user_id ) ) {
+						continue;
+					}
+
 					// We don't display negative ages.
 					if ( $years_old > 0 ) {
 						$celebration_string = $next_birthday->format( 'Ymd' );

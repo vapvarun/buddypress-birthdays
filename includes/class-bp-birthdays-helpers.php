@@ -328,4 +328,49 @@ class BP_Birthdays_Helpers {
 			return 0;
 		}
 	}
+
+	/**
+	 * User meta key that stores a member's per-user birthday opt-out flag.
+	 *
+	 * When set to 'yes' the member has chosen to hide their birthday from every
+	 * plugin surface (widget, shortcode, activity, notifications, emails).
+	 *
+	 * @since 2.5.0
+	 * @var string
+	 */
+	const OPTOUT_META_KEY = 'bb_birthday_hidden';
+
+	/**
+	 * Whether a member has opted out of having their birthday shown.
+	 *
+	 * GDPR: birthday month/day is personal data. A member can suppress it from
+	 * every plugin surface by enabling the opt-out on their BuddyPress
+	 * Settings > General screen. This is the single gate consulted by the widget,
+	 * shortcode, activity posts, BuddyPress notifications and greeting emails, so
+	 * an opted-out member never appears anywhere the plugin renders or messages.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param int $user_id The member ID to test.
+	 * @return bool True when the member has opted out (their birthday must be hidden).
+	 */
+	public static function is_user_opted_out( $user_id ) {
+		$user_id = absint( $user_id );
+
+		$opted_out = ( $user_id && 'yes' === get_user_meta( $user_id, self::OPTOUT_META_KEY, true ) );
+
+		/**
+		 * Filter whether a member's birthday is hidden everywhere.
+		 *
+		 * Return true to hide the member's birthday from all plugin surfaces,
+		 * false to always show it. Site owners can wire this to a privacy plugin
+		 * or a global consent store without touching the stored user meta.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param bool $opted_out Whether the member has opted out.
+		 * @param int  $user_id   The member ID being tested.
+		 */
+		return (bool) apply_filters( 'bb_birthday_user_opted_out', $opted_out, $user_id );
+	}
 }

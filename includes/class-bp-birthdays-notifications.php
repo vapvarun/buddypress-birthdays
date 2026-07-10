@@ -534,6 +534,13 @@ class BP_Birthdays_Notifications {
 
 		if ( $results ) {
 			foreach ( $results as $row ) {
+				// GDPR: skip members who opted out of showing their birthday.
+				// This single gate excludes them from greeting emails, activity
+				// posts, BuddyPress notifications and the admin summary at once.
+				if ( class_exists( 'BP_Birthdays_Helpers' ) && BP_Birthdays_Helpers::is_user_opted_out( $row['user_id'] ) ) {
+					continue;
+				}
+
 				$birth_date = new DateTime( $row['value'] );
 				$today      = new DateTime();
 				$age        = $today->format( 'Y' ) - $birth_date->format( 'Y' );

@@ -71,6 +71,7 @@
   ],
   "user_meta": [
     { "key": "bb_birthday_wished_users", "purpose": "Per-user record of which birthday users were wished today; cleaned after 7 days", "read_at": "core-init.php:446", "written_at": "core-init.php:458" },
+    { "key": "bb_birthday_hidden", "purpose": "GDPR per-member opt-out flag ('yes' = hide this member's birthday from every plugin surface). Set on BuddyPress Settings > General; enforced via BP_Birthdays_Helpers::is_user_opted_out()", "read_at": "includes/class-bp-birthdays-helpers.php (is_user_opted_out)", "written_at": "core-init.php (bb_save_member_privacy_field)" },
     { "key": "activation_key", "purpose": "Skip unactivated members in widget render (read-only)", "read_at": "assets/inc/buddypress-birthdays-widget.php:125" },
     { "key": "nickname / first_name", "purpose": "Display-name resolution in widget (read-only)", "read_at": "assets/inc/buddypress-birthdays-widget.php:183-185" }
   ],
@@ -89,7 +90,8 @@
     { "name": "bb_birthdays_tooltip_delay", "type": "filter", "args_count": 1, "args_signature": ["int $delay=300"], "where": "core-init.php:109", "consumed_by": [] },
     { "name": "bb_birthdays_cache_duration", "type": "filter", "args_count": 1, "args_signature": ["int $seconds=1800"], "where": "core-init.php:110", "consumed_by": [] },
     { "name": "bb_core_load_assets", "type": "filter", "args_count": 1, "args_signature": ["bool $load=false"], "where": "core-init.php:216", "consumed_by": [] },
-    { "name": "bbirthdays_get_name_to_display", "type": "filter", "args_count": 2, "args_signature": ["string $display", "WP_User $user_info"], "where": "includes/class-bp-birthdays-helpers.php:874", "consumed_by": [] }
+    { "name": "bbirthdays_get_name_to_display", "type": "filter", "args_count": 2, "args_signature": ["string $display", "WP_User $user_info"], "where": "includes/class-bp-birthdays-helpers.php:874", "consumed_by": [] },
+    { "name": "bb_birthday_user_opted_out", "type": "filter", "args_count": 2, "args_signature": ["bool $opted_out", "int $user_id"], "where": "includes/class-bp-birthdays-helpers.php (BP_Birthdays_Helpers::is_user_opted_out)", "consumed_by": [], "purpose": "GDPR opt-out gate: return true to hide a member's birthday from all plugin surfaces (widget, shortcode, activity, notifications, emails). Default reads user meta bb_birthday_hidden." }
   ],
   "hooks_listened": [
     { "hook": "admin_init", "callback": "bb_check_bp_active", "where": "buddypress-birthdays.php:58", "purpose": "Deactivate self if BuddyPress missing" },
@@ -101,6 +103,8 @@
     { "hook": "friends_friendship_accepted/deleted/withdrawn", "callback": "cache clear", "where": "core-init.php:547,559,569" },
     { "hook": "delete_user / wpmu_delete_user / user_register", "callback": "cache clear", "where": "core-init.php:579-590" },
     { "hook": "bp_follow_start_following / bp_follow_stop_following", "callback": "bb_clear_cache_on_follow_change", "where": "core-init.php:600-601" },
+    { "hook": "bp_core_general_settings_before_submit", "callback": "bb_render_member_privacy_field", "where": "core-init.php", "purpose": "Render per-member GDPR birthday opt-out checkbox on BuddyPress Settings > General" },
+    { "hook": "bp_core_general_settings_after_save", "callback": "bb_save_member_privacy_field", "where": "core-init.php", "purpose": "Persist the opt-out (user meta bb_birthday_hidden) + invalidate birthday cache; re-verifies bp_settings_general nonce" },
     { "hook": "widgets_init", "callback": "buddypress_birthdays_register_widget", "where": "assets/inc/buddypress-birthdays-widget.php:1087" },
     { "hook": "admin_menu (20)", "callback": "BP_Birthdays_Admin::add_admin_menu", "where": "admin/class-bp-birthdays-admin.php:77" },
     { "hook": "admin_init", "callback": "BP_Birthdays_Admin::register_settings", "where": "admin/class-bp-birthdays-admin.php:78" },

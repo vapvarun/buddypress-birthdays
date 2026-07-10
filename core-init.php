@@ -444,6 +444,18 @@ function bb_birthdays_ajax_handler() {
 			$user_id         = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
 			$current_user_id = get_current_user_id();
 
+			// Recording a wish requires a logged-in actor.
+			if ( ! $current_user_id ) {
+				wp_send_json_error( 'Authentication required' );
+				break;
+			}
+
+			// A valid target birthday user id must be supplied.
+			if ( ! $user_id ) {
+				wp_send_json_error( 'Invalid request: missing user_id' );
+				break;
+			}
+
 			if ( $user_id && $current_user_id ) {
 				$wished_users = get_user_meta( $current_user_id, 'bb_birthday_wished_users', true );
 				if ( ! is_array( $wished_users ) ) {
@@ -611,3 +623,71 @@ function bb_daily_cache_clear() {
 	bb_clear_birthday_caches();
 }
 add_action( 'bb_cleanup_old_wishes', 'bb_daily_cache_clear' );
+
+/**
+ * Render the per-user birthday privacy opt-out on the member's
+ * BuddyPress "Settings > General" screen.
+ *
+ * GDPR: birthday month/day is personal data. This gives every member a
+ * self-service switch to hide their birthday from every plugin surface
+ * (widget, shortcode, activity, notifications and greeting emails). The
+ * enforcement lives in BP_Birthdays_Helpers::is_user_opted_out().
+ *
+ * @since 2.5.0
+ */
+function bb_render_member_privacy_field() {
+	if ( ! is_user_logged_in() || ! function_exists( 'bp_displayed_user_id' ) || ! class_exists( 'BP_Birthdays_Helpers' ) ) {
+		return;
+	}
+
+	$user_id = bp_displayed_user_id();
+	if ( ! $user_id ) {
+		$user_id = get_current_user_id();
+	}
+
+	$is_hidden = ( 'yes' === get_user_meta( $user_id, BP_Birthdays_Helpers::OPTOUT_META_KEY, true ) );
+	?>
+	<label for="bb-birthday-hidden" class="bb-birthday-privacy-label">
+		<input type="checkbox" name="bb_birthday_hidden" id="bb-birthday-hidden" value="yes" <?php checked( $is_hidden ); ?> />
+		<?php esc_html_e( 'Hide my birthday everywhere on this site (widgets, activity, notifications and emails).', 'buddypress-birthdays' ); ?>
+	</label>
+	<?php
+}
+add_action( 'bp_core_general_settings_before_submit', 'bb_render_member_privacy_field' );
+
+/**
+ * Persist the member's birthday privacy opt-out when the BuddyPress
+ * "Settings > General" form is saved.
+ *
+ * Fires after BuddyPress has already verified the bp_settings_general nonce and
+ * saved the core fields; the nonce is re-checked here for defence in depth.
+ *
+ * @since 2.5.0
+ */
+function bb_save_member_privacy_field() {
+	if ( ! function_exists( 'bp_displayed_user_id' ) || ! class_exists( 'BP_Birthdays_Helpers' ) ) {
+		return;
+	}
+
+	$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+	if ( ! wp_verify_nonce( $nonce, 'bp_settings_general' ) ) {
+		return;
+	}
+
+	$user_id = bp_displayed_user_id();
+	if ( ! $user_id ) {
+		return;
+	}
+
+	$hide = ( isset( $_POST['bb_birthday_hidden'] ) && 'yes' === sanitize_text_field( wp_unslash( $_POST['bb_birthday_hidden'] ) ) );
+
+	if ( $hide ) {
+		update_user_meta( $user_id, BP_Birthdays_Helpers::OPTOUT_META_KEY, 'yes' );
+	} else {
+		delete_user_meta( $user_id, BP_Birthdays_Helpers::OPTOUT_META_KEY );
+	}
+
+	// A visibility change must invalidate the cached birthday lists.
+	bb_clear_birthday_caches();
+}
+add_action( 'bp_core_general_settings_after_save', 'bb_save_member_privacy_field' );

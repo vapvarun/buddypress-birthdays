@@ -3,8 +3,9 @@ Contributors: vapvarun,wbcomdesigns
 Tags: buddypress, birthdays, widget, community, members
 Donate link: https://www.paypal.me/wbcomdesigns
 Requires at least: 5.0
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 7.4
+Requires Plugins: buddypress
 Stable tag: 2.5.0
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -131,6 +132,7 @@ Redesigned admin settings, big-community performance bounds, and a batch of widg
 
 * New      - Redesigned admin settings: card-panel interface under the WB Plugins menu with an overview dashboard and grouped settings tabs. The settings page URL and stored option are unchanged.
 * New      - Birthday wish tracking: clicking the send-wishes button now records the wish before opening the compose screen, and records older than 7 days are cleaned up daily.
+* New      - Per-member birthday privacy opt-out (GDPR): members can hide their birthday from every plugin surface (widget, shortcode, activity, notifications, emails) from their BuddyPress Settings > General screen. Override programmatically with the bb_birthday_user_opted_out filter.
 * Improve  - Large-community performance: every widget mode (all members, friends, followers) now fetches a bounded, batch-primed candidate pool instead of iterating every member. Tune via the bb_birthdays_widget_candidate_multiplier and bb_birthdays_widget_candidate_cap filters.
 * Improve  - Plugin lifecycle: cron events are scheduled on activation, cleared on deactivation, and all plugin options and wish-tracking user meta are removed on uninstall.
 * Improve  - Translations now load from the bundled languages folder for self-hosted installs.
@@ -140,6 +142,7 @@ Redesigned admin settings, big-community performance bounds, and a batch of widg
 * Fix      - Cache Duration setting is now honoured on frontend renders instead of a fixed 30 minutes.
 * Fix      - Birthday email templates now install correctly instead of being skipped by a dead guard.
 * Fix      - Documentation link now points to the correct docs page.
+* Compat   - Tested with WordPress 7.0.
 
 = 2.4.1 =
 * Code Quality: Fixed all WordPress Coding Standards (WPCS) violations across all PHP files
