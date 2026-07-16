@@ -49,7 +49,8 @@ buddypress-birthdays/
 - Adds admin notice for missing BuddyPress
 
 ### 2. Core Init (`core-init.php`)
-- Defines constants: `BB_CORE_INC`, `BB_CORE_CSS`, `BB_CORE_JS`, `BB_CORE_IMG`, `BB_CORE_VERSION`
+- Defines constants: `BB_CORE_INC`, `BB_CORE_CSS`, `BB_CORE_JS`, `BB_CORE_IMG`
+- Asset cache busting uses `BIRTHDAY_WIDGET_VERSION` (the plugin version, defined in `buddypress-birthdays.php`)
 - Asset loading (CSS/JS) with smart conditional loading
 - Shortcode registration: `[bp_birthdays]`
 - AJAX handlers for widget actions

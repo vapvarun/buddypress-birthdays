@@ -20,7 +20,6 @@ define( 'BB_CORE_INC', __DIR__ . '/assets/inc/' );
 define( 'BB_CORE_IMG', plugins_url( 'assets/img/', __FILE__ ) );
 define( 'BB_CORE_CSS', plugins_url( 'assets/css/', __FILE__ ) );
 define( 'BB_CORE_JS', plugins_url( 'assets/js/', __FILE__ ) );
-define( 'BB_CORE_VERSION', '2.0.0' ); // Add version for cache busting.
 
 /**
  * Global flag to track if assets are loaded
@@ -46,7 +45,7 @@ function bb_register_core_css() {
 			'bb-core',
 			BB_CORE_CSS . 'bb-core.css',
 			array(),
-			BB_CORE_VERSION,
+			BIRTHDAY_WIDGET_VERSION,
 			'all'
 		);
 
@@ -72,7 +71,7 @@ function bb_register_core_js() {
 			'bb-core',
 			BB_CORE_JS . 'bb-core.js',
 			array( 'jquery' ),
-			BB_CORE_VERSION,
+			BIRTHDAY_WIDGET_VERSION,
 			true
 		);
 
@@ -91,7 +90,7 @@ function bb_register_core_js() {
 				'ajaxurl'    => admin_url( 'admin-ajax.php' ),
 				'nonce'      => wp_create_nonce( 'bb_birthdays_nonce' ),
 				'plugin_url' => plugins_url( '', __FILE__ ),
-				'version'    => BB_CORE_VERSION,
+				'version'    => BIRTHDAY_WIDGET_VERSION,
 				'debug'      => defined( 'WP_DEBUG' ) && WP_DEBUG,
 				'strings'    => array(
 					'loading'        => __( 'Loading...', 'buddypress-birthdays' ),

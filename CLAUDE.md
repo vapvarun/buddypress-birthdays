@@ -1,13 +1,14 @@
 # Plugin: Wbcom Designs - Birthday Widget for BuddyPress
 
-> **READ FIRST:** [`audit/manifest.json`](audit/manifest.json) is the canonical inventory — 0 REST endpoints, 1 AJAX action (priv+nopriv), 1 admin page, 1 shortcode, 2 cron hooks, 5 fired filters, 0 tables (reads BuddyPress xProfile tables read-only). Use this before grepping. See also [`audit/FEATURE_AUDIT.md`](audit/FEATURE_AUDIT.md), [`audit/CODE_FLOWS.md`](audit/CODE_FLOWS.md), and the QA baseline [`audit/wppqa-baseline-2026-06-05/SUMMARY.md`](audit/wppqa-baseline-2026-06-05/SUMMARY.md). Interactive graph: `cd audit && python3 -m http.server 8765` → http://localhost:8765/graph.html. Refresh via `/wp-plugin-onboard --refresh` after non-trivial changes.
+> **READ FIRST:** [`audit/manifest.json`](audit/manifest.json) is the canonical inventory — 0 REST endpoints, 0 blocks, 1 widget (`widget_buddypress_birthdays`), 1 AJAX action (priv+nopriv), 1 admin page, 1 shortcode (11 attrs), 2 cron hooks, 12 fired filters / 0 fired actions, 0 tables (reads BuddyPress xProfile tables read-only). Use this before grepping. See also [`audit/FEATURE_AUDIT.md`](audit/FEATURE_AUDIT.md), [`audit/CODE_FLOWS.md`](audit/CODE_FLOWS.md), and the QA baseline [`audit/wppqa-baseline-2026-06-05/SUMMARY.md`](audit/wppqa-baseline-2026-06-05/SUMMARY.md). Interactive graph: `cd audit && python3 -m http.server 8765` → http://localhost:8765/graph.html. Refresh via `/wp-plugin-onboard --refresh` after non-trivial changes.
 
 ## Development skill
 All plugin work follows the **`/wp-plugin-development`** skill (backend architecture, REST, hooks, DB, security, escaping, admin UI, release). QA before release: `/wp-plugin-smoke`. Onboarding refresh: `/wp-plugin-onboard`.
 
 ## Quick reference
 - **Main file**: `buddypress-birthdays.php`
-- **Version**: `2.4.1` (dev branch `2.5.0`)
+- **Version**: `2.5.0` (`BIRTHDAY_WIDGET_VERSION`, `buddypress-birthdays.php:27`) — branch `2.5.0`
+- **Requires**: WP 5.3+ (`wp_date()`/`wp_timezone()` are called unguarded on the render path), PHP 7.4+, BuddyPress (`Requires Plugins: buddypress`); tested to WP 7.0. License: bare `GPLv3`.
 - **Namespace**: none — global `bb_*` functions + `BP_Birthdays_*` / `Widget_Buddypress_Birthdays` classes
 - **Text domain**: `buddypress-birthdays`
 - **Extends**: null (standalone; requires BuddyPress)
@@ -16,7 +17,8 @@ All plugin work follows the **`/wp-plugin-development`** skill (backend architec
 ## Admin UI wrapper: NEW (card-panel under wbcomplugins) — as of 2.5.0
 The admin migrated to the **Wbcom card-panel pattern** under the shared `wbcomplugins` hub (mirrors `buddypress-contact-me`):
 - Controller: `BP_Birthdays_Admin_Panel` (`includes/admin/class-bp-birthdays-admin-panel.php`) — menu, enqueue, render router, hub takeover (pri 999).
-- Views: `includes/admin/views/{shell,hub,overview,settings-general,settings-email,settings-activity,settings-notifications,settings-display}.php`.
+- Views: `includes/admin/views/{shell,hub,overview,settings-general,settings-email,settings-activity,settings-notifications,settings-display,discover}.php`.
+- Tabs (7): overview, general, email, activity, notifications, display, discover. `discover` is appended **after** the `bp_birthdays_admin_tabs` filter so it can't be filtered away.
 - Assets: `assets/css/admin.css` (`--bbd-admin-*` tokens), `assets/js/admin.js` (`bbdToast`/`bbdConfirm` + dependent-field toggles).
 
 Menu: `add_menu_page('wbcomplugins', …)` (if not present) + `add_submenu_page('wbcomplugins', …, 'bp-birthday-settings', …)`. Slug `bp-birthday-settings` **preserved** for URL continuity. Cap `manage_options` (filter `bp_birthdays_admin_capability`). Page hook suffix: `wbcomplugins_page_bp-birthday-settings`. The old `bp-settings`/`options-general.php` registration was dropped.
@@ -27,8 +29,8 @@ Single stored option `bp_birthdays_settings` (group `bp_birthdays_settings_group
 
 ## Key entry points
 - Bootstrap: `buddypress-birthdays.php` (constants, BP dependency check, requires)
-- Core: `core-init.php` (assets, shortcode, AJAX, cache invalidation, wished-users cron)
-- Admin: `admin/class-bp-birthdays-admin.php` (settings page + option)
+- Core: `core-init.php` (assets, shortcode, AJAX, cache invalidation, wished-users cron, GDPR opt-out UI/save)
+- Admin: `includes/admin/class-bp-birthdays-admin-panel.php` (menu, enqueue, render router) + `admin/class-bp-birthdays-admin.php` (legacy service class — sanitizer/defaults/getter ONLY, no UI)
 - Notifications: `includes/class-bp-birthdays-notifications.php` (cron, BP emails, activity, BP notifications)
 - Helpers: `includes/class-bp-birthdays-helpers.php` (zodiac, age, date format)
 - Widget: `assets/inc/buddypress-birthdays-widget.php` (`Widget_Buddypress_Birthdays`)
