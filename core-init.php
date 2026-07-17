@@ -41,9 +41,20 @@ function bb_register_core_css() {
 
 	// Load on appropriate pages.
 	if ( bb_should_load_assets() ) {
+		/*
+		 * Serve the minified build unless SCRIPT_DEBUG is on.
+		 *
+		 * grunt builds bb-core.min.css but nothing ever enqueued it, so every
+		 * visitor was served the unminified source (10780 B against 6893 B) and
+		 * the minified bundle shipped in the zip as dead weight. Keep this in
+		 * step with the cssmin/uglify targets in gruntfile.js: if a target is
+		 * added or removed, this suffix has to follow.
+		 */
+		$bb_suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.css' : '.min.css';
+
 		wp_enqueue_style(
 			'bb-core',
-			BB_CORE_CSS . 'bb-core.css',
+			BB_CORE_CSS . 'bb-core' . $bb_suffix,
 			array(),
 			BIRTHDAY_WIDGET_VERSION,
 			'all'
@@ -67,9 +78,13 @@ function bb_register_core_js() {
 
 	// Load on appropriate pages.
 	if ( bb_should_load_assets() ) {
+		// See the note in bb_register_core_css(): the minified build was shipped
+		// but never enqueued (29168 B against 14307 B).
+		$bb_suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.js' : '.min.js';
+
 		wp_enqueue_script(
 			'bb-core',
-			BB_CORE_JS . 'bb-core.js',
+			BB_CORE_JS . 'bb-core' . $bb_suffix,
 			array( 'jquery' ),
 			BIRTHDAY_WIDGET_VERSION,
 			true
