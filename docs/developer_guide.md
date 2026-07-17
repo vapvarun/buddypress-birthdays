@@ -69,7 +69,7 @@ function bb_should_load_assets() {
 // Asset loading with cache busting
 function bb_register_core_css() {
     if ( bb_should_load_assets() ) {
-        wp_enqueue_style( 'bb-core', BB_CORE_CSS . 'bb-core.css', array(), BB_CORE_VERSION );
+        wp_enqueue_style( 'bb-core', BB_CORE_CSS . 'bb-core.css', array(), BIRTHDAY_WIDGET_VERSION );
     }
 }
 

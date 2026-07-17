@@ -13,3 +13,10 @@ Thumbs.db
 # Internal documentation
 CLAUDE.md
 marketing/
+
+# AutoVAP onboarding artifacts — keep tracked despite broad ignores above
+!CLAUDE.md
+!audit/
+!audit/**
+!audit/manifest.json
+!audit/manifest.summary.json

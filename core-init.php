@@ -20,7 +20,6 @@ define( 'BB_CORE_INC', __DIR__ . '/assets/inc/' );
 define( 'BB_CORE_IMG', plugins_url( 'assets/img/', __FILE__ ) );
 define( 'BB_CORE_CSS', plugins_url( 'assets/css/', __FILE__ ) );
 define( 'BB_CORE_JS', plugins_url( 'assets/js/', __FILE__ ) );
-define( 'BB_CORE_VERSION', '2.0.0' ); // Add version for cache busting.
 
 /**
  * Global flag to track if assets are loaded
@@ -46,7 +45,7 @@ function bb_register_core_css() {
 			'bb-core',
 			BB_CORE_CSS . 'bb-core.css',
 			array(),
-			BB_CORE_VERSION,
+			BIRTHDAY_WIDGET_VERSION,
 			'all'
 		);
 
@@ -72,7 +71,7 @@ function bb_register_core_js() {
 			'bb-core',
 			BB_CORE_JS . 'bb-core.js',
 			array( 'jquery' ),
-			BB_CORE_VERSION,
+			BIRTHDAY_WIDGET_VERSION,
 			true
 		);
 
@@ -91,18 +90,30 @@ function bb_register_core_js() {
 				'ajaxurl'    => admin_url( 'admin-ajax.php' ),
 				'nonce'      => wp_create_nonce( 'bb_birthdays_nonce' ),
 				'plugin_url' => plugins_url( '', __FILE__ ),
-				'version'    => BB_CORE_VERSION,
+				'version'    => BIRTHDAY_WIDGET_VERSION,
 				'debug'      => defined( 'WP_DEBUG' ) && WP_DEBUG,
+				// Every key bb-core.js reads via bbBirthdays.strings.<key>
+				// MUST be seeded here with a __() value: a key the JS reads
+				// but PHP never seeds renders its English fallback on every
+				// locale forever (docs/standards/i18n.md trap 1).
 				'strings'    => array(
-					'loading'        => __( 'Loading...', 'buddypress-birthdays' ),
-					'error'          => __( 'Error occurred', 'buddypress-birthdays' ),
-					'send_wishes'    => __( 'Send my wishes', 'buddypress-birthdays' ),
-					'wishes_sent'    => __( 'Birthday wishes sent!', 'buddypress-birthdays' ),
-					'wishes_error'   => __( 'Unable to send wishes at this time.', 'buddypress-birthdays' ),
-					'happy_birthday' => __( 'Happy Birthday!', 'buddypress-birthdays' ),
-					'no_birthdays'   => __( 'No upcoming birthdays', 'buddypress-birthdays' ),
-					'today'          => __( 'Today', 'buddypress-birthdays' ),
-					'tomorrow'       => __( 'Tomorrow', 'buddypress-birthdays' ),
+					'loading'           => __( 'Loading...', 'buddypress-birthdays' ),
+					'error'             => __( 'Error occurred', 'buddypress-birthdays' ),
+					'send_wishes'       => __( 'Send my wishes', 'buddypress-birthdays' ),
+					'wishes_sent'       => __( 'Birthday wishes sent!', 'buddypress-birthdays' ),
+					'wishes_error'      => __( 'Unable to send wishes at this time.', 'buddypress-birthdays' ),
+					'happy_birthday'    => __( 'Happy Birthday!', 'buddypress-birthdays' ),
+					'no_birthdays'      => __( 'No upcoming birthdays', 'buddypress-birthdays' ),
+					'today'             => __( 'Today', 'buddypress-birthdays' ),
+					'tomorrow'          => __( 'Tomorrow', 'buddypress-birthdays' ),
+					// Accessible name applied to every send-wishes button by
+					// bb-core.js initAccessibility(). Mirrors the title
+					// attribute the widget renders server-side.
+					'send_wishes_aria'  => __( 'Send birthday wishes', 'buddypress-birthdays' ),
+					// Landmark label applied to each birthday widget region.
+					'widget_aria_label' => __( 'Birthday notifications', 'buddypress-birthdays' ),
+					// Shown once the member grants browser notification permission.
+					'notifications_on'  => __( 'Birthday notifications enabled!', 'buddypress-birthdays' ),
 				),
 				'settings'   => array(
 					'animation_speed'  => apply_filters( 'bb_birthdays_animation_speed', 300 ),
@@ -285,7 +296,7 @@ function bb_birthdays_shortcode( $atts ) {
 
 	// Check if widget class exists.
 	if ( ! class_exists( 'Widget_Buddypress_Birthdays' ) ) {
-		return '<p>' . __( 'Birthday widget not available.', 'buddypress-birthdays' ) . '</p>';
+		return '<p>' . esc_html__( 'Birthday widget not available.', 'buddypress-birthdays' ) . '</p>';
 	}
 
 	// If field_name is not provided or empty, find the first available date field.
@@ -420,7 +431,7 @@ function bb_birthdays_ajax_handler() {
 	// Verify nonce.
 	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 	if ( ! wp_verify_nonce( $nonce, 'bb_birthdays_nonce' ) ) {
-		wp_die( 'Security check failed' );
+		wp_die( esc_html__( 'Security check failed', 'buddypress-birthdays' ) );
 	}
 
 	$action = isset( $_POST['birthday_action'] ) ? sanitize_key( wp_unslash( $_POST['birthday_action'] ) ) : '';
@@ -429,18 +440,32 @@ function bb_birthdays_ajax_handler() {
 		case 'refresh_widget':
 			// Only allow logged-in users with read capability to refresh cache.
 			if ( ! is_user_logged_in() || ! current_user_can( 'read' ) ) {
-				wp_send_json_error( 'Authentication required' );
+				wp_send_json_error( __( 'Authentication required', 'buddypress-birthdays' ) );
 				break;
 			}
 			// Clear birthday cache.
 			bb_clear_birthday_caches();
-			wp_send_json_success( array( 'message' => 'Widget refreshed' ) );
+			wp_send_json_success( array( 'message' => __( 'Widget refreshed', 'buddypress-birthdays' ) ) );
 			break;
 
 		case 'mark_wished':
-			// Mark that user has been wished.
-			$user_id         = filter_input( INPUT_POST, 'user_id', FILTER_SANITIZE_NUMBER_INT );
+			// Mark that user has been wished. Fired (fire-and-forget) by
+			// bb-core.js recordWish() when a member clicks the send-wishes
+			// button, before the browser navigates to the compose screen.
+			$user_id         = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
 			$current_user_id = get_current_user_id();
+
+			// Recording a wish requires a logged-in actor.
+			if ( ! $current_user_id ) {
+				wp_send_json_error( __( 'Authentication required', 'buddypress-birthdays' ) );
+				break;
+			}
+
+			// A valid target birthday user id must be supplied.
+			if ( ! $user_id ) {
+				wp_send_json_error( __( 'Invalid request: missing user_id', 'buddypress-birthdays' ) );
+				break;
+			}
 
 			if ( $user_id && $current_user_id ) {
 				$wished_users = get_user_meta( $current_user_id, 'bb_birthday_wished_users', true );
@@ -453,17 +478,19 @@ function bb_birthdays_ajax_handler() {
 					$wished_users[ $today ] = array();
 				}
 
-				if ( ! in_array( $user_id, $wished_users[ $today ], true ) ) {
+				if ( ! in_array( $user_id, array_map( 'absint', $wished_users[ $today ] ), true ) ) {
 					$wished_users[ $today ][] = $user_id;
 					update_user_meta( $current_user_id, 'bb_birthday_wished_users', $wished_users );
 				}
 
-				wp_send_json_success( array( 'message' => 'Wish recorded' ) );
+				wp_send_json_success( array( 'message' => __( 'Wish recorded', 'buddypress-birthdays' ) ) );
 			}
+
+			wp_send_json_error( __( 'Authentication required', 'buddypress-birthdays' ) );
 			break;
 
 		default:
-			wp_send_json_error( 'Invalid action' );
+			wp_send_json_error( __( 'Invalid action', 'buddypress-birthdays' ) );
 	}
 }
 add_action( 'wp_ajax_bb_birthdays_action', 'bb_birthdays_ajax_handler' );
@@ -607,3 +634,71 @@ function bb_daily_cache_clear() {
 	bb_clear_birthday_caches();
 }
 add_action( 'bb_cleanup_old_wishes', 'bb_daily_cache_clear' );
+
+/**
+ * Render the per-user birthday privacy opt-out on the member's
+ * BuddyPress "Settings > General" screen.
+ *
+ * GDPR: birthday month/day is personal data. This gives every member a
+ * self-service switch to hide their birthday from every plugin surface
+ * (widget, shortcode, activity, notifications and greeting emails). The
+ * enforcement lives in BP_Birthdays_Helpers::is_user_opted_out().
+ *
+ * @since 2.5.0
+ */
+function bb_render_member_privacy_field() {
+	if ( ! is_user_logged_in() || ! function_exists( 'bp_displayed_user_id' ) || ! class_exists( 'BP_Birthdays_Helpers' ) ) {
+		return;
+	}
+
+	$user_id = bp_displayed_user_id();
+	if ( ! $user_id ) {
+		$user_id = get_current_user_id();
+	}
+
+	$is_hidden = ( 'yes' === get_user_meta( $user_id, BP_Birthdays_Helpers::OPTOUT_META_KEY, true ) );
+	?>
+	<label for="bb-birthday-hidden" class="bb-birthday-privacy-label">
+		<input type="checkbox" name="bb_birthday_hidden" id="bb-birthday-hidden" value="yes" <?php checked( $is_hidden ); ?> />
+		<?php esc_html_e( 'Hide my birthday everywhere on this site (widgets, activity, notifications and emails).', 'buddypress-birthdays' ); ?>
+	</label>
+	<?php
+}
+add_action( 'bp_core_general_settings_before_submit', 'bb_render_member_privacy_field' );
+
+/**
+ * Persist the member's birthday privacy opt-out when the BuddyPress
+ * "Settings > General" form is saved.
+ *
+ * Fires after BuddyPress has already verified the bp_settings_general nonce and
+ * saved the core fields; the nonce is re-checked here for defence in depth.
+ *
+ * @since 2.5.0
+ */
+function bb_save_member_privacy_field() {
+	if ( ! function_exists( 'bp_displayed_user_id' ) || ! class_exists( 'BP_Birthdays_Helpers' ) ) {
+		return;
+	}
+
+	$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+	if ( ! wp_verify_nonce( $nonce, 'bp_settings_general' ) ) {
+		return;
+	}
+
+	$user_id = bp_displayed_user_id();
+	if ( ! $user_id ) {
+		return;
+	}
+
+	$hide = ( isset( $_POST['bb_birthday_hidden'] ) && 'yes' === sanitize_text_field( wp_unslash( $_POST['bb_birthday_hidden'] ) ) );
+
+	if ( $hide ) {
+		update_user_meta( $user_id, BP_Birthdays_Helpers::OPTOUT_META_KEY, 'yes' );
+	} else {
+		delete_user_meta( $user_id, BP_Birthdays_Helpers::OPTOUT_META_KEY );
+	}
+
+	// A visibility change must invalidate the cached birthday lists.
+	bb_clear_birthday_caches();
+}
+add_action( 'bp_core_general_settings_after_save', 'bb_save_member_privacy_field' );

@@ -60,11 +60,7 @@
 
             if (!href || href === '#') {
                 e.preventDefault();
-                // Use localized string if available, fallback to English.
-                const errorMsg = (typeof bbBirthdays !== 'undefined' && bbBirthdays.strings && bbBirthdays.strings.wishes_error)
-                    ? bbBirthdays.strings.wishes_error
-                    : 'Unable to send wishes at this time.';
-                this.showMessage(errorMsg, 'error');
+                this.showMessage(this.s('wishes_error', 'Unable to send wishes at this time.'), 'error');
                 return;
             }
 
@@ -76,16 +72,58 @@
 
             // Add loading state without changing button dimensions
             $button.addClass('loading').attr('aria-disabled', 'true');
-            
+
+            // Record the wish server-side (fire-and-forget) before the
+            // browser navigates to the private-message compose screen.
+            this.recordWish($button);
+
             // Optional: Track analytics
             this.trackWishEvent($button);
-            
+
             // No redirect message - let the browser handle navigation naturally
             
             // Remove loading state after navigation starts
             setTimeout(() => {
                 $button.removeClass('loading').removeAttr('aria-disabled');
             }, 1000);
+        },
+
+        recordWish: function($button) {
+            // Fire-and-forget: persist "current user wished this member today"
+            // via the mark_wished AJAX sub-action. Uses sendBeacon so the
+            // request survives the imminent navigation to the compose screen;
+            // falls back to a keepalive fetch, then jQuery POST.
+            if (typeof bbBirthdays === 'undefined' || !bbBirthdays.ajaxurl || !bbBirthdays.nonce) {
+                return;
+            }
+
+            const userId = parseInt($button.data('user-id'), 10);
+            if (!userId) {
+                return;
+            }
+
+            const data = new FormData();
+            data.append('action', 'bb_birthdays_action');
+            data.append('birthday_action', 'mark_wished');
+            data.append('user_id', userId);
+            data.append('nonce', bbBirthdays.nonce);
+
+            if (navigator.sendBeacon && navigator.sendBeacon(bbBirthdays.ajaxurl, data)) {
+                return;
+            }
+
+            if (window.fetch) {
+                fetch(bbBirthdays.ajaxurl, { method: 'POST', body: data, keepalive: true, credentials: 'same-origin' })
+                    .catch(function() { /* fire-and-forget */ });
+                return;
+            }
+
+            $.post(bbBirthdays.ajaxurl, {
+                action: 'bb_birthdays_action',
+                birthday_action: 'mark_wished',
+                user_id: userId,
+                nonce: bbBirthdays.nonce
+            });
         },
 
         initTooltips: function() {
@@ -135,12 +173,24 @@
             }
         },
 
+        // Read a localized string, falling back to the English text. Every key
+        // used here MUST be seeded in the bbBirthdays.strings array in
+        // core-init.php — a key read but not seeded renders English on every
+        // locale forever. The fallback only covers the case where the localize
+        // script did not run at all.
+        s: function(key, fallback) {
+            return (typeof bbBirthdays !== 'undefined' && bbBirthdays.strings && bbBirthdays.strings[key])
+                ? bbBirthdays.strings[key]
+                : fallback;
+        },
+
         initAccessibility: function() {
             // Add ARIA labels for better accessibility
+            const sendWishesLabel = this.s('send_wishes_aria', 'Send birthday wishes');
             this.cache.$sendWishesButtons.each(function() {
                 const $button = $(this);
                 if (!$button.attr('aria-label')) {
-                    $button.attr('aria-label', 'Send birthday wishes');
+                    $button.attr('aria-label', sendWishesLabel);
                 }
                 $button.attr('role', 'button');
             });
@@ -148,9 +198,9 @@
             // Add role attributes where needed
             this.cache.$birthdayLists.attr('role', 'list');
             this.cache.$birthdayLists.find('.bp-birthday-item').attr('role', 'listitem');
-            
+
             // Add landmark roles
-            this.cache.$birthdayWidgets.attr('role', 'complementary').attr('aria-label', 'Birthday notifications');
+            this.cache.$birthdayWidgets.attr('role', 'complementary').attr('aria-label', this.s('widget_aria_label', 'Birthday notifications'));
         },
 
         initSpecialEffects: function() {
@@ -511,7 +561,7 @@
             if ('Notification' in window && Notification.permission === 'default') {
                 Notification.requestPermission().then(permission => {
                     if (permission === 'granted') {
-                        this.showMessage('Birthday notifications enabled!', 'success');
+                        this.showMessage(this.s('notifications_on', 'Birthday notifications enabled!'), 'success');
                     }
                 });
             }

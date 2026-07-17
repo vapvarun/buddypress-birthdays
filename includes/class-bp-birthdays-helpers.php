@@ -21,6 +21,12 @@ class BP_Birthdays_Helpers {
 	/**
 	 * Zodiac signs data.
 	 *
+	 * The `name` values are stable ENGLISH IDENTIFIERS, not display strings —
+	 * the date-range matching in get_zodiac_sign() compares against them, so
+	 * they must never be translated in place. Resolve a display label with
+	 * get_zodiac_label() at render time instead (a static property cannot call
+	 * __() anyway, and doing so would resolve before the textdomain loads).
+	 *
 	 * @var array
 	 */
 	private static $zodiac_signs = array(
@@ -139,6 +145,37 @@ class BP_Birthdays_Helpers {
 	}
 
 	/**
+	 * Get the translated display label for a zodiac sign identifier.
+	 *
+	 * The identifiers in self::$zodiac_signs are matching keys, not display
+	 * text. This maps one to the member-facing label. Called at render time so
+	 * the textdomain (loaded on init:10) is always available.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param string $name Zodiac sign identifier (e.g. 'Capricorn').
+	 * @return string Translated label, or the identifier when unknown.
+	 */
+	public static function get_zodiac_label( $name ) {
+		$labels = array(
+			'Capricorn'   => __( 'Capricorn', 'buddypress-birthdays' ),
+			'Aquarius'    => __( 'Aquarius', 'buddypress-birthdays' ),
+			'Pisces'      => __( 'Pisces', 'buddypress-birthdays' ),
+			'Aries'       => __( 'Aries', 'buddypress-birthdays' ),
+			'Taurus'      => __( 'Taurus', 'buddypress-birthdays' ),
+			'Gemini'      => __( 'Gemini', 'buddypress-birthdays' ),
+			'Cancer'      => __( 'Cancer', 'buddypress-birthdays' ),
+			'Leo'         => __( 'Leo', 'buddypress-birthdays' ),
+			'Virgo'       => __( 'Virgo', 'buddypress-birthdays' ),
+			'Libra'       => __( 'Libra', 'buddypress-birthdays' ),
+			'Scorpio'     => __( 'Scorpio', 'buddypress-birthdays' ),
+			'Sagittarius' => __( 'Sagittarius', 'buddypress-birthdays' ),
+		);
+
+		return isset( $labels[ $name ] ) ? $labels[ $name ] : $name;
+	}
+
+	/**
 	 * Get zodiac symbol HTML.
 	 *
 	 * @param string $date Date string.
@@ -152,11 +189,15 @@ class BP_Birthdays_Helpers {
 			return '';
 		}
 
-		$html  = '<span class="bp-birthday-zodiac" title="' . esc_attr( $sign['name'] ) . '">';
+		// The sign's `name` is an identifier; the tooltip and the visible name
+		// must render the translated label.
+		$label = self::get_zodiac_label( $sign['name'] );
+
+		$html  = '<span class="bp-birthday-zodiac" title="' . esc_attr( $label ) . '">';
 		$html .= '<span class="zodiac-symbol">' . esc_html( $sign['symbol'] ) . '</span>';
 
 		if ( $include_name ) {
-			$html .= ' <span class="zodiac-name">' . esc_html( $sign['name'] ) . '</span>';
+			$html .= ' <span class="zodiac-name">' . esc_html( $label ) . '</span>';
 		}
 
 		$html .= '</span>';
@@ -214,6 +255,90 @@ class BP_Birthdays_Helpers {
 	}
 
 	/**
+	 * Convert a PHP date format string to its MySQL DATE_FORMAT / STR_TO_DATE
+	 * equivalent.
+	 *
+	 * BuddyPress stores a datebox field's `date_format` meta as a PHP date
+	 * format (e.g. `Y-m-d`). MySQL's STR_TO_DATE()/DATE_FORMAT() use their own
+	 * `%`-prefixed specifiers (e.g. `%Y-%m-%d`), so passing the PHP format
+	 * straight into SQL makes STR_TO_DATE() return NULL for every row.
+	 *
+	 * Tokens without a MySQL equivalent (ordinal suffix `S`, timezone tokens)
+	 * are dropped; backslash-escaped characters become literals; a literal `%`
+	 * is escaped as `%%` for MySQL.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param string $php_format PHP date format (e.g. 'Y-m-d', 'd/m/Y').
+	 * @return string MySQL format string (e.g. '%Y-%m-%d', '%d/%m/%Y').
+	 */
+	public static function php_to_mysql_date_format( $php_format ) {
+		$map = array(
+			// Day.
+			'd' => '%d',
+			'j' => '%e',
+			'D' => '%a',
+			'l' => '%W',
+			'N' => '%w',
+			'w' => '%w',
+			'z' => '%j',
+			'S' => '', // Ordinal suffix — no standalone MySQL token.
+			// Month.
+			'm' => '%m',
+			'n' => '%c',
+			'M' => '%b',
+			'F' => '%M',
+			// Year.
+			'Y' => '%Y',
+			'y' => '%y',
+			'o' => '%Y',
+			// Time.
+			'H' => '%H',
+			'G' => '%k',
+			'h' => '%h',
+			'g' => '%l',
+			'i' => '%i',
+			's' => '%s',
+			'A' => '%p',
+			'a' => '%p',
+			'u' => '%f',
+			// No MySQL equivalent — dropped.
+			'v' => '',
+			'e' => '',
+			'T' => '',
+			'P' => '',
+			'O' => '',
+			'U' => '',
+		);
+
+		$php_format = (string) $php_format;
+		$mysql      = '';
+		$length     = strlen( $php_format );
+
+		for ( $i = 0; $i < $length; $i++ ) {
+			$char = $php_format[ $i ];
+
+			// A backslash escapes the next character to a literal in PHP formats.
+			if ( '\\' === $char && $i + 1 < $length ) {
+				++$i;
+				$literal = $php_format[ $i ];
+				$mysql  .= ( '%' === $literal ) ? '%%' : $literal;
+				continue;
+			}
+
+			if ( isset( $map[ $char ] ) ) {
+				$mysql .= $map[ $char ];
+			} elseif ( '%' === $char ) {
+				$mysql .= '%%';
+			} else {
+				$mysql .= $char;
+			}
+		}
+
+		return $mysql;
+	}
+
+	/**
 	 * Get days until next birthday.
 	 *
 	 * @param string $date Birth date string.
@@ -243,5 +368,50 @@ class BP_Birthdays_Helpers {
 		} catch ( Exception $e ) {
 			return 0;
 		}
+	}
+
+	/**
+	 * User meta key that stores a member's per-user birthday opt-out flag.
+	 *
+	 * When set to 'yes' the member has chosen to hide their birthday from every
+	 * plugin surface (widget, shortcode, activity, notifications, emails).
+	 *
+	 * @since 2.5.0
+	 * @var string
+	 */
+	const OPTOUT_META_KEY = 'bb_birthday_hidden';
+
+	/**
+	 * Whether a member has opted out of having their birthday shown.
+	 *
+	 * GDPR: birthday month/day is personal data. A member can suppress it from
+	 * every plugin surface by enabling the opt-out on their BuddyPress
+	 * Settings > General screen. This is the single gate consulted by the widget,
+	 * shortcode, activity posts, BuddyPress notifications and greeting emails, so
+	 * an opted-out member never appears anywhere the plugin renders or messages.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param int $user_id The member ID to test.
+	 * @return bool True when the member has opted out (their birthday must be hidden).
+	 */
+	public static function is_user_opted_out( $user_id ) {
+		$user_id = absint( $user_id );
+
+		$opted_out = ( $user_id && 'yes' === get_user_meta( $user_id, self::OPTOUT_META_KEY, true ) );
+
+		/**
+		 * Filter whether a member's birthday is hidden everywhere.
+		 *
+		 * Return true to hide the member's birthday from all plugin surfaces,
+		 * false to always show it. Site owners can wire this to a privacy plugin
+		 * or a global consent store without touching the stored user meta.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param bool $opted_out Whether the member has opted out.
+		 * @param int  $user_id   The member ID being tested.
+		 */
+		return (bool) apply_filters( 'bb_birthday_user_opted_out', $opted_out, $user_id );
 	}
 }

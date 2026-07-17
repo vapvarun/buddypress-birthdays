@@ -73,7 +73,7 @@
 .bp-birthday-item.today-birthday .bp-send-wishes::after {
     content: "🎉";
     position: absolute;
-    right: -5px;
+    inset-inline-end: -5px;
     top: 30%;
     transform: translateY(-50%);
     font-size: 14px;
@@ -147,7 +147,7 @@
 }
 
 .bp-birthday-emoji {
-    margin-left: 4px;
+    margin-inline-start: 4px;
 }
 
 /* ====================================
@@ -320,7 +320,7 @@
 .bp-birthday-zodiac {
     display: inline-flex;
     align-items: center;
-    margin-left: 6px;
+    margin-inline-start: 6px;
     font-size: 0.95em;
 }
 
@@ -330,7 +330,7 @@
 }
 
 .bp-birthday-zodiac .zodiac-name {
-    margin-left: 3px;
+    margin-inline-start: 3px;
     font-size: 0.85em;
     color: var(--bp-birthday-text-muted, #666);
 }
