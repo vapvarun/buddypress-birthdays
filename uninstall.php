@@ -2,9 +2,26 @@
 /**
  * Uninstall handler for Wbcom Designs - Birthday Widget for BuddyPress.
  *
- * Removes all plugin data when the plugin is deleted via the WordPress
- * admin: the settings option, the notification tracking options, the
- * per-user wish-tracking meta, and any scheduled cron events.
+ * Removes plugin CONFIGURATION and DERIVED data when the plugin is deleted via
+ * the WordPress admin: the settings option, the notification tracking options,
+ * the per-user wish-tracking meta, and any scheduled cron events.
+ *
+ * DELIBERATELY RETAINED - the `bb_birthday_hidden` user meta:
+ *
+ * That meta is the member's own GDPR opt-out ("hide my birthday everywhere",
+ * BP_Birthdays_Helpers::OPTOUT_META_KEY, set from BuddyPress Settings >
+ * General). It is a consent decision made BY THE MEMBER, not configuration set
+ * by the site owner, so it is not this handler's to discard. Deleting it would
+ * fail OPEN: uninstall + reinstall (a routine troubleshooting or migration
+ * step) would silently republish the birthday of every member who had asked to
+ * be hidden, without asking them again. Keeping it fails CLOSED - the worst
+ * case is a stale row for a member who never returns, which is strictly safer
+ * than re-exposing personal data. It is also cheap to reverse: the member can
+ * untick the box themselves at any time (bb_save_member_privacy_field() calls
+ * delete_user_meta() when unchecked), and an admin can clear it in bulk.
+ *
+ * This retention is intentional and owner-facing. If the policy is ever changed
+ * to purge the opt-out on uninstall, update this docblock in the same commit.
  *
  * @package BP_Birthdays
  */

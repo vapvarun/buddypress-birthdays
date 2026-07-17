@@ -2,6 +2,10 @@
 node_modules/
 *.cmd
 .DS_Store
+
+# Build output - release zips are attached to the GitHub release, never tracked.
+# (Matches buddypress-check-in and the rest of the portfolio.)
+dist/
 Thumbs.db
 *.log
 *.swp
@@ -20,3 +24,7 @@ marketing/
 !audit/**
 !audit/manifest.json
 !audit/manifest.summary.json
+
+# Generated admin bundles - grunt output, nothing enqueues them.
+assets/css/admin.min.css
+assets/js/admin.min.js

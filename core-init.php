@@ -112,8 +112,10 @@ function bb_register_core_js() {
 					'send_wishes_aria'  => __( 'Send birthday wishes', 'buddypress-birthdays' ),
 					// Landmark label applied to each birthday widget region.
 					'widget_aria_label' => __( 'Birthday notifications', 'buddypress-birthdays' ),
-					// Shown once the member grants browser notification permission.
-					'notifications_on'  => __( 'Birthday notifications enabled!', 'buddypress-birthdays' ),
+					// NOTE: 'notifications_on' was dropped in 2.5.0 alongside the
+					// browser-notification subsystem in bb-core.js (the permission
+					// prompt had no caller that ever sent a notification). Do not
+					// re-add the string without re-adding a real consumer.
 				),
 				'settings'   => array(
 					'animation_speed'  => apply_filters( 'bb_birthdays_animation_speed', 300 ),

@@ -539,33 +539,14 @@
                 });
         },
 
-        createNotification: function(title, message, options = {}) {
-            // Browser notification for important birthday alerts
-            if ('Notification' in window && Notification.permission === 'granted') {
-                const notification = new Notification(title, {
-                    body: message,
-                    // Use emoji SVG as icon - works universally without external files
-                    icon: options.icon || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎂</text></svg>',
-                    tag: 'birthday-notification',
-                    requireInteraction: false,
-                    ...options
-                });
-                
-                setTimeout(() => notification.close(), 5000);
-                return notification;
-            }
-        },
-
-        requestNotificationPermission: function() {
-            // Request notification permission for birthday alerts
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        this.showMessage(this.s('notifications_on', 'Birthday notifications enabled!'), 'success');
-                    }
-                });
-            }
-        },
+        // NOTE: the browser Notification subsystem (createNotification +
+        // requestNotificationPermission) was removed in 2.5.0. createNotification
+        // was never called from anywhere, which made requestNotificationPermission
+        // a dead end: it prompted every visitor for browser-notification
+        // permission (2s after load, with no user gesture) for a capability the
+        // plugin never used. Do not reintroduce a permission prompt without a
+        // caller that actually sends notifications, and trigger it from a user
+        // gesture - browsers penalise or auto-block non-gesture prompts.
 
         debounce: function(func, wait) {
             let timeout;
@@ -644,13 +625,6 @@
     $(document).ready(function() {
         BPBirthdays.init();
         BPBirthdays.preloadImages();
-        
-        // Initialize notification permission request (optional)
-        if (BPBirthdays.getTodaysBirthdays() > 0) {
-            setTimeout(() => {
-                BPBirthdays.requestNotificationPermission();
-            }, 2000);
-        }
     });
 
     // Handle page unload cleanup
@@ -661,132 +635,14 @@
     // Expose to global scope for external access
     window.BPBirthdays = BPBirthdays;
 
-    // Additional utility functions for birthday widgets
-    const BirthdayUtils = {
-        formatDate: function(dateString, format = 'F j') {
-            // Enhanced date formatting utility
-            const date = new Date(dateString);
-            const months = [
-                'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'
-            ];
-            
-            const shortMonths = [
-                'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-            ];
-            
-            switch (format) {
-                case 'F j':
-                    return `${months[date.getMonth()]} ${date.getDate()}`;
-                case 'M j':
-                    return `${shortMonths[date.getMonth()]} ${date.getDate()}`;
-                case 'j F':
-                    return `${date.getDate()} ${months[date.getMonth()]}`;
-                case 'j M':
-                    return `${date.getDate()} ${shortMonths[date.getMonth()]}`;
-                default:
-                    return date.toLocaleDateString();
-            }
-        },
-
-        calculateAge: function(birthDate) {
-            const today = new Date();
-            const birth = new Date(birthDate);
-            let age = today.getFullYear() - birth.getFullYear();
-            
-            const monthDiff = today.getMonth() - birth.getMonth();
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                age--;
-            }
-            
-            return age;
-        },
-
-        isToday: function(dateString) {
-            const today = new Date();
-            const date = new Date(dateString);
-            
-            return today.getDate() === date.getDate() && 
-                   today.getMonth() === date.getMonth();
-        },
-
-        isTomorrow: function(dateString) {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const date = new Date(dateString);
-            
-            return tomorrow.getDate() === date.getDate() && 
-                   tomorrow.getMonth() === date.getMonth();
-        },
-
-        getDaysUntilBirthday: function(birthDate) {
-            const today = new Date();
-            const birth = new Date(birthDate);
-            const currentYear = today.getFullYear();
-            
-            let nextBirthday = new Date(currentYear, birth.getMonth(), birth.getDate());
-            
-            if (nextBirthday < today) {
-                nextBirthday.setFullYear(currentYear + 1);
-            }
-            
-            const diffTime = nextBirthday - today;
-            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        },
-
-        getUpcomingBirthdays: function(birthdays, limit = 5) {
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            
-            return birthdays
-                .map(birthday => {
-                    const birthDate = new Date(birthday.date);
-                    const thisYearBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
-                    
-                    // If birthday has passed this year, use next year
-                    if (thisYearBirthday < today) {
-                        thisYearBirthday.setFullYear(currentYear + 1);
-                    }
-                    
-                    return {
-                        ...birthday,
-                        nextBirthday: thisYearBirthday,
-                        daysUntil: Math.ceil((thisYearBirthday - today) / (1000 * 60 * 60 * 24)),
-                        isToday: this.isToday(birthday.date),
-                        isTomorrow: this.isTomorrow(birthday.date)
-                    };
-                })
-                .sort((a, b) => a.nextBirthday - b.nextBirthday)
-                .slice(0, limit);
-        },
-
-        getBirthdayGreeting: function(name, age) {
-            const greetings = [
-                `Happy Birthday, ${name}! 🎉`,
-                `Wishing you a wonderful ${age}th birthday, ${name}! 🎂`,
-                `Hope your special day is amazing, ${name}! 🎈`,
-                `Many happy returns, ${name}! 🎁`,
-                `Have a fantastic birthday, ${name}! ✨`
-            ];
-            
-            return greetings[Math.floor(Math.random() * greetings.length)];
-        },
-
-        generateBirthdayMessage: function(name, age) {
-            const messages = [
-                `Hi ${name}! Wishing you a very happy ${age}th birthday! Hope your day is filled with joy and celebration! 🎉`,
-                `Happy Birthday ${name}! May this new year of life bring you happiness, health, and all your heart desires! 🎂`,
-                `Dear ${name}, Happy ${age}th Birthday! Hope you have a wonderful day surrounded by family and friends! 🎈`,
-                `${name}, wishing you the happiest of birthdays! May ${age} be your best year yet! 🎁`
-            ];
-            
-            return messages[Math.floor(Math.random() * messages.length)];
-        }
-    };
-
-    // Expose utilities globally
-    window.BirthdayUtils = BirthdayUtils;
+    // NOTE: `window.BirthdayUtils` was removed in 2.5.0. It exposed date/greeting
+    // helpers (formatDate, calculateAge, isToday, isTomorrow, getDaysUntilBirthday,
+    // getUpcomingBirthdays, getBirthdayGreeting, generateBirthdayMessage) that
+    // nothing in this plugin ever called, and that carried ~30 hardcoded English
+    // literals (month names, greeting text) which could never be translated.
+    // All real formatting is done server-side via BP_Birthdays_Helpers, which
+    // honours the site locale and date format. If a helper is needed on the
+    // client again, seed its strings through bbBirthdays.strings (see core-init.php).
 
     // Add CSS classes for enhanced animations
     $('<style>')
