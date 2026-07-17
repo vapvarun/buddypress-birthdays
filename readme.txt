@@ -247,6 +247,7 @@ No. Every widget mode fetches a bounded, batch-primed candidate pool instead of 
 
 Redesigned admin settings, big-community performance bounds, and a batch of widget and notification fixes.
 
+* New      - Added German, Spanish, French, Italian and Portuguese (Brazil) translations.
 * New      - Redesigned admin settings: card-panel interface under the WB Plugins menu with an overview dashboard and grouped settings tabs. The settings page URL and stored option are unchanged.
 * New      - Birthday wish tracking: clicking the send-wishes button now records the wish before opening the compose screen, and records older than 7 days are cleaned up daily.
 * New      - Per-member birthday privacy opt-out (GDPR): members can hide their birthday from every plugin surface (widget, shortcode, activity, notifications, emails) from their BuddyPress Settings > General screen. Override programmatically with the bb_birthday_user_opted_out filter.
@@ -254,6 +255,10 @@ Redesigned admin settings, big-community performance bounds, and a batch of widg
 * Improve  - Plugin lifecycle: cron events are scheduled on activation, cleared on deactivation, and all plugin options and wish-tracking user meta are removed on uninstall.
 * Improve  - Translations now load from the bundled languages folder for self-hosted installs.
 * Improve  - Keyboard focus visibility on admin form controls.
+* Fix      - Bundled translations could never load because the Domain Path header was missing. WordPress 6.7+ needs it to locate the translation files.
+* Fix      - The twelve zodiac sign names, shown in the birthday tooltip, had no translatable source and always rendered in English.
+* Fix      - The birthday activity and notification defaults differed between the settings screen and the scheduled task, so the same site could post two different messages. Both now use the same text, without emoji.
+* Fix      - Screen-reader labels on the wish button and the widget had no translatable source.
 * Fix      - Frontend styles and scripts are now versioned with the plugin version, so updating no longer leaves you on a stale cached copy. Previously the confetti option and wish recording could silently do nothing after an update until the browser cache was cleared.
 * Fix      - Widget birthday query: the field date format is now converted to MySQL specifiers, so weekly and monthly ranges and upcoming-birthday ordering work again.
 * Fix      - Database placeholder notice raised by the widget birthday query.

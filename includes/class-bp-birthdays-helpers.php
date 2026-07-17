@@ -21,6 +21,12 @@ class BP_Birthdays_Helpers {
 	/**
 	 * Zodiac signs data.
 	 *
+	 * The `name` values are stable ENGLISH IDENTIFIERS, not display strings —
+	 * the date-range matching in get_zodiac_sign() compares against them, so
+	 * they must never be translated in place. Resolve a display label with
+	 * get_zodiac_label() at render time instead (a static property cannot call
+	 * __() anyway, and doing so would resolve before the textdomain loads).
+	 *
 	 * @var array
 	 */
 	private static $zodiac_signs = array(
@@ -139,6 +145,37 @@ class BP_Birthdays_Helpers {
 	}
 
 	/**
+	 * Get the translated display label for a zodiac sign identifier.
+	 *
+	 * The identifiers in self::$zodiac_signs are matching keys, not display
+	 * text. This maps one to the member-facing label. Called at render time so
+	 * the textdomain (loaded on init:10) is always available.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param string $name Zodiac sign identifier (e.g. 'Capricorn').
+	 * @return string Translated label, or the identifier when unknown.
+	 */
+	public static function get_zodiac_label( $name ) {
+		$labels = array(
+			'Capricorn'   => __( 'Capricorn', 'buddypress-birthdays' ),
+			'Aquarius'    => __( 'Aquarius', 'buddypress-birthdays' ),
+			'Pisces'      => __( 'Pisces', 'buddypress-birthdays' ),
+			'Aries'       => __( 'Aries', 'buddypress-birthdays' ),
+			'Taurus'      => __( 'Taurus', 'buddypress-birthdays' ),
+			'Gemini'      => __( 'Gemini', 'buddypress-birthdays' ),
+			'Cancer'      => __( 'Cancer', 'buddypress-birthdays' ),
+			'Leo'         => __( 'Leo', 'buddypress-birthdays' ),
+			'Virgo'       => __( 'Virgo', 'buddypress-birthdays' ),
+			'Libra'       => __( 'Libra', 'buddypress-birthdays' ),
+			'Scorpio'     => __( 'Scorpio', 'buddypress-birthdays' ),
+			'Sagittarius' => __( 'Sagittarius', 'buddypress-birthdays' ),
+		);
+
+		return isset( $labels[ $name ] ) ? $labels[ $name ] : $name;
+	}
+
+	/**
 	 * Get zodiac symbol HTML.
 	 *
 	 * @param string $date Date string.
@@ -152,11 +189,15 @@ class BP_Birthdays_Helpers {
 			return '';
 		}
 
-		$html  = '<span class="bp-birthday-zodiac" title="' . esc_attr( $sign['name'] ) . '">';
+		// The sign's `name` is an identifier; the tooltip and the visible name
+		// must render the translated label.
+		$label = self::get_zodiac_label( $sign['name'] );
+
+		$html  = '<span class="bp-birthday-zodiac" title="' . esc_attr( $label ) . '">';
 		$html .= '<span class="zodiac-symbol">' . esc_html( $sign['symbol'] ) . '</span>';
 
 		if ( $include_name ) {
-			$html .= ' <span class="zodiac-name">' . esc_html( $sign['name'] ) . '</span>';
+			$html .= ' <span class="zodiac-name">' . esc_html( $label ) . '</span>';
 		}
 
 		$html .= '</span>';

@@ -1212,7 +1212,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		}
 
 		if ( ! isset( $user_info->user_login ) ) {
-			return 'N/A';
+			return __( 'N/A', 'buddypress-birthdays' );
 		}
 
 		if ( ( ! empty( $user_info->user_firstname ) || ! empty( $user_info->user_lastname ) ) ) {

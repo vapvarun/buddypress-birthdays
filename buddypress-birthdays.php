@@ -7,6 +7,7 @@
  * Author: Wbcom Designs
  * Author URI: https://wbcomdesigns.com/
  * Text Domain: buddypress-birthdays
+ * Domain Path: /languages
  * License: GPLv3
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 5.3

@@ -21,8 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * This class is retained ONLY for the option contract that the new panel
  * delegates to:
  *  - sanitize_settings()  — the canonical sanitizer for all 13 subkeys.
- *  - get_settings()       — settings getter with $defaults applied.
- *  - $defaults            — the single source of truth for defaults.
+ *  - get_settings()       — settings getter with the defaults applied.
+ *  - get_defaults()       — the single source of truth for defaults.
  *
  * Its menu/enqueue/render methods (add_admin_menu, register_settings,
  * enqueue_admin_assets, render_settings_page and the per-tab renderers)
@@ -39,30 +39,43 @@ class BP_Birthdays_Admin {
 	const OPTION_NAME = 'bp_birthdays_settings';
 
 	/**
-	 * Default settings.
+	 * Default settings — the single source of truth for every subkey.
 	 *
-	 * @var array
+	 * Built by a method rather than a property initializer because two of the
+	 * defaults (activity_message, notification_text) are member-facing copy
+	 * that must pass through __(). PHP does not allow a function call in a
+	 * property default, and resolving a label before the textdomain loads on
+	 * init:10 would return English anyway (docs/standards/i18n.md trap 4).
+	 * Every caller reaches these through get_settings(), which runs at render
+	 * time, so the textdomain is always loaded by then.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @return array Default settings.
 	 */
-	private $defaults = array(
-		// General.
-		'default_field_id'          => '',
-		'cache_duration'            => 30,
-		// Email Notifications (content is managed in BP Emails).
-		'email_enabled'             => false,
-		'email_send_time'           => '09:00',
-		'admin_email_enabled'       => false,
-		'admin_email'               => '',
-		// Activity Feed.
-		'activity_enabled'          => false,
-		'activity_message'          => "Today is {name}'s birthday! Send your wishes!",
-		// BP Notifications.
-		'notification_enabled'      => false,
-		'notification_friends_only' => false,
-		'notification_text'         => "It's {name}'s birthday today!",
-		// Display Extras.
-		'confetti_enabled'          => false,
-		'zodiac_enabled'            => false,
-	);
+	public static function get_defaults() {
+		return array(
+			// General.
+			'default_field_id'          => '',
+			'cache_duration'            => 30,
+			// Email Notifications (content is managed in BP Emails).
+			'email_enabled'             => false,
+			'email_send_time'           => '09:00',
+			'admin_email_enabled'       => false,
+			'admin_email'               => '',
+			// Activity Feed. {name}/{age}/{profile_url} are placeholders the
+			// site owner can re-order, so the whole sentence is one unit.
+			'activity_enabled'          => false,
+			'activity_message'          => __( "Today is {name}'s birthday! Send your wishes!", 'buddypress-birthdays' ),
+			// BP Notifications.
+			'notification_enabled'      => false,
+			'notification_friends_only' => false,
+			'notification_text'         => __( "It's {name}'s birthday today!", 'buddypress-birthdays' ),
+			// Display Extras.
+			'confetti_enabled'          => false,
+			'zodiac_enabled'            => false,
+		);
+	}
 
 	/**
 	 * Instance of this class.
@@ -210,8 +223,7 @@ class BP_Birthdays_Admin {
 	 */
 	public static function get_settings( $key = null ) {
 		$settings = get_option( self::OPTION_NAME, array() );
-		$instance = self::get_instance();
-		$settings = wp_parse_args( $settings, $instance->defaults );
+		$settings = wp_parse_args( $settings, self::get_defaults() );
 
 		if ( null !== $key ) {
 			return isset( $settings[ $key ] ) ? $settings[ $key ] : null;

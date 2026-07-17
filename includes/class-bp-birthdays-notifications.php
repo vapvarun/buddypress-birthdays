@@ -194,7 +194,7 @@ class BP_Birthdays_Notifications {
 	 * @return string
 	 */
 	private function get_birthday_email_content() {
-		$content = '<p>' . __( '🎂 <strong>Happy Birthday!</strong> 🎉', 'buddypress-birthdays' ) . '</p>' . "\n\n";
+		$content = '<p>' . __( '<strong>Happy Birthday!</strong>', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
 		$content .= '<p>' . __( 'Wishing you a fantastic birthday filled with joy, laughter, and wonderful moments! The entire {{{site.name}}} community sends you warm birthday wishes on your special day.', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
@@ -238,7 +238,7 @@ class BP_Birthdays_Notifications {
 	private function get_admin_summary_content() {
 		$content = '<p>' . __( 'Hi Admin,', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
-		$content .= '<p>' . __( '🎂 Here are the members celebrating their birthday today:', 'buddypress-birthdays' ) . '</p>' . "\n\n";
+		$content .= '<p>' . __( 'Here are the members celebrating their birthday today:', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
 		$content .= '{{{birthdays.list}}}' . "\n\n";
 
@@ -611,7 +611,7 @@ class BP_Birthdays_Notifications {
 			esc_html( $birthday_data['display_name'] )
 		) . '</p>';
 
-		$message .= '<p>🎂 <strong>' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</strong> 🎉</p>';
+		$message .= '<p><strong>' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</strong></p>';
 
 		$message .= '<p>' . sprintf(
 			/* translators: %s: site name */
@@ -657,7 +657,16 @@ class BP_Birthdays_Notifications {
 			return;
 		}
 
-		$message = $this->get_setting( 'activity_message', "🎂 Today is {name}'s birthday! Send your wishes! 🎉" );
+		// Cron/CLI fallback: BP_Birthdays_Admin (which owns the canonical
+		// default) is only loaded in is_admin() context, so this literal is
+		// what a site that has never saved the Activity tab actually posts —
+		// it needs its own __() home. {name}/{age}/{profile_url} are
+		// placeholders the site owner may re-order, so the whole sentence
+		// stays one translatable unit.
+		$message = $this->get_setting(
+			'activity_message',
+			__( "Today is {name}'s birthday! Send your wishes!", 'buddypress-birthdays' )
+		);
 
 		$profile_url = bp_core_get_user_domain( $user_id );
 		$name_link   = '<a href="' . esc_url( $profile_url ) . '">' . esc_html( $birthday_data['display_name'] ) . '</a>';
@@ -822,7 +831,11 @@ class BP_Birthdays_Notifications {
 		$user_name = $user ? $user->display_name : __( 'Someone', 'buddypress-birthdays' );
 		$user_link = bp_core_get_user_domain( $item_id );
 
-		$text = $this->get_setting( 'notification_text', "🎂 It's {name}'s birthday today!" );
+		// Cron/CLI fallback default — see the note in post_birthday_activity().
+		$text = $this->get_setting(
+			'notification_text',
+			__( "It's {name}'s birthday today!", 'buddypress-birthdays' )
+		);
 		$text = str_replace( '{name}', $user_name, $text );
 
 		if ( 'string' === $format ) {
@@ -887,7 +900,12 @@ class BP_Birthdays_Notifications {
 
 			$list_html .= '</li>';
 
-			$list_plain .= '• ' . $birthday['display_name'] . ' (Turning ' . $birthday['age'] . ")\n";
+			$list_plain .= '• ' . sprintf(
+				/* translators: 1: Member display name, 2: Age the member is turning. */
+				__( '%1$s (Turning %2$d)', 'buddypress-birthdays' ),
+				$birthday['display_name'],
+				$birthday['age']
+			) . "\n";
 		}
 
 		$list_html .= '</ul>';

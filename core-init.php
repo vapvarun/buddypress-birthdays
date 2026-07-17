@@ -92,16 +92,28 @@ function bb_register_core_js() {
 				'plugin_url' => plugins_url( '', __FILE__ ),
 				'version'    => BIRTHDAY_WIDGET_VERSION,
 				'debug'      => defined( 'WP_DEBUG' ) && WP_DEBUG,
+				// Every key bb-core.js reads via bbBirthdays.strings.<key>
+				// MUST be seeded here with a __() value: a key the JS reads
+				// but PHP never seeds renders its English fallback on every
+				// locale forever (docs/standards/i18n.md trap 1).
 				'strings'    => array(
-					'loading'        => __( 'Loading...', 'buddypress-birthdays' ),
-					'error'          => __( 'Error occurred', 'buddypress-birthdays' ),
-					'send_wishes'    => __( 'Send my wishes', 'buddypress-birthdays' ),
-					'wishes_sent'    => __( 'Birthday wishes sent!', 'buddypress-birthdays' ),
-					'wishes_error'   => __( 'Unable to send wishes at this time.', 'buddypress-birthdays' ),
-					'happy_birthday' => __( 'Happy Birthday!', 'buddypress-birthdays' ),
-					'no_birthdays'   => __( 'No upcoming birthdays', 'buddypress-birthdays' ),
-					'today'          => __( 'Today', 'buddypress-birthdays' ),
-					'tomorrow'       => __( 'Tomorrow', 'buddypress-birthdays' ),
+					'loading'           => __( 'Loading...', 'buddypress-birthdays' ),
+					'error'             => __( 'Error occurred', 'buddypress-birthdays' ),
+					'send_wishes'       => __( 'Send my wishes', 'buddypress-birthdays' ),
+					'wishes_sent'       => __( 'Birthday wishes sent!', 'buddypress-birthdays' ),
+					'wishes_error'      => __( 'Unable to send wishes at this time.', 'buddypress-birthdays' ),
+					'happy_birthday'    => __( 'Happy Birthday!', 'buddypress-birthdays' ),
+					'no_birthdays'      => __( 'No upcoming birthdays', 'buddypress-birthdays' ),
+					'today'             => __( 'Today', 'buddypress-birthdays' ),
+					'tomorrow'          => __( 'Tomorrow', 'buddypress-birthdays' ),
+					// Accessible name applied to every send-wishes button by
+					// bb-core.js initAccessibility(). Mirrors the title
+					// attribute the widget renders server-side.
+					'send_wishes_aria'  => __( 'Send birthday wishes', 'buddypress-birthdays' ),
+					// Landmark label applied to each birthday widget region.
+					'widget_aria_label' => __( 'Birthday notifications', 'buddypress-birthdays' ),
+					// Shown once the member grants browser notification permission.
+					'notifications_on'  => __( 'Birthday notifications enabled!', 'buddypress-birthdays' ),
 				),
 				'settings'   => array(
 					'animation_speed'  => apply_filters( 'bb_birthdays_animation_speed', 300 ),
@@ -284,7 +296,7 @@ function bb_birthdays_shortcode( $atts ) {
 
 	// Check if widget class exists.
 	if ( ! class_exists( 'Widget_Buddypress_Birthdays' ) ) {
-		return '<p>' . __( 'Birthday widget not available.', 'buddypress-birthdays' ) . '</p>';
+		return '<p>' . esc_html__( 'Birthday widget not available.', 'buddypress-birthdays' ) . '</p>';
 	}
 
 	// If field_name is not provided or empty, find the first available date field.
@@ -419,7 +431,7 @@ function bb_birthdays_ajax_handler() {
 	// Verify nonce.
 	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 	if ( ! wp_verify_nonce( $nonce, 'bb_birthdays_nonce' ) ) {
-		wp_die( 'Security check failed' );
+		wp_die( esc_html__( 'Security check failed', 'buddypress-birthdays' ) );
 	}
 
 	$action = isset( $_POST['birthday_action'] ) ? sanitize_key( wp_unslash( $_POST['birthday_action'] ) ) : '';
@@ -428,12 +440,12 @@ function bb_birthdays_ajax_handler() {
 		case 'refresh_widget':
 			// Only allow logged-in users with read capability to refresh cache.
 			if ( ! is_user_logged_in() || ! current_user_can( 'read' ) ) {
-				wp_send_json_error( 'Authentication required' );
+				wp_send_json_error( __( 'Authentication required', 'buddypress-birthdays' ) );
 				break;
 			}
 			// Clear birthday cache.
 			bb_clear_birthday_caches();
-			wp_send_json_success( array( 'message' => 'Widget refreshed' ) );
+			wp_send_json_success( array( 'message' => __( 'Widget refreshed', 'buddypress-birthdays' ) ) );
 			break;
 
 		case 'mark_wished':
@@ -445,13 +457,13 @@ function bb_birthdays_ajax_handler() {
 
 			// Recording a wish requires a logged-in actor.
 			if ( ! $current_user_id ) {
-				wp_send_json_error( 'Authentication required' );
+				wp_send_json_error( __( 'Authentication required', 'buddypress-birthdays' ) );
 				break;
 			}
 
 			// A valid target birthday user id must be supplied.
 			if ( ! $user_id ) {
-				wp_send_json_error( 'Invalid request: missing user_id' );
+				wp_send_json_error( __( 'Invalid request: missing user_id', 'buddypress-birthdays' ) );
 				break;
 			}
 
@@ -471,14 +483,14 @@ function bb_birthdays_ajax_handler() {
 					update_user_meta( $current_user_id, 'bb_birthday_wished_users', $wished_users );
 				}
 
-				wp_send_json_success( array( 'message' => 'Wish recorded' ) );
+				wp_send_json_success( array( 'message' => __( 'Wish recorded', 'buddypress-birthdays' ) ) );
 			}
 
-			wp_send_json_error( 'Authentication required' );
+			wp_send_json_error( __( 'Authentication required', 'buddypress-birthdays' ) );
 			break;
 
 		default:
-			wp_send_json_error( 'Invalid action' );
+			wp_send_json_error( __( 'Invalid action', 'buddypress-birthdays' ) );
 	}
 }
 add_action( 'wp_ajax_bb_birthdays_action', 'bb_birthdays_ajax_handler' );

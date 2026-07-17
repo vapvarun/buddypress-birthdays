@@ -1,0 +1,82 @@
+{
+  "schema_version": "v1",
+  "plugin": {
+    "slug": "buddypress-birthdays",
+    "version": "2.4.1"
+  },
+  "generated": {
+    "at": "2026-07-03T08:57:28.848Z",
+    "manifest_at": "2026-06-05T00:00:00+05:30",
+    "manifest_branch": "2.5.0"
+  },
+  "categories": {
+    "rest": {
+      "total": 0,
+      "covered": 0,
+      "uncovered": 0,
+      "skipped": 0,
+      "covered_items": [],
+      "uncovered_items": []
+    },
+    "ajax": {
+      "total": 1,
+      "covered": 0,
+      "uncovered": 1,
+      "skipped": 0,
+      "covered_items": [],
+      "uncovered_items": [
+        {
+          "action": "bb_birthdays_action",
+          "stub_command": "bin/qa-stub-gen.php ajax bb_birthdays_action"
+        }
+      ]
+    },
+    "hooks_fired": {
+      "total": 0,
+      "covered": 0,
+      "uncovered": 0,
+      "skipped": 5,
+      "covered_items": [],
+      "uncovered_items": [],
+      "_note": "Tracks only hooks with non-empty consumed_by. Skipped hooks are pure extensibility surface."
+    },
+    "cron": {
+      "total": 2,
+      "covered": 0,
+      "uncovered": 2,
+      "skipped": 0,
+      "covered_items": [],
+      "uncovered_items": [
+        {
+          "hook": "bb_cleanup_old_wishes",
+          "stub_command": "bin/qa-stub-gen.php cron bb_cleanup_old_wishes"
+        },
+        {
+          "hook": "bp_birthdays_daily_check",
+          "stub_command": "bin/qa-stub-gen.php cron bp_birthdays_daily_check"
+        }
+      ]
+    },
+    "wp_cli": {
+      "total": 0,
+      "covered": 0,
+      "uncovered": 0,
+      "skipped": 0,
+      "covered_items": [],
+      "uncovered_items": []
+    }
+  },
+  "summary": {
+    "categories_checked": 5,
+    "items_total": 3,
+    "items_covered": 0,
+    "items_uncovered": 3,
+    "items_skipped": 5,
+    "coverage_percent": 0
+  },
+  "drift": {
+    "previous_uncovered": null,
+    "current_uncovered": 3,
+    "delta": null
+  }
+}
