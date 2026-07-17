@@ -9,14 +9,14 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-16T13:55:54+00:00\n"
+"POT-Creation-Date: 2026-07-17T10:19:02+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: buddypress-birthdays\n"
 
 #. Plugin Name of the plugin
 #: buddypress-birthdays.php
-#: buddypress-birthdays.php:119
+#: buddypress-birthdays.php:120
 msgid "Wbcom Designs - Birthday Widget for BuddyPress"
 msgstr ""
 
@@ -86,7 +86,7 @@ msgid "N/A"
 msgstr ""
 
 #: assets/inc/buddypress-birthdays-widget.php:1276
-#: core-init.php:281
+#: core-init.php:283
 msgid "Upcoming Birthdays"
 msgstr ""
 
@@ -208,12 +208,8 @@ msgstr ""
 msgid "None"
 msgstr ""
 
-#: buddypress-birthdays.php:120
-msgid "BuddyPress"
-msgstr ""
-
 #. translators: %1$s: Wbcom Designs - Birthday Widget for BuddyPress, %2$s: BuddyPress
-#: buddypress-birthdays.php:124
+#: buddypress-birthdays.php:125
 #, php-format
 msgid "%1$s is ineffective as it requires %2$s to be installed and active."
 msgstr ""
@@ -260,41 +256,37 @@ msgstr ""
 msgid "Birthday notifications"
 msgstr ""
 
-#: core-init.php:116
-msgid "Birthday notifications enabled!"
-msgstr ""
-
-#: core-init.php:299
+#: core-init.php:301
 msgid "Birthday widget not available."
 msgstr ""
 
-#: core-init.php:434
+#: core-init.php:436
 msgid "Security check failed"
 msgstr ""
 
-#: core-init.php:443
-#: core-init.php:460
-#: core-init.php:489
+#: core-init.php:445
+#: core-init.php:462
+#: core-init.php:491
 msgid "Authentication required"
 msgstr ""
 
-#: core-init.php:448
+#: core-init.php:450
 msgid "Widget refreshed"
 msgstr ""
 
-#: core-init.php:466
+#: core-init.php:468
 msgid "Invalid request: missing user_id"
 msgstr ""
 
-#: core-init.php:486
+#: core-init.php:488
 msgid "Wish recorded"
 msgstr ""
 
-#: core-init.php:493
+#: core-init.php:495
 msgid "Invalid action"
 msgstr ""
 
-#: core-init.php:663
+#: core-init.php:665
 msgid "Hide my birthday everywhere on this site (widgets, activity, notifications and emails)."
 msgstr ""
 
@@ -364,60 +356,60 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: includes/admin/views/discover.php:24
-msgid "BuddyNext"
+#: includes/admin/views/discover.php:27
+msgid "A free, fast community theme for BuddyPress, BuddyBoss and PeepSo with a modern layout and dark mode."
 msgstr ""
 
-#: includes/admin/views/discover.php:26
+#: includes/admin/views/discover.php:33
 msgid "A full social network for WordPress with feeds, profiles, and messaging."
 msgstr ""
 
-#: includes/admin/views/discover.php:30
-msgid "Jetonomy"
-msgstr ""
-
-#: includes/admin/views/discover.php:32
+#: includes/admin/views/discover.php:39
 msgid "Forums, Q&A, and idea spaces that scale and moderate themselves."
 msgstr ""
 
-#: includes/admin/views/discover.php:36
-msgid "Mediaverse"
-msgstr ""
-
-#: includes/admin/views/discover.php:38
+#: includes/admin/views/discover.php:45
 msgid "Photo and video sharing with albums, reactions, and private chat."
 msgstr ""
 
-#: includes/admin/views/discover.php:42
-msgid "Listora"
-msgstr ""
-
-#: includes/admin/views/discover.php:44
-msgid "Searchable directories with reviews, maps, and member submissions."
-msgstr ""
-
-#: includes/admin/views/discover.php:48
-msgid "Learnomy"
-msgstr ""
-
-#: includes/admin/views/discover.php:50
-msgid "A free LMS to sell courses, run quizzes, and award certificates."
-msgstr ""
-
-#: includes/admin/views/discover.php:58
-msgid "More Free Tools from Wbcom Designs"
+#: includes/admin/views/discover.php:52
+msgid "Run community events with RSVPs, calendars, and front-end submissions."
 msgstr ""
 
 #: includes/admin/views/discover.php:59
-msgid "Birthday reminders keep members coming back. These free Wbcom Designs plugins give your community more reasons to stay: the network itself, forums, media, directories, and courses."
+msgid "Reward members with points, badges, and leaderboards to keep engagement high."
 msgstr ""
 
-#: includes/admin/views/discover.php:71
+#: includes/admin/views/discover.php:65
+msgid "Searchable directories with reviews, maps, and member submissions."
+msgstr ""
+
+#: includes/admin/views/discover.php:72
+msgid "Add a job board with front-end listings, applications, and employer profiles."
+msgstr ""
+
+#: includes/admin/views/discover.php:78
+msgid "A free LMS to sell courses, run quizzes, and award certificates."
+msgstr ""
+
+#: includes/admin/views/discover.php:85
+msgid "A free service marketplace with vendor dashboards, an 11-status order flow, and Stripe or PayPal built in."
+msgstr ""
+
+#: includes/admin/views/discover.php:93
+msgid "More Free Tools from Wbcom Designs"
+msgstr ""
+
+#: includes/admin/views/discover.php:94
+msgid "Birthday reminders keep members coming back. These free Wbcom Designs plugins give your community more reasons to stay: the theme and network itself, forums, media, events, gamification, directories, jobs, courses, and services."
+msgstr ""
+
+#: includes/admin/views/discover.php:106
 msgid "Get it free"
 msgstr ""
 
 #. translators: %s: product name.
-#: includes/admin/views/discover.php:76
+#: includes/admin/views/discover.php:111
 #, php-format
 msgid "%s (opens in a new tab)"
 msgstr ""

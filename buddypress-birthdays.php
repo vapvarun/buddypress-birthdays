@@ -10,8 +10,8 @@
  * Domain Path: /languages
  * License: GPLv3
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
- * Requires at least: 5.3
- * Requires PHP: 7.4
+ * Requires at least: 6.5
+ * Requires PHP: 8.0
  * Tested up to: 7.0
  * Requires Plugins: buddypress
  *
@@ -118,7 +118,7 @@ add_action( 'admin_init', 'bb_check_bp_active' );
  */
 function bb_dependent_plugin_notice() {
 	$bb_plugin = esc_html__( 'Wbcom Designs - Birthday Widget for BuddyPress', 'buddypress-birthdays' );
-	$bp_plugin = esc_html__( 'BuddyPress', 'buddypress-birthdays' );
+	$bp_plugin = 'BuddyPress';
 
 	echo '<div class="error"><p>'
 	/* translators: %1$s: Wbcom Designs - Birthday Widget for BuddyPress, %2$s: BuddyPress */

@@ -2,9 +2,9 @@
 Contributors: wbcomdesigns, vapvarun
 Donate link: https://wbcomdesigns.com/donate/
 Tags: buddypress, birthdays, widget, community, members
-Requires at least: 5.3
+Requires at least: 6.5
 Tested up to: 7.0
-Requires PHP: 7.4
+Requires PHP: 8.0
 Requires Plugins: buddypress
 Stable tag: 2.5.0
 License: GPLv3
@@ -101,8 +101,8 @@ Our dedicated support team is ready to help you get the most out of this plugin.
 
 = Compatibility =
 
-* WordPress 5.3 and higher
-* PHP 7.4 and higher (8.0+ recommended)
+* WordPress 6.5 and higher
+* PHP 8.0 and higher
 * BuddyPress required, with at least one Extended Profile date field (datebox or birthdate)
 * Works with BuddyBoss Platform and the BuddyBoss theme
 * Works with Youzify
@@ -158,8 +158,8 @@ Then set the widget or shortcode options: which members to show (all, friends, f
 
 = Requirements =
 
-* WordPress 5.3 or higher
-* PHP 7.4 or higher
+* WordPress 6.5 or higher
+* PHP 8.0 or higher
 * BuddyPress, with at least one Extended Profile date field
 
 == Frequently Asked Questions ==

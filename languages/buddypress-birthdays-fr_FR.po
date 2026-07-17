@@ -5,7 +5,7 @@ msgstr ""
 "Project-Id-Version: Wbcom Designs - Birthday Widget for BuddyPress 2.5.0\n"
 "Report-Msgid-Bugs-To: "
 "https://wordpress.org/support/plugin/buddypress-birthdays\n"
-"POT-Creation-Date: 2026-07-16T13:55:54+00:00\n"
+"POT-Creation-Date: 2026-07-17T10:19:02+00:00\n"
 "PO-Revision-Date: 2026-07-16T11:32:27+00:00\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -17,7 +17,7 @@ msgstr ""
 "X-Domain: buddypress-birthdays\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: buddypress-birthdays.php buddypress-birthdays.php:119
+#: buddypress-birthdays.php buddypress-birthdays.php:120
 #. Plugin Name of the plugin
 msgid "Wbcom Designs - Birthday Widget for BuddyPress"
 msgstr "Wbcom Designs - Widget d'anniversaires pour BuddyPress"
@@ -92,7 +92,7 @@ msgstr "Page suivante"
 msgid "N/A"
 msgstr "N/A"
 
-#: assets/inc/buddypress-birthdays-widget.php:1276 core-init.php:281
+#: assets/inc/buddypress-birthdays-widget.php:1276 core-init.php:283
 msgid "Upcoming Birthdays"
 msgstr "Anniversaires à venir"
 
@@ -220,11 +220,7 @@ msgstr "Sélectionne un emoji"
 msgid "None"
 msgstr "Aucun"
 
-#: buddypress-birthdays.php:120
-msgid "BuddyPress"
-msgstr "BuddyPress"
-
-#: buddypress-birthdays.php:124
+#: buddypress-birthdays.php:125
 #. translators: %1$s: Wbcom Designs - Birthday Widget for BuddyPress, %2$s: BuddyPress
 #, php-format
 msgid "%1$s is ineffective as it requires %2$s to be installed and active."
@@ -271,39 +267,35 @@ msgstr "Demain"
 msgid "Birthday notifications"
 msgstr "Notifications d'anniversaire"
 
-#: core-init.php:116
-msgid "Birthday notifications enabled!"
-msgstr "Notifications d'anniversaire activées !"
-
-#: core-init.php:299
+#: core-init.php:301
 msgid "Birthday widget not available."
 msgstr "Widget d'anniversaires non disponible."
 
-#: core-init.php:434
+#: core-init.php:436
 msgid "Security check failed"
 msgstr "La vérification de sécurité a échoué"
 
-#: core-init.php:443 core-init.php:460 core-init.php:489
+#: core-init.php:445 core-init.php:462 core-init.php:491
 msgid "Authentication required"
 msgstr "Authentification requise"
 
-#: core-init.php:448
+#: core-init.php:450
 msgid "Widget refreshed"
 msgstr "Widget rafraîchi"
 
-#: core-init.php:466
+#: core-init.php:468
 msgid "Invalid request: missing user_id"
 msgstr "Requête invalide : user_id manquant"
 
-#: core-init.php:486
+#: core-init.php:488
 msgid "Wish recorded"
 msgstr "Vœu enregistré"
 
-#: core-init.php:493
+#: core-init.php:495
 msgid "Invalid action"
 msgstr "Action invalide"
 
-#: core-init.php:663
+#: core-init.php:665
 msgid ""
 "Hide my birthday everywhere on this site (widgets, activity, notifications "
 "and emails)."
@@ -377,69 +369,89 @@ msgstr "Continuer"
 msgid "Cancel"
 msgstr "Annuler"
 
-#: includes/admin/views/discover.php:24
-msgid "BuddyNext"
-msgstr "BuddyNext"
+#: includes/admin/views/discover.php:27
+msgid ""
+"A free, fast community theme for BuddyPress, BuddyBoss and PeepSo with a "
+"modern layout and dark mode."
+msgstr ""
+"Un thème communautaire gratuit et rapide pour BuddyPress, BuddyBoss et "
+"PeepSo avec une mise en page moderne et un mode sombre."
 
-#: includes/admin/views/discover.php:26
+#: includes/admin/views/discover.php:33
 msgid "A full social network for WordPress with feeds, profiles, and messaging."
 msgstr ""
 "Un réseau social complet pour WordPress avec des fils d'actualités, des "
 "profils et la messagerie."
 
-#: includes/admin/views/discover.php:30
-msgid "Jetonomy"
-msgstr "Jetonomy"
-
-#: includes/admin/views/discover.php:32
+#: includes/admin/views/discover.php:39
 msgid "Forums, Q&A, and idea spaces that scale and moderate themselves."
 msgstr "Forums, Q&R et espaces d'idées qui s'adaptent et se modèrent eux-mêmes."
 
-#: includes/admin/views/discover.php:36
-msgid "Mediaverse"
-msgstr "Mediaverse"
-
-#: includes/admin/views/discover.php:38
+#: includes/admin/views/discover.php:45
 msgid "Photo and video sharing with albums, reactions, and private chat."
 msgstr "Partage de photos et vidéos avec des albums, des réactions et du chat privé."
 
-#: includes/admin/views/discover.php:42
-msgid "Listora"
-msgstr "Listora"
+#: includes/admin/views/discover.php:52
+msgid "Run community events with RSVPs, calendars, and front-end submissions."
+msgstr ""
+"Gère les événements communautaires avec RSVPs, calendriers et soumissions "
+"front-end."
 
-#: includes/admin/views/discover.php:44
+#: includes/admin/views/discover.php:59
+msgid ""
+"Reward members with points, badges, and leaderboards to keep engagement "
+"high."
+msgstr ""
+"Récompense les membres avec des points, des badges et des classements pour "
+"maintenir l'engagement à un haut niveau."
+
+#: includes/admin/views/discover.php:65
 msgid "Searchable directories with reviews, maps, and member submissions."
 msgstr "Répertoires consultables avec critiques, cartes et soumissions de membres."
 
-#: includes/admin/views/discover.php:48
-msgid "Learnomy"
-msgstr "Learnomy"
+#: includes/admin/views/discover.php:72
+msgid ""
+"Add a job board with front-end listings, applications, and employer "
+"profiles."
+msgstr ""
+"Ajoute un tableau d'emploi avec des annonces front-end, des candidatures et "
+"des profils d'employeurs."
 
-#: includes/admin/views/discover.php:50
+#: includes/admin/views/discover.php:78
 msgid "A free LMS to sell courses, run quizzes, and award certificates."
 msgstr ""
 "Un LMS gratuit pour vendre des cours, organiser des quiz et décerner des "
 "certificats."
 
-#: includes/admin/views/discover.php:58
+#: includes/admin/views/discover.php:85
+msgid ""
+"A free service marketplace with vendor dashboards, an 11-status order flow, "
+"and Stripe or PayPal built in."
+msgstr ""
+"Une place de marché de services gratuite avec des tableaux de bord vendeur, "
+"un flux de commandes à 11 statuts et Stripe ou PayPal intégrés."
+
+#: includes/admin/views/discover.php:93
 msgid "More Free Tools from Wbcom Designs"
 msgstr "Plus d'outils gratuits de Wbcom Designs"
 
-#: includes/admin/views/discover.php:59
+#: includes/admin/views/discover.php:94
 msgid ""
 "Birthday reminders keep members coming back. These free Wbcom Designs "
-"plugins give your community more reasons to stay: the network itself, "
-"forums, media, directories, and courses."
+"plugins give your community more reasons to stay: the theme and network "
+"itself, forums, media, events, gamification, directories, jobs, courses, "
+"and services."
 msgstr ""
-"Les rappels d'anniversaires gardent les membres engagés. Ces plugins Wbcom "
-"Designs gratuits donnent à ta communauté plus de raisons de rester : le "
-"réseau lui-même, les forums, les médias, les répertoires et les cours."
+"Les rappels d'anniversaire font revenir les membres. Ces plugins gratuits "
+"de Wbcom Designs donnent à ta communauté plus de raisons de rester : le "
+"thème et le réseau lui-même, les forums, les médias, les événements, la "
+"gamification, les répertoires, les emplois, les cours et les services."
 
-#: includes/admin/views/discover.php:71
+#: includes/admin/views/discover.php:106
 msgid "Get it free"
 msgstr "L'obtenir gratuitement"
 
-#: includes/admin/views/discover.php:76
+#: includes/admin/views/discover.php:111
 #. translators: %s: product name.
 #, php-format
 msgid "%s (opens in a new tab)"
@@ -1125,6 +1137,51 @@ msgstr "[%2$s] %1$d Anniversaire(s) aujourd'hui"
 #: includes/class-bp-birthdays-notifications.php:934
 msgid "Today's Birthdays"
 msgstr "Anniversaires d'aujourd'hui"
+
+#~ msgid "BuddyPress"
+#~ msgstr "BuddyPress"
+
+#~ msgid "BuddyX"
+#~ msgstr "BuddyX"
+
+#~ msgid "BuddyNext"
+#~ msgstr "BuddyNext"
+
+#~ msgid "Jetonomy"
+#~ msgstr "Jetonomy"
+
+#~ msgid "Mediaverse"
+#~ msgstr "Mediaverse"
+
+#~ msgid "Eventonomy"
+#~ msgstr "Eventonomy"
+
+#~ msgid "WB Gamification"
+#~ msgstr "WB Gamification"
+
+#~ msgid "Listora"
+#~ msgstr "Listora"
+
+#~ msgid "WP Career Board"
+#~ msgstr "WP Career Board"
+
+#~ msgid "Learnomy"
+#~ msgstr "Learnomy"
+
+#~ msgid "WP Sell Services"
+#~ msgstr "WP Sell Services"
+
+#~ msgid "Birthday notifications enabled!"
+#~ msgstr "Notifications d'anniversaire activées !"
+
+#~ msgid ""
+#~ "Birthday reminders keep members coming back. These free Wbcom Designs "
+#~ "plugins give your community more reasons to stay: the network itself, "
+#~ "forums, media, directories, and courses."
+#~ msgstr ""
+#~ "Les rappels d'anniversaires gardent les membres engagés. Ces plugins Wbcom "
+#~ "Designs gratuits donnent à ta communauté plus de raisons de rester : le "
+#~ "réseau lui-même, les forums, les médias, les répertoires et les cours."
 
 #~ msgid "🎂 <strong>Happy Birthday!</strong> 🎉"
 #~ msgstr "🎂 <strong>Joyeux anniversaire !</strong> 🎉"
