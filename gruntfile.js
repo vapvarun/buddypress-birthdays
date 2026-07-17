@@ -21,6 +21,7 @@ module.exports = function (grunt) {
                     src: [
                         '**',
                         '!node_modules/**',
+                        '!audit/**',
                         '!dist/**',
                         '!.git/**',
                         '!.git*',
