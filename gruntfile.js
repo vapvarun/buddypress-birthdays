@@ -204,7 +204,7 @@ module.exports = function (grunt) {
     // Register tasks
     grunt.registerTask('minify', ['cssmin:assets', 'cssmin:admin', 'uglify:assets', 'uglify:admin']);
     grunt.registerTask('i18n', ['checktextdomain', 'makepot']);
-    grunt.registerTask('build', ['checktextdomain', 'minify', 'makepot']);
+    grunt.registerTask('build', ['checktextdomain', 'minify']);
     grunt.registerTask('release', ['clean:dist', 'build', 'copy:dist', 'compress:dist', 'clean:temp']);
     grunt.registerTask('zip', ['release']);
     grunt.registerTask('dist', ['release']);
