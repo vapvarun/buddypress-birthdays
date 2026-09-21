@@ -3,8 +3,9 @@ Contributors: wbcomdesigns, vapvarun
 Donate link: https://wbcomdesigns.com/donate/
 Tags: buddypress, birthdays, widget, community, members
 Requires at least: 6.5
-Tested up to: 7.0
-Requires PHP: 8.0
+Tested up to: 7.1
+Requires PHP: 8.1
+Tested with BuddyPress: 14.5.2
 Requires Plugins: buddypress
 Stable tag: 2.5.0
 License: GPLv3
