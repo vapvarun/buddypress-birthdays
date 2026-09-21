@@ -1,0 +1,14 @@
+{
+  "product": "BuddyPress Birthday Widget",
+  "productType": "plugin",
+  "shortId": "bpbday",
+  "sections": [
+    { "name": "Getting Started", "folder": "getting-started" },
+    { "name": "Features", "folder": "features" },
+    { "name": "Usage", "folder": "usage" },
+    { "name": "Shortcodes", "folder": "shortcodes" },
+    { "name": "Developer Guide", "folder": "developer-guide" },
+    { "name": "FAQ", "folder": "faq" },
+    { "name": "Troubleshooting", "folder": "troubleshooting" }
+  ]
+}
