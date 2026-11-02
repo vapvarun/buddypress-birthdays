@@ -25,6 +25,7 @@ module.exports = function (grunt) {
                         '!dist/**',
                         '!.git/**',
                         '!.git*',
+                        '!.wordpress-org/**',
                         '!.gitignore',
                         '!Gruntfile.js',
                         '!gruntfile.js',
