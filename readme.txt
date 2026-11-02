@@ -1,9 +1,8 @@
 === Wbcom Designs - Birthday Widget for BuddyPress ===
 Contributors: wbcomdesigns, vapvarun
-Donate link: https://wbcomdesigns.com/donate/
 Tags: buddypress, birthdays, widget, community, members
 Requires at least: 6.5
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.0
 Requires Plugins: buddypress
 Stable tag: 2.5.0
@@ -84,7 +83,7 @@ Our dedicated support team is ready to help you get the most out of this plugin.
 
 = Documentation =
 
-* **[Documentation and Support](https://docs.wbcomdesigns.com/)** - Setup walkthrough, settings reference, and usage guides
+* **[Documentation and Support](https://docs.wbcomdesigns.com/bp-family/buddypress-birthdays/)** - Setup walkthrough, settings reference, and usage guides
 
 = Translations =
 
@@ -95,7 +94,7 @@ Our dedicated support team is ready to help you get the most out of this plugin.
 = Links =
 
 * [Plugin Homepage](https://wbcomdesigns.com/downloads/buddypress-birthdays/)
-* [Documentation](https://docs.wbcomdesigns.com/)
+* [Documentation](https://docs.wbcomdesigns.com/bp-family/buddypress-birthdays/)
 * [Support](https://wbcomdesigns.com/support/)
 * [Request Features](https://wbcomdesigns.com/contact/)
 
@@ -113,19 +112,14 @@ Our dedicated support team is ready to help you get the most out of this plugin.
 
 Version 2.5 adds a per-member birthday privacy opt-out so members can hide their birthday from every surface of the plugin, redesigns the admin settings into a card-panel interface under the WB Plugins menu, and bounds every widget query so large communities stay fast. It also fixes the birthday range filters, the cache duration setting, and birthday email template installation.
 
-== More Free Tools from Wbcom Designs ==
+== More from Wbcom Designs ==
 
-Remembering birthdays is a small gesture that keeps members feeling seen and coming back. These other free tools from Wbcom Designs give your community more reasons to show up all year round, from the theme and social network itself to forums, media, events, gamification, directories, jobs, and courses.
+A birthday is one good reason for members to come back. If you want to give them a few more, these Wbcom Designs products are a natural next step:
 
-* **[BuddyX](https://wbcomdesigns.com/downloads/buddyx-theme/)** - A free, fast community theme for BuddyPress, BuddyBoss and PeepSo with a modern layout and dark mode.
-* **[BuddyNext](https://wbcomdesigns.com/downloads/buddynext/)** - Stand up a complete WordPress community with activity streams, member spaces, profiles, direct messaging, and built-in moderation.
-* **[Jetonomy](https://wbcomdesigns.com/downloads/jetonomy/)** - Add forums, question-and-answer boards, and idea spaces that stay tidy through trust-based auto-moderation even past 100,000 topics.
-* **[Mediaverse](https://wbcomdesigns.com/downloads/mediaverse/)** - Let members build photo and video albums, react, follow each other, and message privately while AI moderation keeps things clean.
-* **[Eventonomy](https://wbcomdesigns.com/downloads/eventonomy/)** - Run community events with RSVPs, calendars, and front-end submissions.
-* **[WB Gamification](https://wbcomdesigns.com/downloads/wordpress-gamification-plugin/)** - Reward members with points, badges, and leaderboards to keep engagement high.
-* **[Listora](https://wbcomdesigns.com/downloads/listora/)** - Publish searchable directories across ten listing types with reviews, maps, and member-submitted entries from the front end.
-* **[WP Career Board](https://wbcomdesigns.com/downloads/wp-career-board/)** - Add a job board with front-end listings, applications, and employer profiles.
-* **[Learnomy](https://wbcomdesigns.com/downloads/learnomy/)** - Build and sell online courses, auto-grade quizzes, collect payments, and award certificates when learners finish.
+* **[BuddyNext](https://buddynext.com/migrate/buddypress/)** - Our standalone community engine, for when you outgrow BuddyPress: feed, spaces, profiles, messaging and moderation in one plugin, plus a free importer that carries your BuddyPress members, profile fields, groups and activity across.
+* **[Eventonomy](https://eventonomy.org/for-communities/)** - Turn the celebrations into gatherings with events members can RSVP to, a front-end submission form and a member dashboard. Eventonomy Pro adds an events tab to BuddyPress groups and profiles.
+* **[WB Gamification](https://wbcomdesigns.com/downloads/wordpress-gamification-plugin/)** - Points, badges and streaks for the things members already do on your site, with a store where they redeem what they earn.
+* **[BuddyX](https://buddyxtheme.com/features/)** - A free community theme on WordPress.org with BuddyPress support built in, so the birthday widget sits in a layout made for member sites.
 
 == Installation ==
 
@@ -154,7 +148,7 @@ Then set the widget or shortcode options: which members to show (all, friends, f
 1. Visit **WB Plugins > Birthdays > Overview** to confirm the plugin found your birthday profile field
 2. Configure email greetings, activity posts and notifications under the settings tabs
 3. Ask members to fill in their birthday field, and let them know they can hide it from Settings > General if they prefer
-4. See the [documentation](https://docs.wbcomdesigns.com/) for detailed instructions
+4. See the [documentation](https://docs.wbcomdesigns.com/bp-family/buddypress-birthdays/) for detailed instructions
 
 = Requirements =
 
@@ -204,15 +198,23 @@ Friends shows the viewer's BuddyPress friends and needs the Friends component ac
 
 = Does this work with BuddyBoss? =
 
-Yes, the plugin works with BuddyBoss Platform and the BuddyBoss theme.
+Yes. The plugin works with BuddyBoss Platform and the BuddyBoss theme. Its styles load on BuddyBoss theme pages, and the followings mode reads BuddyBoss's own follow connections, so you do not need the separate BP Follow plugin there.
+
+= Does this work with BuddyNext? =
+
+No. Birthday Widget is built on BuddyPress profile fields, and BuddyNext is a standalone community engine that does not use BuddyPress. If you move a community to BuddyNext, its free importer brings your members and profile fields across; see the [BuddyPress migration guide](https://buddynext.com/migrate/buddypress/).
 
 = Is it compatible with Youzify? =
 
-Yes, the plugin works with Youzify and other popular BuddyPress extensions.
+Yes. Youzify places widgets all over a site, so when Youzify is active the plugin loads its styles on every page instead of only where it detects the widget.
 
 = Does it work with custom themes? =
 
-Yes. The plugin uses theme-compatible styling that inherits your theme's colors and fonts.
+Yes. The plugin uses theme-compatible styling that inherits your theme's colors and fonts. On the Reign theme it also picks up Reign's theme colour and matches Reign's widget title spacing.
+
+= Can I invite members to a birthday meetup or event? =
+
+Not with this plugin; it lists birthdays and sends greetings, and does not create events. For that, [Eventonomy](https://eventonomy.org/features/rsvp/) adds events with RSVPs, guest counts and waitlists, and runs alongside Birthday Widget on the same BuddyPress site.
 
 = Is it mobile responsive? =
 
