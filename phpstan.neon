@@ -6,7 +6,6 @@ parameters:
         - vendor
         - node_modules
         - dist
-        - assets
     treatPhpDocTypesAsCertain: false
     ignoreErrors:
         - '#Function buddypress not found\.#'
@@ -17,4 +16,6 @@ parameters:
         - '#Action callback returns .+ but should not return anything\.#'
         - '#Unreachable statement - code above always terminates\.#'
         - '#is_wp_error\(.+\) will always evaluate to false\.#'
-        - '#Variable \$birthdays in empty\(\) always exists and is not falsy\.#'
+        # BuddyPress component APIs (Friends, xProfile): no BP stubs are installed,
+        # same reason as the bp_* pattern above. Every call is guarded at runtime.
+        - '#Function (friends|xprofile)_\w+ not found\.#'

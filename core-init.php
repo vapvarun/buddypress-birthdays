@@ -316,13 +316,9 @@ function bb_birthdays_shortcode( $atts ) {
 		return '<p>' . esc_html__( 'Birthday widget not available.', 'buddypress-birthdays' ) . '</p>';
 	}
 
-	// If field_name is not provided or empty, find the first available date field.
+	// No field_name attribute: use the General tab's Default Birthday Field.
 	if ( empty( $atts['field_name'] ) ) {
-		global $wpdb;
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$atts['field_name'] = $wpdb->get_var(
-			"SELECT id FROM {$wpdb->prefix}bp_xprofile_fields WHERE type IN ('datebox', 'birthdate') LIMIT 1"
-		);
+		$atts['field_name'] = BP_Birthdays_Helpers::get_birthday_field_id();
 	}
 
 	// Create widget instance.
@@ -484,26 +480,22 @@ function bb_birthdays_ajax_handler() {
 				break;
 			}
 
-			if ( $user_id && $current_user_id ) {
-				$wished_users = get_user_meta( $current_user_id, 'bb_birthday_wished_users', true );
-				if ( ! is_array( $wished_users ) ) {
-					$wished_users = array();
-				}
-
-				$today = wp_date( 'Y-m-d' );
-				if ( ! isset( $wished_users[ $today ] ) ) {
-					$wished_users[ $today ] = array();
-				}
-
-				if ( ! in_array( $user_id, array_map( 'absint', $wished_users[ $today ] ), true ) ) {
-					$wished_users[ $today ][] = $user_id;
-					update_user_meta( $current_user_id, 'bb_birthday_wished_users', $wished_users );
-				}
-
-				wp_send_json_success( array( 'message' => __( 'Wish recorded', 'buddypress-birthdays' ) ) );
+			$wished_users = get_user_meta( $current_user_id, 'bb_birthday_wished_users', true );
+			if ( ! is_array( $wished_users ) ) {
+				$wished_users = array();
 			}
 
-			wp_send_json_error( __( 'Authentication required', 'buddypress-birthdays' ) );
+			$today = wp_date( 'Y-m-d' );
+			if ( ! isset( $wished_users[ $today ] ) ) {
+				$wished_users[ $today ] = array();
+			}
+
+			if ( ! in_array( $user_id, array_map( 'absint', $wished_users[ $today ] ), true ) ) {
+				$wished_users[ $today ][] = $user_id;
+				update_user_meta( $current_user_id, 'bb_birthday_wished_users', $wished_users );
+			}
+
+			wp_send_json_success( array( 'message' => __( 'Wish recorded', 'buddypress-birthdays' ) ) );
 			break;
 
 		default:
