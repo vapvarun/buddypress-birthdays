@@ -98,9 +98,36 @@ register_activation_hook( __FILE__, 'bb_birthdays_activate' );
  */
 function bb_birthdays_deactivate() {
 	wp_clear_scheduled_hook( 'bb_cleanup_old_wishes' );
-	wp_clear_scheduled_hook( 'bp_birthdays_daily_check' );
+	// Unschedule every event on the hook, including a queued retry run.
+	wp_unschedule_hook( 'bp_birthdays_daily_check' );
 }
 register_deactivation_hook( __FILE__, 'bb_birthdays_deactivate' );
+
+/**
+ * After a single, manual activation, open the plugin's settings page.
+ *
+ * Runs on activated_plugin, after WordPress has saved the plugin as active,
+ * so no state needs storing. Bulk, network-wide, WP-CLI and AJAX activations
+ * keep WordPress' normal flow.
+ *
+ * @param string $plugin       Activated plugin basename.
+ * @param bool   $network_wide Whether it was activated network-wide.
+ */
+function bb_birthdays_activation_redirect( $plugin, $network_wide ) {
+	if ( plugin_basename( __FILE__ ) !== $plugin || $network_wide || wp_doing_ajax() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+		return;
+	}
+
+	// phpcs:ignore WordPress.Security.NonceVerification -- Read-only check of the core activate action; WordPress verified its nonce.
+	$action = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : '';
+	if ( 'activate' !== $action || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	wp_safe_redirect( admin_url( 'admin.php?page=bp-birthday-settings' ) );
+	exit;
+}
+add_action( 'activated_plugin', 'bb_birthdays_activation_redirect', 10, 2 );
 
 /**
  * Check BuddyPress is not activated.
