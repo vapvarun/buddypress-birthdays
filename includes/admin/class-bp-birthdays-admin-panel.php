@@ -323,9 +323,9 @@ class BP_Birthdays_Admin_Panel {
 		$settings_form_group = self::OPTION_GROUP;
 
 		$view_path = BIRTHDAY_WIDGET_PLUGIN_PATH . 'includes/admin/views/' . $view . '.php';
-		$shell     = BIRTHDAY_WIDGET_PLUGIN_PATH . 'includes/admin/views/shell.php';
+		$layout    = BIRTHDAY_WIDGET_PLUGIN_PATH . 'includes/admin/views/layout.php';
 
-		include $shell;
+		include $layout;
 	}
 
 	/**

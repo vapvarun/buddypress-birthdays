@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin page shell: page header, sidebar nav, body slot.
+ * Admin page layout: page header, sidebar nav, body slot.
  *
  * Receives from BP_Birthdays_Admin_Panel::render_page():
  *

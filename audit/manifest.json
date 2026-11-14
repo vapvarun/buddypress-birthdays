@@ -58,10 +58,10 @@
       "capability": "manage_options (filterable via bp_birthdays_admin_capability, class-bp-birthdays-admin-panel.php:118)",
       "menu_hook": "admin_menu (add_menu) + admin_menu @ 999 (takeover_hub_landing)",
       "page_hook_suffix": "wbcomplugins_page_bp-birthday-settings (screen match is a regex on /_page_bp-birthday-settings$/, class-bp-birthdays-admin-panel.php:283)",
-      "render": "BP_Birthdays_Admin_Panel::render_page (class-bp-birthdays-admin-panel.php:300) — routes tab -> view, includes views/shell.php",
+      "render": "BP_Birthdays_Admin_Panel::render_page (class-bp-birthdays-admin-panel.php:300) — routes tab -> view, includes views/layout.php",
       "tabs": ["overview", "general", "email", "activity", "notifications", "display", "discover"],
       "tabs_source": "BP_Birthdays_Admin_Panel::get_tabs (class-bp-birthdays-admin-panel.php:49-97); 'discover' is appended AFTER the bp_birthdays_admin_tabs filter so it cannot be filtered away (:90-94)",
-      "views": ["includes/admin/views/shell.php", "hub.php", "overview.php", "settings-general.php", "settings-email.php", "settings-activity.php", "settings-notifications.php", "settings-display.php", "discover.php"],
+      "views": ["includes/admin/views/layout.php", "hub.php", "overview.php", "settings-general.php", "settings-email.php", "settings-activity.php", "settings-notifications.php", "settings-display.php", "discover.php"],
       "source": "includes/admin/class-bp-birthdays-admin-panel.php:117-145",
       "notes": "2.5.0 migration: this replaced the legacy Settings-API tabbed page that was registered under bp-settings with an options-general.php fallback. Both legacy registrations were DROPPED. Slug preserved for URL continuity. The panel also owns the shared hub landing render (render_hub, :290) via a priority-999 remove_all_actions('toplevel_page_wbcomplugins') takeover (:158-165), and suppresses foreign admin notices on its own screens (in_admin_header @1, :262-269)."
     }
@@ -146,7 +146,7 @@
     { "key": "BP_Birthdays_Admin_Panel", "class": "BP_Birthdays_Admin_Panel (instantiated on plugins_loaded, admin-only)", "file": "includes/admin/class-bp-birthdays-admin-panel.php", "bootstrapped_at": "buddypress-birthdays.php:55-63", "added": "2.5.0", "role": "Card-panel admin controller: menu under the wbcomplugins hub, hub-landing takeover, register_setting, asset enqueue, notice suppression, tab->view routing" },
     { "key": "BP_Birthdays_Admin", "class": "BP_Birthdays_Admin (singleton, admin-only)", "file": "admin/class-bp-birthdays-admin.php", "bootstrapped_at": "admin/class-bp-birthdays-admin.php:225 (plugins_loaded)", "added": "2.4.0", "role": "LEGACY service class as of 2.5.0 — retained ONLY for $defaults (:46-65), get_instance(), sanitize_settings() (:101) and get_settings() (:211). Its constructor is a no-op (:93); its menu/enqueue/render methods were DELETED. The panel delegates sanitization + defaults here so the option contract is unchanged." },
     { "key": "BP_Birthdays_Notifications", "class": "BP_Birthdays_Notifications (singleton)", "file": "includes/class-bp-birthdays-notifications.php", "bootstrapped_at": "includes/class-bp-birthdays-notifications.php:967 (bp_loaded)", "added": "2.4.0", "role": "Daily cron, greeting emails, activity auto-post, BP notifications, admin summary, BP email schema/install" },
-    { "key": "BP_Birthdays_Helpers", "class": "BP_Birthdays_Helpers (static utils)", "file": "includes/class-bp-birthdays-helpers.php", "added": "2.4.0", "role": "zodiac (:107,:148), age (:173), format (:191), is_birthday_today (:206), php_to_mysql_date_format (:234), days_until_birthday (:306), is_user_opted_out (:357)" },
+    { "key": "BP_Birthdays_Helpers", "class": "BP_Birthdays_Helpers (static utils)", "file": "includes/class-bp-birthdays-helpers.php", "added": "2.4.0", "role": "zodiac (:107,:148), age (:173), format (:191), is_birthday_today (:206), get_user_url, get_birthday_field_id, visibility_allows, days_until_birthday (:306), is_user_opted_out (:357)" },
     { "key": "Widget_Buddypress_Birthdays", "class": "Widget_Buddypress_Birthdays (WP_Widget)", "file": "assets/inc/buddypress-birthdays-widget.php", "added": "1.0.0", "role": "The ONLY render surface — used by both the widget and the shortcode" }
   ],
   "hooks_fired": [
@@ -306,7 +306,7 @@
     "always_sign_filter": null,
     "rate_limit_middleware": "none",
     "ajax_nonce": "bb_birthdays_nonce (created core-init.php:91, verified core-init.php:421 before dispatch)",
-    "settings_nonce": "WP Settings API (settings_fields on the OPTION_GROUP, rendered via includes/admin/views/shell.php)",
+    "settings_nonce": "WP Settings API (settings_fields on the OPTION_GROUP, rendered via includes/admin/views/layout.php)",
     "member_settings_nonce": "bp_settings_general — re-verified in bb_save_member_privacy_field (core-init.php:671-674) even though BuddyPress already checked it before firing bp_core_general_settings_after_save",
     "notes": "Public nopriv AJAX action bb_birthdays_action is registered; refresh_widget gates on is_user_logged_in() + current_user_can('read') (core-init.php:430), mark_wished requires get_current_user_id() (:447) and a non-zero target user_id (:453), default branch returns wp_send_json_error (:481). wppqa's nonce-no-cap heuristic does not understand nopriv endpoints and may false-positive here — pre-triaged as FALSE POSITIVE. The bbirthdays_get_name_to_display filter result is esc_html()'d after the filter (widget:1224), so third-party filters cannot inject markup."
   },
