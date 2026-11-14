@@ -255,90 +255,6 @@ class BP_Birthdays_Helpers {
 	}
 
 	/**
-	 * Convert a PHP date format string to its MySQL DATE_FORMAT / STR_TO_DATE
-	 * equivalent.
-	 *
-	 * BuddyPress stores a datebox field's `date_format` meta as a PHP date
-	 * format (e.g. `Y-m-d`). MySQL's STR_TO_DATE()/DATE_FORMAT() use their own
-	 * `%`-prefixed specifiers (e.g. `%Y-%m-%d`), so passing the PHP format
-	 * straight into SQL makes STR_TO_DATE() return NULL for every row.
-	 *
-	 * Tokens without a MySQL equivalent (ordinal suffix `S`, timezone tokens)
-	 * are dropped; backslash-escaped characters become literals; a literal `%`
-	 * is escaped as `%%` for MySQL.
-	 *
-	 * @since 2.5.0
-	 *
-	 * @param string $php_format PHP date format (e.g. 'Y-m-d', 'd/m/Y').
-	 * @return string MySQL format string (e.g. '%Y-%m-%d', '%d/%m/%Y').
-	 */
-	public static function php_to_mysql_date_format( $php_format ) {
-		$map = array(
-			// Day.
-			'd' => '%d',
-			'j' => '%e',
-			'D' => '%a',
-			'l' => '%W',
-			'N' => '%w',
-			'w' => '%w',
-			'z' => '%j',
-			'S' => '', // Ordinal suffix — no standalone MySQL token.
-			// Month.
-			'm' => '%m',
-			'n' => '%c',
-			'M' => '%b',
-			'F' => '%M',
-			// Year.
-			'Y' => '%Y',
-			'y' => '%y',
-			'o' => '%Y',
-			// Time.
-			'H' => '%H',
-			'G' => '%k',
-			'h' => '%h',
-			'g' => '%l',
-			'i' => '%i',
-			's' => '%s',
-			'A' => '%p',
-			'a' => '%p',
-			'u' => '%f',
-			// No MySQL equivalent — dropped.
-			'v' => '',
-			'e' => '',
-			'T' => '',
-			'P' => '',
-			'O' => '',
-			'U' => '',
-		);
-
-		$php_format = (string) $php_format;
-		$mysql      = '';
-		$length     = strlen( $php_format );
-
-		for ( $i = 0; $i < $length; $i++ ) {
-			$char = $php_format[ $i ];
-
-			// A backslash escapes the next character to a literal in PHP formats.
-			if ( '\\' === $char && $i + 1 < $length ) {
-				++$i;
-				$literal = $php_format[ $i ];
-				$mysql  .= ( '%' === $literal ) ? '%%' : $literal;
-				continue;
-			}
-
-			if ( isset( $map[ $char ] ) ) {
-				$mysql .= $map[ $char ];
-			} elseif ( '%' === $char ) {
-				$mysql .= '%%';
-			} else {
-				$mysql .= $char;
-			}
-		}
-
-		return $mysql;
-	}
-
-	/**
 	 * Get days until next birthday.
 	 *
 	 * @param string $date Birth date string.
@@ -367,6 +283,90 @@ class BP_Birthdays_Helpers {
 			return (int) $today->diff( $next_birthday )->days;
 		} catch ( Exception $e ) {
 			return 0;
+		}
+	}
+
+	/**
+	 * A member's profile URL on any supported BuddyPress version.
+	 *
+	 * BuddyPress 12.0 deprecated bp_core_get_user_domain() in favour of
+	 * bp_members_get_user_url(). Every plugin surface links members through
+	 * this one helper.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param int $user_id Member ID.
+	 * @return string Profile URL.
+	 */
+	public static function get_user_url( $user_id ) {
+		if ( function_exists( 'bp_members_get_user_url' ) ) {
+			return bp_members_get_user_url( $user_id );
+		}
+
+		return bp_core_get_user_domain( $user_id );
+	}
+
+	/**
+	 * The xProfile field that holds member birthdays.
+	 *
+	 * The General tab's Default Birthday Field when it still points at a real
+	 * datebox/birthdate field, otherwise the first such field. The cron
+	 * channels, the shortcode and the widget all resolve the field here, so a
+	 * deleted field never leaves one surface reading nothing.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @return int Field ID, 0 when the site has no date field.
+	 */
+	public static function get_birthday_field_id() {
+		global $wpdb;
+
+		$settings   = get_option( 'bp_birthdays_settings', array() );
+		$configured = is_array( $settings ) && isset( $settings['default_field_id'] ) ? absint( $settings['default_field_id'] ) : 0;
+		$table      = $wpdb->prefix . 'bp_xprofile_fields';
+
+		if ( $configured ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Primary-key lookup; only the table name is interpolated.
+			$field_id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d AND type IN ('datebox', 'birthdate')", $configured ) );
+			if ( $field_id ) {
+				return $field_id;
+			}
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Static query, table name only.
+		return (int) $wpdb->get_var( "SELECT id FROM {$table} WHERE type IN ('datebox', 'birthdate') ORDER BY id ASC LIMIT 1" );
+	}
+
+	/**
+	 * Whether a BuddyPress field visibility level lets a viewer see a member's birthday.
+	 *
+	 * Mirrors BuddyPress' own levels. BuddyPress labels `adminsonly` "Only Me"
+	 * (the member and site admins); BuddyBoss adds a stricter `onlyme`. A
+	 * viewer ID of 0 is an anonymous visitor, which is who a public activity
+	 * post is shown to.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param string $level     Visibility level (public, loggedin, friends, adminsonly, onlyme).
+	 * @param int    $owner_id  Member whose birthday it is.
+	 * @param int    $viewer_id Member looking at it, 0 for a visitor.
+	 * @return bool
+	 */
+	public static function visibility_allows( $level, $owner_id, $viewer_id ) {
+		$owner_id  = absint( $owner_id );
+		$viewer_id = absint( $viewer_id );
+
+		switch ( $level ) {
+			case 'onlyme':
+				return $viewer_id && $viewer_id === $owner_id;
+			case 'adminsonly':
+				return $viewer_id && ( $viewer_id === $owner_id || user_can( $viewer_id, 'manage_options' ) );
+			case 'friends':
+				return $viewer_id && ( $viewer_id === $owner_id || ( function_exists( 'friends_check_friendship' ) && friends_check_friendship( $viewer_id, $owner_id ) ) );
+			case 'loggedin':
+				return (bool) $viewer_id;
+			default:
+				return true;
 		}
 	}
 

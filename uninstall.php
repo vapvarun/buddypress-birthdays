@@ -50,4 +50,4 @@ delete_metadata( 'user', 0, 'bb_birthday_wished_users', '', true );
 
 // Scheduled events (already cleared on deactivation; belt and braces).
 wp_clear_scheduled_hook( 'bb_cleanup_old_wishes' );
-wp_clear_scheduled_hook( 'bp_birthdays_daily_check' );
+wp_unschedule_hook( 'bp_birthdays_daily_check' );
