@@ -204,6 +204,10 @@
     transform: translateY(-1px);
 }
 
+.bp-send-wishes-text {
+    display: none;
+}
+
 .bp-send-wishes .dashicons {
     font-size: 16px;
     width: 16px;
@@ -328,6 +332,10 @@
     .bp-send-wishes {
         width: 100%;
         justify-content: center;
+    }
+
+    .bp-send-wishes-text {
+        display: inline;
     }
 }
 

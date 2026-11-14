@@ -19,14 +19,17 @@ $bbd_field_id    = isset( $settings['default_field_id'] ) ? (int) $settings['def
 $bbd_date_fields = BP_Birthdays_Admin_Panel::get_date_fields();
 $bbd_field_count = count( $bbd_date_fields );
 
-// Resolve the configured field's label, if any.
-$bbd_field_label = '';
+// Resolve the field actually in use: the same resolver the cron, shortcode
+// and widget read (the pick on General, else the first date field).
+$bbd_used_field_id = BP_Birthdays_Helpers::get_birthday_field_id();
+$bbd_field_label   = '';
 foreach ( $bbd_date_fields as $bbd_field ) {
-	if ( (int) $bbd_field['id'] === $bbd_field_id && $bbd_field_id > 0 ) {
+	if ( (int) $bbd_field['id'] === $bbd_used_field_id && $bbd_used_field_id > 0 ) {
 		$bbd_field_label = $bbd_field['name'];
 		break;
 	}
 }
+$bbd_field_is_fallback = '' !== $bbd_field_label && $bbd_used_field_id !== $bbd_field_id;
 
 // Feature status flags.
 $bbd_email_on        = ! empty( $settings['email_enabled'] );
@@ -52,8 +55,22 @@ $bbd_display_url  = $page_url . '&tab=display';
 	<div class="bbd-notice bbd-notice--warn">
 		<span class="dashicons dashicons-warning" aria-hidden="true"></span>
 		<span>
-			<?php esc_html_e( 'No default birthday field is set yet. Pick the xProfile date field that holds member birthdays so emails, activity posts, and notifications know where to read from.', 'buddypress-birthdays' ); ?>
+			<?php esc_html_e( 'This site has no date field for birthdays yet. Add a Date Selector field under Users > Profile Fields, then pick it here so emails, activity posts, and notifications know where to read from.', 'buddypress-birthdays' ); ?>
 			<a href="<?php echo esc_url( $bbd_general_url ); ?>" class="bbd-inline-hint"><?php esc_html_e( 'Set it now', 'buddypress-birthdays' ); ?></a>
+		</span>
+	</div>
+<?php elseif ( $bbd_field_is_fallback ) : ?>
+	<div class="bbd-notice bbd-notice--info">
+		<span class="dashicons dashicons-info" aria-hidden="true"></span>
+		<span>
+			<?php
+			printf(
+				/* translators: %s: xProfile field name, e.g. "Birthday". */
+				esc_html__( 'Using %s, the first date field on this site. Birthdays already work; pick a different field only if this is the wrong one.', 'buddypress-birthdays' ),
+				'<strong>' . esc_html( $bbd_field_label ) . '</strong>'
+			);
+			?>
+			<a href="<?php echo esc_url( $bbd_general_url ); ?>" class="bbd-inline-hint"><?php esc_html_e( 'Pick a field', 'buddypress-birthdays' ); ?></a>
 		</span>
 	</div>
 <?php endif; ?>

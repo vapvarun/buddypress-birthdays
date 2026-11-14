@@ -3,13 +3,13 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Wbcom Designs - Birthday Widget for BuddyPress 2.5.1\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/buddypress-birthdays\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/birthday-widget-for-buddypress\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-14T17:50:07+00:00\n"
+"POT-Creation-Date: 2026-11-14T22:34:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: buddypress-birthdays\n"
@@ -73,138 +73,142 @@ msgstr ""
 msgid "Send birthday wishes"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:325
+#: assets/inc/buddypress-birthdays-widget.php:307
+msgid "Send wishes"
+msgstr ""
+
+#: assets/inc/buddypress-birthdays-widget.php:327
 msgid "Previous page"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:345
+#: assets/inc/buddypress-birthdays-widget.php:347
 msgid "Next page"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1167
+#: assets/inc/buddypress-birthdays-widget.php:1169
 msgid "N/A"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1228
+#: assets/inc/buddypress-birthdays-widget.php:1230
 #: core-init.php:298
 msgid "Upcoming Birthdays"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1273
+#: assets/inc/buddypress-birthdays-widget.php:1275
 msgid "Setup Required:"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1276
+#: assets/inc/buddypress-birthdays-widget.php:1278
 msgid "No birthday date field found. Please create a date field in BuddyPress profile fields first:"
 msgstr ""
 
 #. translators: %s: Link to BuddyPress profile fields admin page.
-#: assets/inc/buddypress-birthdays-widget.php:1282
+#: assets/inc/buddypress-birthdays-widget.php:1284
 #, php-format
 msgid "Go to %s"
 msgstr ""
 
 #. translators: %s: Link to BuddyPress profile fields admin page.
-#: assets/inc/buddypress-birthdays-widget.php:1282
+#: assets/inc/buddypress-birthdays-widget.php:1284
 msgid "Users → Profile Fields"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1285
+#: assets/inc/buddypress-birthdays-widget.php:1287
 msgid "Add a new field with type \"Date Selector\" or \"Birthdate\""
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1286
+#: assets/inc/buddypress-birthdays-widget.php:1288
 msgid "Save and return here to configure the widget"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1294
+#: assets/inc/buddypress-birthdays-widget.php:1296
 msgid "Title:"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1300
+#: assets/inc/buddypress-birthdays-widget.php:1302
 msgid "Show the age of the person"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1304
+#: assets/inc/buddypress-birthdays-widget.php:1306
 msgid "Enable option to wish them"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1307
+#: assets/inc/buddypress-birthdays-widget.php:1309
 msgid "Date Format"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1311
+#: assets/inc/buddypress-birthdays-widget.php:1313
 msgid "Birthday range limit"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1313
+#: assets/inc/buddypress-birthdays-widget.php:1315
 msgid "No Limit"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1314
+#: assets/inc/buddypress-birthdays-widget.php:1316
 msgid "Next 7 Days"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1315
+#: assets/inc/buddypress-birthdays-widget.php:1317
 msgid "Next 30 Days"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1319
+#: assets/inc/buddypress-birthdays-widget.php:1321
 msgid "Show Birthdays of"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1322
 #: assets/inc/buddypress-birthdays-widget.php:1324
+#: assets/inc/buddypress-birthdays-widget.php:1326
 msgid "Followings"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1327
+#: assets/inc/buddypress-birthdays-widget.php:1329
 msgid "Friends"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1329
+#: assets/inc/buddypress-birthdays-widget.php:1331
 msgid "All Members"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1333
+#: assets/inc/buddypress-birthdays-widget.php:1335
 msgid "Display Name Type"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1335
+#: assets/inc/buddypress-birthdays-widget.php:1337
 msgid "User name"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1336
+#: assets/inc/buddypress-birthdays-widget.php:1338
 msgid "Nick name"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1337
+#: assets/inc/buddypress-birthdays-widget.php:1339
 msgid "First Name"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1341
-#: includes/admin/views/overview.php:63
+#: assets/inc/buddypress-birthdays-widget.php:1343
+#: includes/admin/views/overview.php:80
 #: includes/admin/views/settings-general.php:24
 msgid "Birthday Field"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1344
+#: assets/inc/buddypress-birthdays-widget.php:1346
 msgid "— No date fields available —"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1353
+#: assets/inc/buddypress-birthdays-widget.php:1355
 msgid "Number of birthdays to show"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1357
+#: assets/inc/buddypress-birthdays-widget.php:1359
 msgid "Birthdays per page (for pagination)"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1360
+#: assets/inc/buddypress-birthdays-widget.php:1362
 msgid "Select Emoji"
 msgstr ""
 
-#: assets/inc/buddypress-birthdays-widget.php:1364
+#: assets/inc/buddypress-birthdays-widget.php:1366
 msgid "None"
 msgstr ""
 
@@ -298,7 +302,7 @@ msgid "General"
 msgstr ""
 
 #: includes/admin/class-bp-birthdays-admin-panel.php:62
-#: includes/admin/views/overview.php:188
+#: includes/admin/views/overview.php:205
 msgid "Email Notifications"
 msgstr ""
 
@@ -307,7 +311,7 @@ msgid "Activity Feed"
 msgstr ""
 
 #: includes/admin/class-bp-birthdays-admin-panel.php:72
-#: includes/admin/views/overview.php:192
+#: includes/admin/views/overview.php:209
 msgid "Notifications"
 msgstr ""
 
@@ -481,135 +485,145 @@ msgstr ""
 msgid "Save Settings"
 msgstr ""
 
-#: includes/admin/views/overview.php:55
-msgid "No default birthday field is set yet. Pick the xProfile date field that holds member birthdays so emails, activity posts, and notifications know where to read from."
+#: includes/admin/views/overview.php:58
+msgid "This site has no date field for birthdays yet. Add a Date Selector field under Users > Profile Fields, then pick it here so emails, activity posts, and notifications know where to read from."
 msgstr ""
 
-#: includes/admin/views/overview.php:56
+#: includes/admin/views/overview.php:59
 msgid "Set it now"
 msgstr ""
 
+#. translators: %s: xProfile field name, e.g. "Birthday".
 #: includes/admin/views/overview.php:69
-msgid "Not set"
+#, php-format
+msgid "Using %s, the first date field on this site. Birthdays already work; pick a different field only if this is the wrong one."
 msgstr ""
 
 #: includes/admin/views/overview.php:73
-msgid "xProfile field used for birthdays"
-msgstr ""
-
-#: includes/admin/views/overview.php:76
-msgid "Available Date Fields"
-msgstr ""
-
-#: includes/admin/views/overview.php:78
-msgid "Datebox / birthdate xProfile fields"
-msgstr ""
-
-#: includes/admin/views/overview.php:81
-msgid "Channels On"
-msgstr ""
-
-#: includes/admin/views/overview.php:83
-msgid "Email, activity, notifications"
+msgid "Pick a field"
 msgstr ""
 
 #: includes/admin/views/overview.php:86
+msgid "Not set"
+msgstr ""
+
+#: includes/admin/views/overview.php:90
+msgid "xProfile field used for birthdays"
+msgstr ""
+
+#: includes/admin/views/overview.php:93
+msgid "Available Date Fields"
+msgstr ""
+
+#: includes/admin/views/overview.php:95
+msgid "Datebox / birthdate xProfile fields"
+msgstr ""
+
+#: includes/admin/views/overview.php:98
+msgid "Channels On"
+msgstr ""
+
+#: includes/admin/views/overview.php:100
+msgid "Email, activity, notifications"
+msgstr ""
+
+#: includes/admin/views/overview.php:103
 #: includes/admin/views/settings-general.php:53
 msgid "Cache Duration"
 msgstr ""
 
 #. translators: %s: number of minutes
-#: includes/admin/views/overview.php:92
+#: includes/admin/views/overview.php:109
 #, php-format
 msgid "%s min"
 msgid_plural "%s min"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/admin/views/overview.php:98
+#: includes/admin/views/overview.php:115
 msgid "How long birthday data is cached"
 msgstr ""
 
-#: includes/admin/views/overview.php:104
+#: includes/admin/views/overview.php:121
 msgid "Current Configuration"
 msgstr ""
 
-#: includes/admin/views/overview.php:105
+#: includes/admin/views/overview.php:122
 msgid "What happens right now on member birthdays."
 msgstr ""
 
-#: includes/admin/views/overview.php:109
+#: includes/admin/views/overview.php:126
 msgid "Birthday emails"
 msgstr ""
 
-#: includes/admin/views/overview.php:112
+#: includes/admin/views/overview.php:129
 msgid "On: members get a greeting email on their birthday"
 msgstr ""
 
-#: includes/admin/views/overview.php:114
-#: includes/admin/views/overview.php:125
-#: includes/admin/views/overview.php:136
-#: includes/admin/views/overview.php:147
-#: includes/admin/views/overview.php:168
+#: includes/admin/views/overview.php:131
+#: includes/admin/views/overview.php:142
+#: includes/admin/views/overview.php:153
+#: includes/admin/views/overview.php:164
+#: includes/admin/views/overview.php:185
 msgid "Off"
 msgstr ""
 
-#: includes/admin/views/overview.php:115
-#: includes/admin/views/overview.php:126
-#: includes/admin/views/overview.php:137
-#: includes/admin/views/overview.php:148
+#: includes/admin/views/overview.php:132
+#: includes/admin/views/overview.php:143
+#: includes/admin/views/overview.php:154
+#: includes/admin/views/overview.php:165
 msgid "Turn on"
 msgstr ""
 
-#: includes/admin/views/overview.php:120
+#: includes/admin/views/overview.php:137
 msgid "Admin summary email"
 msgstr ""
 
-#: includes/admin/views/overview.php:123
+#: includes/admin/views/overview.php:140
 msgid "On: a daily summary of birthdays is emailed to the admin"
 msgstr ""
 
-#: includes/admin/views/overview.php:131
+#: includes/admin/views/overview.php:148
 msgid "Activity feed posts"
 msgstr ""
 
-#: includes/admin/views/overview.php:134
+#: includes/admin/views/overview.php:151
 msgid "On: a post is added to the activity feed on each birthday"
 msgstr ""
 
-#: includes/admin/views/overview.php:142
+#: includes/admin/views/overview.php:159
 msgid "BuddyPress notifications"
 msgstr ""
 
-#: includes/admin/views/overview.php:145
+#: includes/admin/views/overview.php:162
 msgid "On: members are notified about birthdays"
 msgstr ""
 
-#: includes/admin/views/overview.php:153
+#: includes/admin/views/overview.php:170
 msgid "Display extras"
 msgstr ""
 
-#: includes/admin/views/overview.php:159
+#: includes/admin/views/overview.php:176
 msgid "Confetti animation and zodiac signs are on"
 msgstr ""
 
-#: includes/admin/views/overview.php:161
+#: includes/admin/views/overview.php:178
 msgid "Confetti animation is on"
 msgstr ""
 
-#: includes/admin/views/overview.php:163
+#: includes/admin/views/overview.php:180
 msgid "Zodiac signs are on"
 msgstr ""
 
-#: includes/admin/views/overview.php:169
+#: includes/admin/views/overview.php:186
 msgid "Configure"
 msgstr ""
 
-#: includes/admin/views/overview.php:178
+#: includes/admin/views/overview.php:195
 msgid "Quick Actions"
 msgstr ""
 
-#: includes/admin/views/overview.php:184
+#: includes/admin/views/overview.php:201
 msgid "General Settings"
 msgstr ""
 

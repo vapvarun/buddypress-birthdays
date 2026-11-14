@@ -301,8 +301,10 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				if ( 'yes' === $instance['birthday_send_message'] && bp_is_active( 'messages' ) && is_user_logged_in() ) {
 					echo '<div class="bp-birthday-action">';
 					$message_url = $this->bbirthday_get_send_private_message_to_user_url( $user_id );
-					echo '<a class="bp-send-wishes" href="' . esc_url( $message_url ) . '" data-user-id="' . esc_attr( $user_id ) . '" title="' . esc_attr__( 'Send birthday wishes', 'buddypress-birthdays' ) . '">';
-					echo '<span class="dashicons dashicons-email"></span>';
+					echo '<a class="bp-send-wishes" href="' . esc_url( $message_url ) . '" data-user-id="' . esc_attr( $user_id ) . '" title="' . esc_attr__( 'Send birthday wishes', 'buddypress-birthdays' ) . '" aria-label="' . esc_attr__( 'Send birthday wishes', 'buddypress-birthdays' ) . '">';
+					echo '<span class="dashicons dashicons-email" aria-hidden="true"></span>';
+					// Visible only when the button goes full width on phones (bb-core.css).
+					echo '<span class="bp-send-wishes-text">' . esc_html__( 'Send wishes', 'buddypress-birthdays' ) . '</span>';
 					echo '</a>';
 					echo '</div>';
 				}
