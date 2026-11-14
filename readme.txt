@@ -4,9 +4,9 @@ Donate link: https://wbcomdesigns.com/donate/
 Tags: buddypress, birthdays, widget, community, members
 Requires at least: 6.5
 Tested up to: 7.0
-Requires PHP: 8.0
+Requires PHP: 8.1
 Requires Plugins: buddypress
-Stable tag: 2.5.0
+Stable tag: 2.5.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 Text Domain: buddypress-birthdays
@@ -102,7 +102,7 @@ Our dedicated support team is ready to help you get the most out of this plugin.
 = Compatibility =
 
 * WordPress 6.5 and higher
-* PHP 8.0 and higher
+* PHP 8.1 and higher
 * BuddyPress required, with at least one Extended Profile date field (datebox or birthdate)
 * Works with BuddyBoss Platform and the BuddyBoss theme
 * Works with Youzify
@@ -143,8 +143,8 @@ BuddyPress must be active, and you need at least one Extended Profile field of t
 
 Pick whichever fits your theme:
 
-* **Block themes (WordPress 5.9 and later, no Appearance > Widgets screen):** edit your template or a page in the Site Editor or block editor and add the **Legacy Widget** block, then choose "BuddyPress Birthdays". Or just use the shortcode below.
-* **Classic themes:** go to **Appearance > Widgets** and drag the "BuddyPress Birthdays" widget into a sidebar or footer area.
+* **Block themes (WordPress 5.9 and later, no Appearance > Widgets screen):** edit your template or a page in the Site Editor or block editor and add the **Legacy Widget** block, then choose "(BuddyPress) Birthdays". Or just use the shortcode below.
+* **Classic themes:** go to **Appearance > Widgets** and drag the "(BuddyPress) Birthdays" widget into a sidebar or footer area.
 * **Any theme, any page or post:** add the `[bp_birthdays]` shortcode. This is the simplest route and works everywhere.
 
 Then set the widget or shortcode options: which members to show (all, friends, followings), the range, the birthday field, how many to show, and how many per page.
@@ -159,14 +159,14 @@ Then set the widget or shortcode options: which members to show (all, friends, f
 = Requirements =
 
 * WordPress 6.5 or higher
-* PHP 8.0 or higher
+* PHP 8.1 or higher
 * BuddyPress, with at least one Extended Profile date field
 
 == Frequently Asked Questions ==
 
 = Where do birthdays come from? =
 
-From a BuddyPress Extended Profile field of type "datebox" or "birthdate". Create a date field at Users > Profile Fields and select it in the widget settings. If you do not pick one in the shortcode, the plugin uses the first date field it finds.
+From a BuddyPress Extended Profile field of type "datebox" or "birthdate". Create a date field at Users > Profile Fields and pick it as the Default Birthday Field on the General tab. Emails, activity posts, notifications, the shortcode and the widget all read that field unless a widget or the shortcode names another one. With no Default Birthday Field set, the plugin uses the first date field it finds.
 
 = Can I show birthdays in a post or page? =
 
@@ -185,7 +185,7 @@ All eleven, with their defaults:
 * `show_birthdays_of` - `all`, `friends` or `followers` (followers means the people the viewer follows, and needs BP Follow). Default: all
 * `display_name_type` - `user_name`, `nick_name` or `first_name`. Default: user_name
 * `emoji` - the emoji shown next to each name, for example `balloon`, `cake` or `none`. Default: balloon
-* `field_name` - **the numeric ID of the xProfile date field, not its name.** Despite the attribute name, this expects a number, for example `field_name="12"`. Leave it out and the plugin auto-discovers the first datebox or birthdate field
+* `field_name` - **the numeric ID of the xProfile date field, not its name.** Despite the attribute name, this expects a number, for example `field_name="12"`. Leave it out and the shortcode uses the Default Birthday Field from the General tab
 * `birthdays_per_page` - how many birthdays per page in the paginated list. Default: 10
 
 Example: `[bp_birthdays limit="20" birthdays_per_page="5" range_limit="monthly" show_age="no"]`
@@ -243,6 +243,27 @@ No. Every widget mode fetches a bounded, batch-primed candidate pool instead of 
 
 == Changelog ==
 
+= 2.5.1 - November 2026 =
+
+Birthday notifications now respect profile privacy and opt-outs, failed emails are retried, and the Next 7 / Next 30 Days ranges work with any date format.
+
+* New      - Activating the plugin opens its settings page.
+* New      - The Notifications tab warns when Notify Friends Only is on but the Friends component is off.
+* Improve  - The Default Birthday Field is now used by the shortcode and by widgets saved without a field, not only by the daily emails.
+* Improve  - The Overview shows a Turn on link for the admin summary email, and warns when the saved birthday field no longer exists.
+* Fix      - A birthday field set to Only Me, Friends or All Members is no longer announced in the public activity feed, Only Me birthdays are no longer notified, and Friends birthdays only reach friends.
+* Fix      - Members who hid their birthday no longer receive birthday notifications about other members.
+* Fix      - Notify Friends Only no longer notifies every member when the Friends component is inactive.
+* Fix      - A birthday email that BuddyPress cannot send now falls back to a plain email, failures are logged, and failed sends are retried an hour later.
+* Fix      - The admin summary email is sent once a day instead of on every scheduled run.
+* Fix      - Changing the Send Time now moves the daily birthday check to the new time.
+* Fix      - Clearing the Notification Text or Activity Message now uses the default text instead of posting an empty message.
+* Fix      - The Next 7 Days and Next 30 Days ranges showed no birthdays when the birthday field used a display format other than year-month-day.
+* Fix      - The Default Birthday Field only accepts real date fields, and Cache Duration is kept between 1 and 1440 minutes so the General tab can always be saved.
+* Fix      - The Message button border is visible again in BuddyX, BuddyX Pro and Reign dark mode.
+* Fix      - Profile links no longer use a function deprecated in BuddyPress 12.
+* Compat   - Requires PHP 8.1 or higher.
+
 = 2.5.0 - July 2026 =
 
 Redesigned admin settings, big-community performance bounds, and a batch of widget and notification fixes.
@@ -266,7 +287,7 @@ Redesigned admin settings, big-community performance bounds, and a batch of widg
 * Fix      - Birthday email templates now install correctly instead of being skipped by a dead guard.
 * Fix      - Documentation link now points to the correct docs page.
 * Compat   - Tested with WordPress 7.0.
-* Compat   - The minimum supported WordPress version is now stated correctly as 5.3, which is what the plugin has actually required since it began using wp_date() and wp_timezone().
+* Compat   - The minimum supported WordPress version is now stated consistently as 6.5.
 
 = 2.4.2 =
 * Fix: Birthday celebration activities were showing empty content in the activity feed.
@@ -391,6 +412,9 @@ Redesigned admin settings, big-community performance bounds, and a batch of widg
 * Initial Release
 
 == Upgrade Notice ==
+
+= 2.5.1 =
+Birthday notifications and activity posts now respect the birthday field's privacy setting and member opt-outs. Requires PHP 8.1.
 
 = 2.5.0 =
 Members can now hide their own birthday, the admin settings are redesigned, and large communities render faster. This release also fixes stale cached styles and scripts after an update, so the confetti and wish-recording options work right away.
