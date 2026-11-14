@@ -165,10 +165,16 @@ class BP_Birthdays_Admin {
 
 		// General.
 		if ( isset( $input['default_field_id'] ) ) {
-			$sanitized['default_field_id'] = absint( $input['default_field_id'] );
+			// Only a real datebox/birthdate field id is accepted. Anything else
+			// (a deleted field, a hand-edited POST) is stored as 0 so the
+			// Overview warns and every surface falls back to the first date field.
+			$field_id = absint( $input['default_field_id'] );
+			$valid    = array_map( 'absint', wp_list_pluck( BP_Birthdays_Admin_Panel::get_date_fields(), 'id' ) );
+
+			$sanitized['default_field_id'] = in_array( $field_id, $valid, true ) ? $field_id : 0;
 		}
 		if ( isset( $input['cache_duration'] ) ) {
-			$sanitized['cache_duration'] = absint( $input['cache_duration'] );
+			$sanitized['cache_duration'] = self::clamp_cache_duration( $input['cache_duration'] );
 		}
 
 		// Email Notifications (content managed in BP Emails).
@@ -176,7 +182,12 @@ class BP_Birthdays_Admin {
 			$sanitized['email_enabled'] = '1' === $input['email_enabled'];
 		}
 		if ( isset( $input['email_send_time'] ) ) {
-			$sanitized['email_send_time'] = sanitize_text_field( $input['email_send_time'] );
+			$send_time = sanitize_text_field( $input['email_send_time'] );
+			// HH:MM (24h) only. The cron builds a DateTime from this value, so
+			// anything else would break scheduling; keep the previous value.
+			if ( preg_match( '/^([01]\d|2[0-3]):[0-5]\d$/', $send_time ) ) {
+				$sanitized['email_send_time'] = $send_time;
+			}
 		}
 		if ( isset( $input['admin_email_enabled'] ) ) {
 			$sanitized['admin_email_enabled'] = '1' === $input['admin_email_enabled'];
@@ -213,6 +224,24 @@ class BP_Birthdays_Admin {
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Clamp a Cache Duration value to the documented 1-1440 minute range.
+	 *
+	 * Empty or 0 falls back to the shipped default (30). Used by the
+	 * sanitizer and by the views, so a legacy stored 0 can never render
+	 * below the input's min and block the General tab form.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param mixed $value Raw value.
+	 * @return int Minutes, 1-1440.
+	 */
+	public static function clamp_cache_duration( $value ) {
+		$minutes = absint( $value );
+
+		return $minutes ? min( 1440, $minutes ) : 30;
 	}
 
 	/**

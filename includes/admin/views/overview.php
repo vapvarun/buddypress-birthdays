@@ -1,6 +1,6 @@
 <?php
 /**
- * Overview dashboard partial: rendered inside shell.php.
+ * Overview dashboard partial: rendered inside layout.php.
  *
  * @package BP_Birthdays
  * @since   2.5.0
@@ -39,7 +39,7 @@ $bbd_zodiac_on       = ! empty( $settings['zodiac_enabled'] );
 // Count of channels currently switched on.
 $bbd_channels_on = (int) $bbd_email_on + (int) $bbd_activity_on + (int) $bbd_notification_on;
 
-$bbd_cache_minutes = isset( $settings['cache_duration'] ) ? (int) $settings['cache_duration'] : 30;
+$bbd_cache_minutes = BP_Birthdays_Admin::clamp_cache_duration( isset( $settings['cache_duration'] ) ? $settings['cache_duration'] : 30 );
 
 $bbd_general_url  = $page_url . '&tab=general';
 $bbd_email_url    = $page_url . '&tab=email';
@@ -48,7 +48,7 @@ $bbd_notif_url    = $page_url . '&tab=notifications';
 $bbd_display_url  = $page_url . '&tab=display';
 ?>
 
-<?php if ( 0 === $bbd_field_id ) : ?>
+<?php if ( '' === $bbd_field_label ) : ?>
 	<div class="bbd-notice bbd-notice--warn">
 		<span class="dashicons dashicons-warning" aria-hidden="true"></span>
 		<span>
@@ -123,6 +123,7 @@ $bbd_display_url  = $page_url . '&tab=display';
 					<span class="bbd-status bbd-status--on"><?php esc_html_e( 'On: a daily summary of birthdays is emailed to the admin', 'buddypress-birthdays' ); ?></span>
 				<?php else : ?>
 					<span class="bbd-status bbd-status--off"><?php esc_html_e( 'Off', 'buddypress-birthdays' ); ?></span>
+					<a href="<?php echo esc_url( $bbd_email_url ); ?>" class="bbd-inline-hint"><?php esc_html_e( 'Turn on', 'buddypress-birthdays' ); ?></a>
 				<?php endif; ?>
 			</td>
 		</tr>

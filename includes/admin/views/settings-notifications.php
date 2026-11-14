@@ -33,6 +33,13 @@ foreach ( $bbd_rendered_keys as $bbd_rendered_key ) :
 	</div>
 <?php endif; ?>
 
+<?php if ( $bbd_friends_only && ! ( function_exists( 'bp_is_active' ) && bp_is_active( 'friends' ) ) ) : ?>
+	<div class="bbd-notice bbd-notice--warn">
+		<span class="dashicons dashicons-warning" aria-hidden="true"></span>
+		<span><?php esc_html_e( 'Notify Friends Only is on, but the BuddyPress Friends component is not active, so no birthday notifications are sent. Enable Friend Connections in BuddyPress → Settings → Components, or turn Notify Friends Only off to notify all members.', 'buddypress-birthdays' ); ?></span>
+	</div>
+<?php endif; ?>
+
 <div class="bbd-card">
 	<div class="bbd-card__head">
 		<p class="bbd-card__title"><?php esc_html_e( 'Birthday Notifications', 'buddypress-birthdays' ); ?></p>
