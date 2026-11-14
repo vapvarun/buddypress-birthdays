@@ -1,15 +1,33 @@
 /* BuddyPress Birthdays - Simple & Theme Compatible */
 
+/*
+ * Tokens chain to the host theme first (BuddyX --bx-color-*, then Reign
+ * --reign-*), then a literal. BuddyX, BuddyX Pro and Reign switch to dark
+ * by setting data-bx-mode="dark" on <html>; the second block gives the
+ * black-alpha literals a light-on-dark equivalent so borders and the
+ * Send wishes button stay visible there.
+ */
 :root {
-    --bp-birthday-border-color: rgba(0, 0, 0, 0.1);
-    --bp-birthday-border-light: rgba(0, 0, 0, 0.08);
+    --bp-birthday-border-color: var(--bx-color-border, var(--reign-site-border-color, rgba(0, 0, 0, 0.1)));
+    --bp-birthday-border-light: var(--bx-color-border, var(--reign-site-border-color, rgba(0, 0, 0, 0.08)));
     --bp-birthday-border-lighter: rgba(0, 0, 0, 0.05);
     --bp-birthday-bg-light: rgba(0, 0, 0, 0.03);
     --bp-birthday-bg-medium: rgba(0, 0, 0, 0.05);
     --bp-birthday-bg-dark: rgba(0, 0, 0, 0.08);
-    --bp-birthday-text-muted: #666;
-    --bp-birthday-primary: var(--reign-colors-theme, var(--color-theme-primary, #2271b1));;
+    --bp-birthday-text-muted: var(--bx-color-fg-muted, #666);
+    --bp-birthday-primary: var(--bx-color-accent, var(--reign-colors-theme, var(--color-theme-primary, #2271b1)));
     --bp-birthday-primary-inverse: #fff;
+}
+
+:root[data-bx-mode="dark"] {
+    --bp-birthday-border-color: var(--bx-color-border, var(--reign-site-border-color, rgba(255, 255, 255, 0.16)));
+    /* Controls (Send wishes, pagination) need a stronger edge than list dividers. */
+    --bp-birthday-border-light: var(--bx-color-border-strong, rgba(255, 255, 255, 0.2));
+    --bp-birthday-border-lighter: rgba(255, 255, 255, 0.1);
+    --bp-birthday-bg-light: rgba(255, 255, 255, 0.04);
+    --bp-birthday-bg-medium: rgba(255, 255, 255, 0.06);
+    --bp-birthday-bg-dark: rgba(255, 255, 255, 0.1);
+    --bp-birthday-text-muted: var(--bx-color-fg-muted, #9aa0a6);
 }
 
 /* ====================================
@@ -253,7 +271,7 @@
     border-radius: 4px;
     font-size: 13px;
     border-left: 3px solid currentColor;
-    background: rgba(0,0,0,0.05);
+    background: var(--bp-birthday-bg-medium, rgba(0, 0, 0, 0.05));
     opacity: 0.9;
 }
 
@@ -284,7 +302,7 @@
     .bp-send-wishes {
         padding: 10px 14px;
         font-size: 13px;
-        min-height: 36px;
+        min-height: 40px;
         min-width: 44px;
         gap: 6px;
     }
