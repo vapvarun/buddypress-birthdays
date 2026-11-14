@@ -1,8 +1,8 @@
 # BuddyPress Birthdays - Documentation
 
 **Version:** 2.4.1
-**Requires WordPress:** 5.0+
-**Requires PHP:** 7.4+
+**Requires WordPress:** 6.5+
+**Requires PHP:** 8.1+
 **Requires:** BuddyPress (latest stable version)
 **Tested up to:** WordPress 6.9
 
@@ -25,8 +25,8 @@
 
 ### Requirements
 
-- WordPress 5.0 or higher
-- PHP 7.4 or higher
+- WordPress 6.5 or higher
+- PHP 8.1 or higher
 - BuddyPress (latest stable version)
 - BuddyPress Extended Profile component enabled
 
@@ -79,7 +79,7 @@ If you don't already have a birthday field:
 ### Step 3: Add Widget
 
 1. Go to **Appearance > Widgets**
-2. Find "BuddyPress Birthdays" widget
+2. Find the "(BuddyPress) Birthdays" widget
 3. Drag it to your desired sidebar
 4. Configure widget options
 5. Save

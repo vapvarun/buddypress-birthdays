@@ -33,7 +33,7 @@ Default template: `Today is {name}'s birthday! Send your wishes!`
 
 ## BuddyPress notification
 
-When Notifications are enabled, members receive an in-app BuddyPress notification. Turn on Notify Friends Only to restrict it to the birthday member's friends. Set the text on the Notifications tab using the `{name}` placeholder.
+When Notifications are enabled, members receive an in-app BuddyPress notification. Turn on Notify Friends Only to restrict it to the birthday member's friends. Notify Friends Only needs the BuddyPress Friends component; while that component is off, no birthday notifications are sent and the Notifications tab shows a warning. Members who hid their birthday receive no birthday notifications. Set the text on the Notifications tab using the `{name}` placeholder.
 
 Default text: `It's {name}'s birthday today!`
 
@@ -41,7 +41,7 @@ When Notify Friends Only is off, the number of recipients per birthday is capped
 
 ## Admin summary email
 
-When the Admin Summary Email is enabled, the recipient (the Admin Email setting, or the site admin email when empty) receives a daily list of the day's birthdays. It is a BuddyPress email of type `birthday-admin-summary`, also editable under BuddyPress > Emails, with a `wp_mail` fallback.
+When the Daily Summary Email is enabled, the recipient (the Summary Recipient setting, or the site admin email when empty) receives one list of the day's birthdays per day. It is a BuddyPress email of type `birthday-admin-summary`, also editable under BuddyPress > Emails, with a `wp_mail` fallback.
 
 ## Emails not appearing under BuddyPress > Emails
 

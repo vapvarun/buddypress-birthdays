@@ -231,9 +231,9 @@ None - uses existing BuddyPress tables
 ## Dependencies
 
 ### Required
-- WordPress 5.0+
-- PHP 7.4+
-- BuddyPress 5.0+
+- WordPress 6.5+
+- PHP 8.1+
+- BuddyPress
 
 ### Optional
 - BuddyPress Friends component (for friends filter)

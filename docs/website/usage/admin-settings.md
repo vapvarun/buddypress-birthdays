@@ -23,8 +23,8 @@ A read-only dashboard confirming the plugin found a birthday profile field and s
 |---|---|---|
 | Enable Birthday Emails | Send a greeting email to each member on their birthday. | Off |
 | Send Time | Time of day the daily birthday check runs, in 24-hour HH:MM. | 09:00 |
-| Enable Admin Summary Email | Send the site owner a daily summary of the day's birthdays. | Off |
-| Admin Email | Recipient for the summary. Falls back to the site admin email when empty. | Empty |
+| Daily Summary Email | Send the site owner one summary of the day's birthdays each day. | Off |
+| Summary Recipient | Recipient for the summary. Falls back to the site admin email when empty. | Empty |
 
 ### Activity
 

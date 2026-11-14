@@ -439,8 +439,8 @@ Users can control birthday visibility via:
 
 ### Version Information
 - **Current Version**: 2.4.1
-- **WordPress Requirements**: 5.0+
-- **PHP Requirements**: 7.4+
+- **WordPress Requirements**: 6.5+
+- **PHP Requirements**: 8.1+
 - **BuddyPress Requirements**: Latest stable version
 - **Tested Up To**: WordPress 6.9
 

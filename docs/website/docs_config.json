@@ -3,12 +3,47 @@
   "productType": "plugin",
   "shortId": "bpbday",
   "sections": [
-    { "name": "Getting Started", "folder": "getting-started" },
-    { "name": "Features", "folder": "features" },
-    { "name": "Usage", "folder": "usage" },
-    { "name": "Shortcodes", "folder": "shortcodes" },
-    { "name": "Developer Guide", "folder": "developer-guide" },
-    { "name": "FAQ", "folder": "faq" },
-    { "name": "Troubleshooting", "folder": "troubleshooting" }
+    {
+      "name": "Getting Started",
+      "folder": "getting-started",
+      "description": "What the plugin does, what it needs, and how to install it.",
+      "pages": [ { "slug": "introduction" }, { "slug": "installation" } ]
+    },
+    {
+      "name": "Features",
+      "folder": "features",
+      "description": "Everything the birthday widget, shortcode and notifications can do.",
+      "pages": [ { "slug": "overview" } ]
+    },
+    {
+      "name": "Usage",
+      "folder": "usage",
+      "description": "Set up the widget, the settings tabs, birthday emails and notifications, and member privacy.",
+      "pages": [ { "slug": "widget" }, { "slug": "admin-settings" }, { "slug": "notifications-and-emails" }, { "slug": "privacy-and-gdpr" } ]
+    },
+    {
+      "name": "Shortcodes",
+      "folder": "shortcodes",
+      "description": "Show the birthday list on any page or post with the bp_birthdays shortcode.",
+      "pages": [ { "slug": "bp-birthdays" } ]
+    },
+    {
+      "name": "Developer Guide",
+      "folder": "developer-guide",
+      "description": "How the plugin is built, and the hooks and filters you can use to change it.",
+      "pages": [ { "slug": "architecture" }, { "slug": "hooks-and-filters" } ]
+    },
+    {
+      "name": "FAQ",
+      "folder": "faq",
+      "description": "Answers to the questions site owners ask most.",
+      "pages": [ { "slug": "index" } ]
+    },
+    {
+      "name": "Troubleshooting",
+      "folder": "troubleshooting",
+      "description": "What to check when birthdays, emails or notifications do not appear.",
+      "pages": [ { "slug": "index" } ]
+    }
   ]
 }

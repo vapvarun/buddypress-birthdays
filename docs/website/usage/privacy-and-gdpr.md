@@ -33,9 +33,11 @@ This is useful for wiring the opt-out to a site-wide consent store or a privacy 
 
 Separately from the opt-out, the plugin honours the visibility level set on the birthday profile field:
 
-- Public: shown to everyone.
-- Logged-in members: shown only to logged-in viewers.
-- Friends: shown only to the member's friends (needs the Friends component).
-- Only Me: never shown in the widget, shortcode, or notifications.
+- Public: shown to everyone, and announced in the activity feed.
+- Logged-in members: shown only to logged-in viewers. Notified to members, not posted to the public activity feed.
+- Friends: shown and notified only to the member's friends (needs the Friends component). Not posted to the activity feed.
+- Only Me: never shown in the widget or shortcode to other members, never posted to the activity feed, and never notified. Site admins can still see it on the profile, so it stays in the admin summary (on BuddyBoss, Only Me also leaves it out of the summary).
+
+The birthday greeting email goes only to the member, so it is sent whatever the field visibility. Use the opt-out to stop it.
 
 Because both controls are respected, a private birthday field stays private even if a member has not used the opt-out.

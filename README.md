@@ -2,8 +2,8 @@
 
 Display upcoming birthdays of BuddyPress members with a beautiful, responsive widget that integrates seamlessly with any WordPress theme.
 
-[![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-blue.svg)](https://wordpress.org/)
-[![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple.svg)](https://php.net/)
+[![WordPress](https://img.shields.io/badge/WordPress-6.5%2B-blue.svg)](https://wordpress.org/)
+[![PHP](https://img.shields.io/badge/PHP-8.1%2B-purple.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/License-GPLv3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 [**Community Bundle**](https://wbcomdesigns.com/downloads/buddypress-community-bundle/) | [**All Products**](https://store.wbcomdesigns.com/)
@@ -31,28 +31,35 @@ Transform your BuddyPress community with the Birthday Widget! Know the upcoming 
 
 1. Upload the `buddypress-birthdays` folder to `/wp-content/plugins/`
 2. Activate the plugin through the **Plugins** menu in WordPress
-3. Go to **Appearance > Widgets** and add the "BuddyPress Birthdays" widget
+3. Go to **Appearance > Widgets** and add the "(BuddyPress) Birthdays" widget
 4. Or use the shortcode `[bp_birthdays]` in any page or post
 
 ## Shortcode
 
 ```
-[bp_birthdays range="monthly" display="friends" show_age="yes" limit="10"]
+[bp_birthdays range_limit="monthly" show_birthdays_of="friends" show_age="yes" limit="10"]
 ```
 
 | Parameter | Options | Default |
 |-----------|---------|---------|
-| `range` | `weekly`, `monthly`, `unlimited` | `monthly` |
-| `display` | `all`, `friends`, `followers` | `all` |
-| `show_age` | `yes`, `no` | `no` |
-| `limit` | Any number | `10` |
+| `title` | Any text | `Upcoming Birthdays` |
+| `limit` | Any number | `5` |
+| `show_age` | `yes`, `no` | `yes` |
+| `show_message_button` | `yes`, `no` | `yes` |
+| `date_format` | A PHP date format | `F d` |
+| `range_limit` | `no_limit`, `weekly`, `monthly` | `no_limit` |
+| `show_birthdays_of` | `all`, `friends`, `followers` | `all` |
+| `display_name_type` | `user_name`, `nick_name`, `first_name` | `user_name` |
+| `emoji` | `none`, `cake`, `balloon`, `party` | `balloon` |
+| `field_name` | An xProfile date field ID | The Default Birthday Field |
+| `birthdays_per_page` | Any number | `10` |
 
 ## Compatibility
 
-- WordPress 5.0+
-- BuddyPress 6.0+
+- WordPress 6.5+
+- BuddyPress
 - BuddyBoss Platform
-- PHP 7.4+
+- PHP 8.1+
 
 ## More Products by Wbcom Designs
 
