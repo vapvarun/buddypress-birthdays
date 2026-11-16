@@ -356,7 +356,7 @@ function my_custom_name_format( $display, $user_info ) {
 | Platform | Version | Status | Notes |
 |----------|---------|---------|-------|
 | WordPress | 6.5+ | ✅ Full | Requires WordPress 6.5+ and PHP 8.1+ |
-| BuddyPress | 8.0+ | ✅ Full | All versions supported |
+| BuddyPress | 12.0+ | ✅ Full | All versions supported |
 | BuddyPress 12.0+ | Latest | ✅ Full | Uses new BP functions |
 | BuddyBoss Platform | All | ✅ Full | Special BP compatibility |
 | Youzify | All | ✅ Full | Profile extension support |
