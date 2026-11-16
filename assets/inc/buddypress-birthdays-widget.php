@@ -67,6 +67,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			return;
 		}
 
+		bb_enqueue_core_assets();
+
 		// For friends/followers filters, user must be logged in.
 		// These filters require a logged-in user to determine whose friends/followers to show.
 		// "All Members" filter is available to everyone including logged-out users.

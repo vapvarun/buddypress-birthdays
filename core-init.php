@@ -22,258 +22,97 @@ define( 'BB_CORE_CSS', plugins_url( 'assets/css/', __FILE__ ) );
 define( 'BB_CORE_JS', plugins_url( 'assets/js/', __FILE__ ) );
 
 /**
- * Global flag to track if assets are loaded
+ * Enqueue the widget's CSS and JS.
  *
- * @global bool $bb_assets_loaded
+ * Called where a birthday list actually renders (the widget and the
+ * [bp_birthdays] shortcode), so pages without one load nothing. A style
+ * enqueued during render prints in the footer; WordPress handles that.
  */
-$bb_assets_loaded = false;
-
-/**
- * Register CSS with enhanced smart loading.
- */
-function bb_register_core_css() {
-	global $bb_assets_loaded;
-
-	// Prevent duplicate loading.
-	if ( $bb_assets_loaded || wp_style_is( 'bb-core', 'enqueued' ) ) {
+function bb_enqueue_core_assets() {
+	if ( wp_script_is( 'bb-core', 'enqueued' ) || wp_script_is( 'bb-core', 'done' ) ) {
 		return;
 	}
 
-	// Load on appropriate pages.
-	if ( bb_should_load_assets() ) {
-		/*
-		 * Serve the minified build unless SCRIPT_DEBUG is on.
-		 *
-		 * grunt builds bb-core.min.css but nothing ever enqueued it, so every
-		 * visitor was served the unminified source (10780 B against 6893 B) and
-		 * the minified bundle shipped in the zip as dead weight. Keep this in
-		 * step with the cssmin/uglify targets in gruntfile.js: if a target is
-		 * added or removed, this suffix has to follow.
-		 */
-		$bb_suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.css' : '.min.css';
+	// Minified builds unless SCRIPT_DEBUG; keep in step with gruntfile.js cssmin/uglify targets.
+	$bb_min = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '' : '.min';
 
-		wp_enqueue_style(
-			'bb-core',
-			BB_CORE_CSS . 'bb-core' . $bb_suffix,
-			array(),
-			BIRTHDAY_WIDGET_VERSION,
-			'all'
-		);
+	wp_enqueue_style( 'bb-core', BB_CORE_CSS . 'bb-core' . $bb_min . '.css', array(), BIRTHDAY_WIDGET_VERSION, 'all' );
+	wp_enqueue_script( 'bb-core', BB_CORE_JS . 'bb-core' . $bb_min . '.js', array( 'jquery' ), BIRTHDAY_WIDGET_VERSION, true );
 
-		$bb_assets_loaded = true;
-	}
-}
-add_action( 'wp_enqueue_scripts', 'bb_register_core_css', 10 );
-
-/**
- * Register JS with enhanced smart loading.
- */
-function bb_register_core_js() {
-	global $bb_assets_loaded;
-
-	// Prevent duplicate loading.
-	if ( wp_script_is( 'bb-core', 'enqueued' ) ) {
-		return;
+	// Enhanced localization.
+	// Determine confetti setting from saved options (don't rely on admin class being loaded).
+	$confetti_enabled = false;
+	$bb_opts          = get_option( 'bp_birthdays_settings', array() );
+	if ( is_array( $bb_opts ) && isset( $bb_opts['confetti_enabled'] ) ) {
+		$confetti_enabled = (bool) $bb_opts['confetti_enabled'];
 	}
 
-	// Load on appropriate pages.
-	if ( bb_should_load_assets() ) {
-		// See the note in bb_register_core_css(): the minified build was shipped
-		// but never enqueued (29168 B against 14307 B).
-		$bb_suffix = ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ? '.js' : '.min.js';
-
-		wp_enqueue_script(
-			'bb-core',
-			BB_CORE_JS . 'bb-core' . $bb_suffix,
-			array( 'jquery' ),
-			BIRTHDAY_WIDGET_VERSION,
-			true
-		);
-
-		// Enhanced localization.
-		// Determine confetti setting from saved options (don't rely on admin class being loaded).
-		$confetti_enabled = false;
-		$bb_opts          = get_option( 'bp_birthdays_settings', array() );
-		if ( is_array( $bb_opts ) && isset( $bb_opts['confetti_enabled'] ) ) {
-			$confetti_enabled = (bool) $bb_opts['confetti_enabled'];
-		}
-
-		wp_localize_script(
-			'bb-core',
-			'bbBirthdays',
-			array(
-				'ajaxurl'    => admin_url( 'admin-ajax.php' ),
-				'nonce'      => wp_create_nonce( 'bb_birthdays_nonce' ),
-				'plugin_url' => plugins_url( '', __FILE__ ),
-				'version'    => BIRTHDAY_WIDGET_VERSION,
-				'debug'      => defined( 'WP_DEBUG' ) && WP_DEBUG,
-				// Every key bb-core.js reads via bbBirthdays.strings.<key>
-				// MUST be seeded here with a __() value: a key the JS reads
-				// but PHP never seeds renders its English fallback on every
-				// locale forever (docs/standards/i18n.md trap 1).
-				'strings'    => array(
-					'loading'           => __( 'Loading...', 'buddypress-birthdays' ),
-					'error'             => __( 'Error occurred', 'buddypress-birthdays' ),
-					'send_wishes'       => __( 'Send my wishes', 'buddypress-birthdays' ),
-					'wishes_sent'       => __( 'Birthday wishes sent!', 'buddypress-birthdays' ),
-					'wishes_error'      => __( 'Unable to send wishes at this time.', 'buddypress-birthdays' ),
-					'happy_birthday'    => __( 'Happy Birthday!', 'buddypress-birthdays' ),
-					'no_birthdays'      => __( 'No upcoming birthdays', 'buddypress-birthdays' ),
-					'today'             => __( 'Today', 'buddypress-birthdays' ),
-					'tomorrow'          => __( 'Tomorrow', 'buddypress-birthdays' ),
-					// Accessible name applied to every send-wishes button by
-					// bb-core.js initAccessibility(). Mirrors the title
-					// attribute the widget renders server-side.
-					'send_wishes_aria'  => __( 'Send birthday wishes', 'buddypress-birthdays' ),
-					// Landmark label applied to each birthday widget region.
-					'widget_aria_label' => __( 'Birthday notifications', 'buddypress-birthdays' ),
-					// NOTE: 'notifications_on' was dropped in 2.5.0 alongside the
-					// browser-notification subsystem in bb-core.js (the permission
-					// prompt had no caller that ever sent a notification). Do not
-					// re-add the string without re-adding a real consumer.
-				),
-				'settings'   => array(
-					'animation_speed'  => apply_filters( 'bb_birthdays_animation_speed', 300 ),
-					'tooltip_delay'    => apply_filters( 'bb_birthdays_tooltip_delay', 300 ),
-					'cache_duration'   => apply_filters( 'bb_birthdays_cache_duration', 1800 ), // 30 minutes.
-					// Frontend toggle for confetti animation (from admin settings).
-					'confetti_enabled' => $confetti_enabled,
-				),
-			)
-		);
-	}
-}
-add_action( 'wp_enqueue_scripts', 'bb_register_core_js', 10 );
-
-
-
-/**
- * Force load assets - for widgets displayed in footer or dynamic content
- */
-function bb_force_load_assets() {
-	global $bb_assets_loaded;
-
-	if ( ! $bb_assets_loaded ) {
-		bb_register_core_css();
-		bb_register_core_js();
-	}
+	wp_localize_script(
+		'bb-core',
+		'bbBirthdays',
+		array(
+			'ajaxurl'    => admin_url( 'admin-ajax.php' ),
+			'nonce'      => wp_create_nonce( 'bb_birthdays_nonce' ),
+			'plugin_url' => plugins_url( '', __FILE__ ),
+			'version'    => BIRTHDAY_WIDGET_VERSION,
+			'debug'      => defined( 'WP_DEBUG' ) && WP_DEBUG,
+			// Every key bb-core.js reads via bbBirthdays.strings.<key>
+			// MUST be seeded here with a __() value: a key the JS reads
+			// but PHP never seeds renders its English fallback on every
+			// locale forever (docs/standards/i18n.md trap 1).
+			'strings'    => array(
+				'loading'           => __( 'Loading...', 'buddypress-birthdays' ),
+				'error'             => __( 'Error occurred', 'buddypress-birthdays' ),
+				'send_wishes'       => __( 'Send my wishes', 'buddypress-birthdays' ),
+				'wishes_sent'       => __( 'Birthday wishes sent!', 'buddypress-birthdays' ),
+				'wishes_error'      => __( 'Unable to send wishes at this time.', 'buddypress-birthdays' ),
+				'happy_birthday'    => __( 'Happy Birthday!', 'buddypress-birthdays' ),
+				'no_birthdays'      => __( 'No upcoming birthdays', 'buddypress-birthdays' ),
+				'today'             => __( 'Today', 'buddypress-birthdays' ),
+				'tomorrow'          => __( 'Tomorrow', 'buddypress-birthdays' ),
+				// Accessible name applied to every send-wishes button by
+				// bb-core.js initAccessibility(). Mirrors the title
+				// attribute the widget renders server-side.
+				'send_wishes_aria'  => __( 'Send birthday wishes', 'buddypress-birthdays' ),
+				// Landmark label applied to each birthday widget region.
+				'widget_aria_label' => __( 'Birthday notifications', 'buddypress-birthdays' ),
+				// NOTE: 'notifications_on' was dropped in 2.5.0 alongside the
+				// browser-notification subsystem in bb-core.js (the permission
+				// prompt had no caller that ever sent a notification). Do not
+				// re-add the string without re-adding a real consumer.
+			),
+			'settings'   => array(
+				'animation_speed'  => apply_filters( 'bb_birthdays_animation_speed', 300 ),
+				'tooltip_delay'    => apply_filters( 'bb_birthdays_tooltip_delay', 300 ),
+				'cache_duration'   => apply_filters( 'bb_birthdays_cache_duration', 1800 ), // 30 minutes.
+				// Frontend toggle for confetti animation (from admin settings).
+				'confetti_enabled' => $confetti_enabled,
+			),
+		)
+	);
 }
 
 /**
- * Enhanced asset loading check - runs in footer for late-loaded widgets
+ * Load the assets in the page head where we already know a list renders
+ * (the shortcode in the main post), or where a site forces it.
  */
-function bb_footer_asset_check() {
-	// Check if widget is active but assets weren't loaded.
-	if ( is_active_widget( false, false, 'widget_buddypress_birthdays' ) ) {
-		if ( ! wp_style_is( 'bb-core', 'enqueued' ) && ! wp_style_is( 'bb-core', 'done' ) ) {
-			// Force load assets in footer.
-			bb_force_load_assets();
-		}
-	}
+function bb_maybe_enqueue_core_assets() {
+	$post = get_post();
+	$load = is_singular() && $post && has_shortcode( $post->post_content, 'bp_birthdays' );
 
-	// Also check for shortcode in dynamic content.
-	global $post;
-	if ( $post && has_shortcode( $post->post_content, 'bp_birthdays' ) ) {
-		if ( ! wp_style_is( 'bb-core', 'enqueued' ) && ! wp_style_is( 'bb-core', 'done' ) ) {
-			bb_force_load_assets();
-		}
+	/**
+	 * Filters whether the birthday assets load in the head of the current page.
+	 *
+	 * The widget and shortcode enqueue them on render anyway; return true for
+	 * markup the plugin cannot see (cached fragments, page builders).
+	 *
+	 * @param bool $load Whether to load. Default true only on a post using the shortcode.
+	 */
+	if ( apply_filters( 'bb_core_load_assets', $load ) ) {
+		bb_enqueue_core_assets();
 	}
 }
-add_action( 'wp_footer', 'bb_footer_asset_check', 5 );
-
-/**
- * Check if assets should be loaded - Enhanced for BuddyPress and all scenarios.
- *
- * @return bool Whether assets should be loaded.
- */
-function bb_should_load_assets() {
-	// Always load if widget is active (most important check).
-	if ( is_active_widget( false, false, 'widget_buddypress_birthdays' ) ) {
-		return true;
-	}
-
-	// Load in admin/customizer.
-	if ( is_admin() || is_customize_preview() ) {
-		return true;
-	}
-
-	// Check for shortcode in current post content.
-	global $post;
-	if ( $post && has_shortcode( $post->post_content, 'bp_birthdays' ) ) {
-		return true;
-	}
-
-	// Load on all BuddyPress pages.
-	if ( function_exists( 'bp_is_directory' ) && bp_is_directory() ) {
-		return true;
-	}
-
-	if ( function_exists( 'bp_is_user' ) && bp_is_user() ) {
-		return true;
-	}
-
-	if ( function_exists( 'bp_is_group' ) && bp_is_group() ) {
-		return true;
-	}
-
-	if ( function_exists( 'bp_is_activity_component' ) && bp_is_activity_component() ) {
-		return true;
-	}
-
-	// Load on BuddyBoss pages.
-	if ( function_exists( 'buddyboss_theme' ) ) {
-		return true;
-	}
-
-	// Load if Youzify is active (they often use widgets everywhere).
-	if ( function_exists( 'youzify' ) || defined( 'YOUZIFY_VERSION' ) ) {
-		return true;
-	}
-
-	// Load on common pages where widgets might appear.
-	if ( is_home() || is_front_page() || is_page() || is_single() || is_archive() ) {
-		return true;
-	}
-
-	// Load if we're in a widget area context.
-	if ( bb_check_widget_areas() ) {
-		return true;
-	}
-
-	// Allow themes/plugins to force loading.
-	return apply_filters( 'bb_core_load_assets', false );
-}
-
-/**
- * Check if birthday widget is present in any widget area
- *
- * @return bool Whether widget is found in any widget area.
- */
-function bb_check_widget_areas() {
-	// Ensure function is available (may not be during early loading).
-	if ( ! function_exists( 'wp_get_sidebars_widgets' ) ) {
-		return false;
-	}
-
-	// phpcs:ignore Generic.PHP.ForbiddenFunctions.Found -- Required for widget detection.
-	$sidebars_widgets = wp_get_sidebars_widgets();
-
-	if ( ! is_array( $sidebars_widgets ) ) {
-		return false;
-	}
-
-	foreach ( $sidebars_widgets as $sidebar_id => $widgets ) {
-		if ( is_array( $widgets ) ) {
-			foreach ( $widgets as $widget ) {
-				if ( false !== strpos( $widget, 'widget_buddypress_birthdays' ) ) {
-					return true;
-				}
-			}
-		}
-	}
-
-	return false;
-}
+add_action( 'wp_enqueue_scripts', 'bb_maybe_enqueue_core_assets' );
 
 
 /**
@@ -290,8 +129,7 @@ if ( file_exists( BB_CORE_INC . 'buddypress-birthdays-widget.php' ) ) {
  * @return string Shortcode output.
  */
 function bb_birthdays_shortcode( $atts ) {
-	// Force load assets when shortcode is used.
-	bb_force_load_assets();
+	bb_enqueue_core_assets();
 
 	$atts = shortcode_atts(
 		array(
@@ -394,7 +232,6 @@ function bb_debug_widget_loading() {
 
 		// Asset loading status.
 		echo '<strong>Asset Loading:</strong><br>';
-		echo '&nbsp;&nbsp;Should Load: ' . ( bb_should_load_assets() ? '<span style="color: green;">YES</span>' : '<span style="color: red;">NO</span>' ) . '<br>';
 		echo '&nbsp;&nbsp;CSS Loaded: ' . ( wp_style_is( 'bb-core', 'done' ) ? '<span style="color: green;">YES</span>' : ( wp_style_is( 'bb-core', 'enqueued' ) ? '<span style="color: orange;">QUEUED</span>' : '<span style="color: red;">NO</span>' ) ) . '<br>';
 		echo '&nbsp;&nbsp;JS Loaded: ' . ( wp_script_is( 'bb-core', 'done' ) ? '<span style="color: green;">YES</span>' : ( wp_script_is( 'bb-core', 'enqueued' ) ? '<span style="color: orange;">QUEUED</span>' : '<span style="color: red;">NO</span>' ) ) . '<br><br>';
 

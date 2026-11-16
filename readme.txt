@@ -262,6 +262,7 @@ Birthday notifications now respect profile privacy and opt-outs, failed emails a
 * Fix      - The Default Birthday Field only accepts real date fields, and Cache Duration is kept between 1 and 1440 minutes so the General tab can always be saved.
 * Fix      - The Message button border is visible again in BuddyX, BuddyX Pro and Reign dark mode.
 * Fix      - Profile links no longer use a function deprecated in BuddyPress 12.
+* Fix      - The widget's styles and scripts now load only on pages that show the widget or the shortcode, not on every page.
 * Compat   - Requires PHP 8.1 or higher.
 
 = 2.5.0 - July 2026 =

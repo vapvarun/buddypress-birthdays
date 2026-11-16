@@ -6,7 +6,7 @@ The plugin fires filters only. It registers no custom action hooks. All names be
 
 ### bb_core_load_assets
 
-Last-resort override to force the front-end CSS and JS to load when none of the built-in context checks matched.
+The widget and the `[bp_birthdays]` shortcode load their CSS and JS when they render, so pages without them load nothing. Return `true` to load the files in the page head anyway, for example when a page builder or cache serves the birthday list.
 
 ```php
 add_filter( 'bb_core_load_assets', '__return_true' );

@@ -61,17 +61,10 @@ buddypress-birthdays/
 **Critical Functions**:
 
 ```php
-// Smart asset loading
-function bb_should_load_assets() {
-    // Checks widget active, customizer, BuddyPress pages, etc.
-}
-
-// Asset loading with cache busting
-function bb_register_core_css() {
-    if ( bb_should_load_assets() ) {
-        wp_enqueue_style( 'bb-core', BB_CORE_CSS . 'bb-core.css', array(), BIRTHDAY_WIDGET_VERSION );
-    }
-}
+// Assets load where a birthday list renders: the widget and the shortcode
+// call this. bb_maybe_enqueue_core_assets() also loads them in the head on a
+// post using the shortcode, or wherever the bb_core_load_assets filter says.
+function bb_enqueue_core_assets() { /* CSS + JS + bbBirthdays config */ }
 
 // Shortcode implementation
 function bb_birthdays_shortcode( $atts ) {
@@ -267,27 +260,7 @@ $members = array_filter( array_map( 'absint', $users_with_birthday ) );
 
 ### Asset Loading Strategy
 
-**Smart Loading Logic**:
-```php
-function bb_should_load_assets() {
-    // Widget active check
-    if ( is_active_widget( false, false, 'widget_buddypress_birthdays' ) ) {
-        return true;
-    }
-    
-    // Shortcode usage check
-    if ( has_shortcode( $post->post_content, 'bp_birthdays' ) ) {
-        return true;
-    }
-    
-    // BuddyPress context check
-    if ( function_exists( 'bp_is_directory' ) && bp_is_directory() ) {
-        return true;
-    }
-    
-    return false;
-}
-```
+The widget's `widget()` method and the `[bp_birthdays]` shortcode call `bb_enqueue_core_assets()` when they render, so CSS and JS load only on pages that show a birthday list. On a post whose content uses the shortcode the files load in the head; force head loading elsewhere with the `bb_core_load_assets` filter.
 
 **Benefits**:
 - **Reduces HTTP Requests**: Only loads when needed
