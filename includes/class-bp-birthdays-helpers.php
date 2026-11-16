@@ -213,8 +213,8 @@ class BP_Birthdays_Helpers {
 	 */
 	public static function calculate_age( $birth_date ) {
 		try {
-			$birth = new DateTime( $birth_date );
-			$today = new DateTime();
+			$birth = new DateTime( $birth_date, wp_timezone() );
+			$today = new DateTime( 'now', wp_timezone() );
 			$age   = $today->diff( $birth )->y;
 			return $age;
 		} catch ( Exception $e ) {
@@ -247,7 +247,7 @@ class BP_Birthdays_Helpers {
 	public static function is_birthday_today( $date ) {
 		try {
 			$birth = new DateTime( $date );
-			$today = new DateTime();
+			$today = new DateTime( 'now', wp_timezone() );
 			return $birth->format( 'm-d' ) === $today->format( 'm-d' );
 		} catch ( Exception $e ) {
 			return false;
@@ -263,11 +263,11 @@ class BP_Birthdays_Helpers {
 	public static function days_until_birthday( $date ) {
 		try {
 			$birth = new DateTime( $date );
-			$today = new DateTime();
+			$today = new DateTime( 'now', wp_timezone() );
 			$today->setTime( 0, 0, 0 );
 
 			// Set birthday to this year.
-			$next_birthday = new DateTime();
+			$next_birthday = new DateTime( 'now', wp_timezone() );
 			$next_birthday->setDate(
 				(int) $today->format( 'Y' ),
 				(int) $birth->format( 'm' ),

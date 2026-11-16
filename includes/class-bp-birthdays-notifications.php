@@ -565,9 +565,7 @@ class BP_Birthdays_Notifications {
 					continue;
 				}
 
-				$birth_date = new DateTime( $row['value'] );
-				$today      = new DateTime();
-				$age        = $today->format( 'Y' ) - $birth_date->format( 'Y' );
+				$age = BP_Birthdays_Helpers::calculate_age( $row['value'] );
 
 				$birthdays[ $row['user_id'] ] = array(
 					'user_id'      => $row['user_id'],
