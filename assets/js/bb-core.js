@@ -587,6 +587,10 @@
         },
 
         destroy: function() {
+            // Nothing to clean up if init() never ran (page left before DOM ready).
+            if (!this.cache.$document) {
+                return;
+            }
             // Clean up event listeners and resources
             this.cache.$document.off('.bpBirthdays');
             this.cache.$window.off('.bpBirthdays');

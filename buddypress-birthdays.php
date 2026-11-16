@@ -13,7 +13,6 @@
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * Tested up to: 7.0
- * Requires Plugins: buddypress
  *
  * @link              https://wbcomdesigns.com/contact/
  * @since             1.0.0
