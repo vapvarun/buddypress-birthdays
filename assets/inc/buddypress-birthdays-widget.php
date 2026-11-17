@@ -1210,14 +1210,6 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			bb_clear_birthday_caches();
 		}
 
-		// Also clear object cache for this widget's cache group.
-		if ( function_exists( 'wp_cache_flush_group' ) ) {
-			wp_cache_flush_group( 'bp_birthdays' );
-		} else {
-			// Fallback: delete specific cache keys.
-			wp_cache_delete( md5( wp_json_encode( $old_instance ) ), 'bp_birthdays' );
-		}
-
 		return $instance;
 	}
 
