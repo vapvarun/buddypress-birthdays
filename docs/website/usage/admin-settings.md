@@ -1,6 +1,6 @@
 # Admin Settings
 
-Settings live at WB Plugins > Birthdays. The page uses a card-panel layout with an overview dashboard and grouped settings tabs. All settings are stored in a single option, `bp_birthdays_settings`. The capability required to see the page is `manage_options`, filterable with `bp_birthdays_admin_capability`.
+Settings live at WB Plugins > Birthdays. The page uses a card-panel layout with an overview dashboard and grouped settings tabs. All settings are stored in a single option, `bp_birthdays_settings`. The capability required to open the page and save its settings is `manage_options`, filterable with `bp_birthdays_admin_capability`.
 
 ## Tabs
 

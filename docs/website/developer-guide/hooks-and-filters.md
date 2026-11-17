@@ -64,7 +64,7 @@ add_filter( 'bb_birthday_user_opted_out', function ( $opted_out, $user_id ) {
 
 ### bp_birthdays_admin_capability
 
-Capability required to view the admin menu and settings page. Default `manage_options`.
+Capability required to open the admin menu and settings page and to save its settings. Default `manage_options`.
 
 ### bp_birthdays_admin_tabs
 
