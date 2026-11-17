@@ -8,7 +8,7 @@ The admin page has seven tabs: Overview, General, Email, Activity, Notifications
 
 ### Overview
 
-A read-only dashboard confirming the plugin found a birthday profile field and showing the current configuration. Start here after activation.
+A read-only dashboard confirming the plugin found a birthday profile field and showing the current configuration. Activity posts and notifications show as Off while their BuddyPress component is inactive, because nothing is sent then. Start here after activation.
 
 ### General
 

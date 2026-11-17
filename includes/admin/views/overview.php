@@ -39,6 +39,13 @@ $bbd_notification_on = ! empty( $settings['notification_enabled'] );
 $bbd_confetti_on     = ! empty( $settings['confetti_enabled'] );
 $bbd_zodiac_on       = ! empty( $settings['zodiac_enabled'] );
 
+// A channel only runs while its BuddyPress component is active (the cron
+// skips it otherwise), so the status below reports the effective state.
+$bbd_activity_component = function_exists( 'bp_is_active' ) && bp_is_active( 'activity' );
+$bbd_notif_component    = function_exists( 'bp_is_active' ) && bp_is_active( 'notifications' );
+$bbd_activity_on        = $bbd_activity_on && $bbd_activity_component;
+$bbd_notification_on    = $bbd_notification_on && $bbd_notif_component;
+
 // Count of channels currently switched on.
 $bbd_channels_on = (int) $bbd_email_on + (int) $bbd_activity_on + (int) $bbd_notification_on;
 
@@ -149,6 +156,8 @@ $bbd_display_url  = $page_url . '&tab=display';
 			<td>
 				<?php if ( $bbd_activity_on ) : ?>
 					<span class="bbd-status bbd-status--on"><?php esc_html_e( 'On: a post is added to the activity feed on each birthday', 'buddypress-birthdays' ); ?></span>
+				<?php elseif ( ! $bbd_activity_component ) : ?>
+					<span class="bbd-status bbd-status--off"><?php esc_html_e( 'Off: the BuddyPress Activity component is inactive', 'buddypress-birthdays' ); ?></span>
 				<?php else : ?>
 					<span class="bbd-status bbd-status--off"><?php esc_html_e( 'Off', 'buddypress-birthdays' ); ?></span>
 					<a href="<?php echo esc_url( $bbd_activity_url ); ?>" class="bbd-inline-hint"><?php esc_html_e( 'Turn on', 'buddypress-birthdays' ); ?></a>
@@ -160,6 +169,8 @@ $bbd_display_url  = $page_url . '&tab=display';
 			<td>
 				<?php if ( $bbd_notification_on ) : ?>
 					<span class="bbd-status bbd-status--on"><?php esc_html_e( 'On: members are notified about birthdays', 'buddypress-birthdays' ); ?></span>
+				<?php elseif ( ! $bbd_notif_component ) : ?>
+					<span class="bbd-status bbd-status--off"><?php esc_html_e( 'Off: the BuddyPress Notifications component is inactive', 'buddypress-birthdays' ); ?></span>
 				<?php else : ?>
 					<span class="bbd-status bbd-status--off"><?php esc_html_e( 'Off', 'buddypress-birthdays' ); ?></span>
 					<a href="<?php echo esc_url( $bbd_notif_url ); ?>" class="bbd-inline-hint"><?php esc_html_e( 'Turn on', 'buddypress-birthdays' ); ?></a>
