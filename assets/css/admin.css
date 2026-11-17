@@ -283,7 +283,7 @@
 .bbd-settings-main {
 	flex: 1;
 	min-width: 0;
-	margin-left: var(--bbd-admin-gap-lg);
+	margin-inline-start: var(--bbd-admin-gap-lg);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -851,8 +851,10 @@
 		flex-direction: column;
 	}
 
+	/* border-box keeps the 1px border inside the 100% width (no sideways scroll). */
 	.bbd-settings-sidebar {
 		width: 100%;
+		box-sizing: border-box;
 		position: static;
 		top: auto;
 	}
@@ -874,14 +876,14 @@
 	}
 
 	.bbd-settings-main {
-		margin-left: 0;
+		margin-inline-start: 0;
 		margin-top: var(--bbd-admin-gap-md);
 	}
 }
 
 @media (max-width: 640px) {
 	.bbd-admin {
-		margin-right: 0;
+		margin-inline-end: 0;
 	}
 
 	.bbd-page-header {
@@ -890,16 +892,18 @@
 		gap: 8px;
 	}
 
+	/* Stacked rows: border-box keeps the padding inside the card width. */
 	.bbd-card .form-table th,
 	.bbd-card .form-table td {
 		display: block;
 		width: 100%;
-		padding: 8px 16px;
+		box-sizing: border-box;
+		padding: var(--bbd-admin-gap-sm) var(--bbd-admin-gap-md);
+		overflow-wrap: anywhere;
 	}
 
 	.bbd-card .form-table th {
-		padding-top: 16px;
-		padding-bottom: 4px;
+		padding-block: var(--bbd-admin-gap-md) calc(var(--bbd-admin-gap-sm) / 2);
 	}
 
 	.bbd-stats-grid,
