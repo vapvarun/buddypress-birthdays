@@ -268,6 +268,8 @@ Birthday notifications now respect profile privacy and opt-outs, failed emails a
 * Fix      - The widget's styles and scripts now load only on pages that show the widget or the shortcode, not on every page.
 * Fix      - A birthday send that failed late in the evening is now retried for that day after midnight, and the next day's birthdays are no longer sent early.
 * Fix      - Members born on February 29 now get their birthday email, activity post and notifications on February 28 in other years.
+* Fix      - Reinstalling BuddyPress emails no longer creates duplicate birthday email templates or PHP warnings, and a template that failed to install is created on the next admin visit.
+* Fix      - The admin summary email no longer starts with an extra "Hi ," line before "Hi Admin,".
 * Compat   - Requires PHP 8.1 or higher.
 
 = 2.5.0 - July 2026 =

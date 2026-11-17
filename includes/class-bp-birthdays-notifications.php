@@ -50,6 +50,15 @@ class BP_Birthdays_Notifications {
 	const EMAIL_TYPE_ADMIN_SUMMARY = 'birthday-admin-summary';
 
 	/**
+	 * Value of bp_birthdays_emails_installed once both email posts exist and
+	 * their types are described. Older installs stored true (1), so they run
+	 * the check once more and get the type descriptions.
+	 *
+	 * @var int
+	 */
+	const EMAILS_INSTALLED_VERSION = 2;
+
+	/**
 	 * Instance of this class.
 	 *
 	 * @var BP_Birthdays_Notifications
@@ -85,10 +94,14 @@ class BP_Birthdays_Notifications {
 		add_filter( 'bp_notifications_get_registered_components', array( $this, 'register_notification_component_filter' ) );
 		add_filter( 'bp_notifications_get_notifications_for_user', array( $this, 'format_notification' ), 10, 8 );
 
-		// Register email types with BuddyPress.
+		// Install the email posts after BuddyPress installs its own (fresh
+		// install, upgrades, Tools > Reinstall emails). The types are kept out
+		// of bp_email_get_schema: BuddyPress would insert them too (duplicates)
+		// and read a type description it has no filter for (PHP warnings).
 		add_action( 'bp_core_install_emails', array( $this, 'install_emails' ) );
-		add_filter( 'bp_email_get_schema', array( $this, 'register_email_schema' ) );
-		add_filter( 'bp_email_get_type_schema', array( $this, 'register_email_type_schema' ) );
+
+		// The admin summary greets the admin in its own body.
+		add_filter( 'bp_email_get_salutation', array( $this, 'filter_admin_summary_salutation' ) );
 
 		// Create emails on plugin load if they don't exist.
 		add_action( 'admin_init', array( $this, 'maybe_install_emails' ) );
@@ -140,7 +153,7 @@ class BP_Birthdays_Notifications {
 	}
 
 	/**
-	 * Register email schema for our custom email types.
+	 * Email post content for our custom email types.
 	 *
 	 * @param array $schema Email schema.
 	 * @return array
@@ -162,23 +175,33 @@ class BP_Birthdays_Notifications {
 	}
 
 	/**
-	 * Register email type schema.
+	 * Situation text BuddyPress shows for an email type under Emails.
 	 *
-	 * @param array $type_schema Type schema.
-	 * @return array
+	 * @param string $email_type Email type.
+	 * @return string
 	 */
-	public function register_email_type_schema( $type_schema ) {
-		$type_schema[ self::EMAIL_TYPE_BIRTHDAY ] = array(
-			'description'      => __( 'A member receives a birthday greeting from the site.', 'buddypress-birthdays' ),
-			'named_salutation' => true,
-		);
+	private function get_email_description( $email_type ) {
+		return self::EMAIL_TYPE_ADMIN_SUMMARY === $email_type
+			? __( 'Site admin receives a daily summary of member birthdays.', 'buddypress-birthdays' )
+			: __( 'A member receives a birthday greeting from the site.', 'buddypress-birthdays' );
+	}
 
-		$type_schema[ self::EMAIL_TYPE_ADMIN_SUMMARY ] = array(
-			'description'      => __( 'Site admin receives a daily summary of member birthdays.', 'buddypress-birthdays' ),
-			'named_salutation' => false,
-		);
+	/**
+	 * Drop BuddyPress' "Hi {{recipient.name}}," from the admin summary.
+	 *
+	 * The summary goes to an address, not a member, and opens with its own
+	 * "Hi Admin,". BuddyPress has no filter to mark a plugin email type as
+	 * unnamed, so the salutation is cleared for this type here.
+	 *
+	 * @param string $salutation Salutation BuddyPress is about to print.
+	 * @return string
+	 */
+	public function filter_admin_summary_salutation( $salutation ) {
+		if ( function_exists( 'bp_email_get_type' ) && self::EMAIL_TYPE_ADMIN_SUMMARY === bp_email_get_type() ) {
+			return '';
+		}
 
-		return $type_schema;
+		return $salutation;
 	}
 
 	/**
@@ -264,11 +287,33 @@ class BP_Birthdays_Notifications {
 	}
 
 	/**
-	 * Install email templates.
+	 * Install email templates after BuddyPress installs its own.
 	 */
 	public function install_emails() {
-		$this->create_email_post( self::EMAIL_TYPE_BIRTHDAY );
-		$this->create_email_post( self::EMAIL_TYPE_ADMIN_SUMMARY );
+		$this->ensure_email_posts();
+	}
+
+	/**
+	 * Create each birthday email that has no published post, and describe its type.
+	 *
+	 * @return bool True when both email posts exist.
+	 */
+	private function ensure_email_posts() {
+		$installed = true;
+
+		foreach ( array( self::EMAIL_TYPE_BIRTHDAY, self::EMAIL_TYPE_ADMIN_SUMMARY ) as $email_type ) {
+			if ( ! $this->email_post_exists( $email_type ) && ! $this->create_email_post( $email_type ) ) {
+				$installed = false;
+				continue;
+			}
+
+			$term = get_term_by( 'slug', $email_type, bp_get_email_tax_type() );
+			if ( $term && '' === $term->description ) {
+				wp_update_term( $term->term_id, bp_get_email_tax_type(), array( 'description' => $this->get_email_description( $email_type ) ) );
+			}
+		}
+
+		return $installed;
 	}
 
 	/**
@@ -285,7 +330,7 @@ class BP_Birthdays_Notifications {
 	 */
 	public function maybe_install_emails() {
 		// Check if already installed.
-		if ( get_option( 'bp_birthdays_emails_installed' ) ) {
+		if ( self::EMAILS_INSTALLED_VERSION <= (int) get_option( 'bp_birthdays_emails_installed' ) ) {
 			return;
 		}
 
@@ -300,17 +345,10 @@ class BP_Birthdays_Notifications {
 			return;
 		}
 
-		// Install birthday greeting email.
-		if ( ! $this->email_post_exists( self::EMAIL_TYPE_BIRTHDAY ) ) {
-			$this->create_email_post( self::EMAIL_TYPE_BIRTHDAY );
+		// A failed insert leaves the flag unset, so the next admin_init retries.
+		if ( $this->ensure_email_posts() ) {
+			update_option( 'bp_birthdays_emails_installed', self::EMAILS_INSTALLED_VERSION );
 		}
-
-		// Install admin summary email.
-		if ( ! $this->email_post_exists( self::EMAIL_TYPE_ADMIN_SUMMARY ) ) {
-			$this->create_email_post( self::EMAIL_TYPE_ADMIN_SUMMARY );
-		}
-
-		update_option( 'bp_birthdays_emails_installed', true );
 	}
 
 	/**
@@ -348,12 +386,13 @@ class BP_Birthdays_Notifications {
 	 * Create an email post for BuddyPress.
 	 *
 	 * @param string $email_type Email type.
+	 * @return bool True when the post was created with its email type.
 	 */
 	private function create_email_post( $email_type ) {
 		$schema = $this->register_email_schema( array() );
 
 		if ( ! isset( $schema[ $email_type ] ) ) {
-			return;
+			return false;
 		}
 
 		$email_data = $schema[ $email_type ];
@@ -368,23 +407,21 @@ class BP_Birthdays_Notifications {
 			)
 		);
 
-		if ( $post_id && ! is_wp_error( $post_id ) ) {
-			// Set the email type term.
-			$term = term_exists( $email_type, bp_get_email_tax_type() );
-
-			if ( ! $term ) {
-				$term = wp_insert_term(
-					$email_type,
-					bp_get_email_tax_type(),
-					array( 'slug' => $email_type )
-				);
-			}
-
-			if ( ! is_wp_error( $term ) ) {
-				$term_id = is_array( $term ) ? $term['term_id'] : $term;
-				wp_set_object_terms( $post_id, (int) $term_id, bp_get_email_tax_type() );
-			}
+		if ( ! $post_id || is_wp_error( $post_id ) ) {
+			return false;
 		}
+
+		// Same call BuddyPress uses: creates the type term on first use.
+		$terms = wp_set_object_terms( $post_id, $email_type, bp_get_email_tax_type() );
+
+		if ( empty( $terms ) || is_wp_error( $terms ) ) {
+			// A post without its type is never sent; drop it so the retry
+			// does not leave a stray template behind.
+			wp_delete_post( $post_id, true );
+			return false;
+		}
+
+		return true;
 	}
 
 	/**

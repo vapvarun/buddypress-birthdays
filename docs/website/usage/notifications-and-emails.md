@@ -43,8 +43,8 @@ When Notify Friends Only is off, the number of recipients per birthday is capped
 
 ## Admin summary email
 
-When the Daily Summary Email is enabled, the recipient (the Summary Recipient setting, or the site admin email when empty) receives one list of the day's birthdays per day. It is a BuddyPress email of type `birthday-admin-summary`, also editable under BuddyPress > Emails, with a `wp_mail` fallback.
+When the Daily Summary Email is enabled, the recipient (the Summary Recipient setting, or the site admin email when empty) receives one list of the day's birthdays per day. It is a BuddyPress email of type `birthday-admin-summary`, also editable under BuddyPress > Emails, with a `wp_mail` fallback. It opens with its own "Hi Admin,", so BuddyPress does not add its usual "Hi name," line.
 
 ## Emails not appearing under BuddyPress > Emails
 
-The two email templates are created once, automatically, in the admin. If you do not see them, load any admin page while the plugin is active. See Troubleshooting if they are still missing.
+The two email templates are created automatically in the admin, and again after BuddyPress > Tools > Reinstall emails. If one could not be created, the plugin tries again on the next admin page load. If you do not see them, load any admin page while the plugin is active. See Troubleshooting if they are still missing.
