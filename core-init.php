@@ -133,17 +133,19 @@ function bb_birthdays_shortcode( $atts ) {
 
 	$atts = shortcode_atts(
 		array(
-			'title'               => __( 'Upcoming Birthdays', 'buddypress-birthdays' ),
-			'limit'               => 5,
-			'show_age'            => 'yes',
-			'show_message_button' => 'yes',
-			'date_format'         => 'F d',
-			'range_limit'         => 'no_limit',
-			'show_birthdays_of'   => 'all',
-			'display_name_type'   => 'user_name',
-			'emoji'               => 'balloon',
-			'field_name'          => '',
-			'birthdays_per_page'  => 10,
+			'title'                => __( 'Upcoming Birthdays', 'buddypress-birthdays' ),
+			'limit'                => 5,
+			'show_age'             => 'yes',
+			'show_message_button'  => 'yes',
+			'date_format'          => 'F d',
+			'range_limit'          => 'no_limit',
+			'show_birthdays_of'    => 'all',
+			'display_name_type'    => 'user_name',
+			'emoji'                => 'balloon',
+			'field_name'           => '',
+			'birthdays_per_page'   => 10,
+			// Alias of limit, the widget's own setting name. limit is the documented attribute and wins when this is not set.
+			'birthdays_to_display' => 0,
 		),
 		$atts,
 		'bp_birthdays'
@@ -165,7 +167,7 @@ function bb_birthdays_shortcode( $atts ) {
 	// Convert shortcode atts to widget instance format.
 	$instance = array(
 		'title'                 => $atts['title'],
-		'birthdays_to_display'  => (int) $atts['limit'],
+		'birthdays_to_display'  => (int) ( $atts['birthdays_to_display'] ? $atts['birthdays_to_display'] : $atts['limit'] ),
 		'display_age'           => $atts['show_age'],
 		'birthday_send_message' => $atts['show_message_button'],
 		'birthday_date_format'  => $atts['date_format'],
