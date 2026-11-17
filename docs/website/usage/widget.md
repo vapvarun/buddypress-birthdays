@@ -38,7 +38,7 @@ When no birthday matches (or no birthday field is set up yet), the widget still 
 
 ## Pagination
 
-When more birthdays match than fit on one page, previous and next controls appear below the list. Set "Birthdays per page" to control the page size. Pages are numbered and the current page is marked. The list is bounded by the candidate cap described in the developer guide, so very deep pages are limited by that cap rather than by total member count.
+When more birthdays match than fit on one page, previous and next controls appear below the list. Set "Birthdays per page" to control the page size. Pages are numbered and the current page is marked. Each list keeps its own page number in the URL, so two lists on one page never change page together. The list is bounded by the candidate cap described in the developer guide, so very deep pages are limited by that cap rather than by total member count.
 
 ## Caching
 

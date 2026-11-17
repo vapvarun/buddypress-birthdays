@@ -140,7 +140,10 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$max_to_show = min( $total_birthdays, $birthdays_to_display );
 		$total_pages = ( $max_to_show > 0 ) ? ceil( $max_to_show / $items_per_page ) : 0;
 
-		$current_page = isset( $_GET['bbirthday_page'] ) ? absint( $_GET['bbirthday_page'] ) : 1;
+		// Each list pages on its own query arg, so two lists on one page
+		// (shortcodes, widgets, or both) never move together.
+		$page_arg     = 'bbirthday_page_' . substr( $cache_key, 0, 8 );
+		$current_page = isset( $_GET[ $page_arg ] ) ? absint( $_GET[ $page_arg ] ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only page number.
 		if ( $current_page < 1 ) {
 			$current_page = 1;
 		}
@@ -327,13 +330,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 		if ( $total_pages > 1 ) {
 			$current_url = home_url( add_query_arg( null, null ) );
-			$current_url = remove_query_arg( 'bbirthday_page', $current_url );
+			$current_url = remove_query_arg( $page_arg, $current_url );
 
 			echo '<nav class="bp-birthday-pagination" aria-label="' . esc_attr__( 'Birthdays pages', 'buddypress-birthdays' ) . '">';
 
 			if ( $current_page > 1 ) {
 				$prev_page = $current_page - 1;
-				echo '<a href="' . esc_url( add_query_arg( 'bbirthday_page', $prev_page, $current_url ) ) . '" class="bp-birthday-page-btn" aria-label="' . esc_attr__( 'Previous page', 'buddypress-birthdays' ) . '">‹</a>';
+				echo '<a href="' . esc_url( add_query_arg( $page_arg, $prev_page, $current_url ) ) . '" class="bp-birthday-page-btn" aria-label="' . esc_attr__( 'Previous page', 'buddypress-birthdays' ) . '">‹</a>';
 			}
 
 			$max_nav = 5;
@@ -347,13 +350,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				if ( (int) $i === (int) $current_page ) {
 					echo '<span class="bp-birthday-page-current" aria-current="page">' . esc_html( number_format_i18n( $i ) ) . '</span>';
 				} else {
-					echo '<a href="' . esc_url( add_query_arg( 'bbirthday_page', $i, $current_url ) ) . '" class="bp-birthday-page-num">' . esc_html( number_format_i18n( $i ) ) . '</a>';
+					echo '<a href="' . esc_url( add_query_arg( $page_arg, $i, $current_url ) ) . '" class="bp-birthday-page-num">' . esc_html( number_format_i18n( $i ) ) . '</a>';
 				}
 			}
 
 			if ( $current_page < $total_pages ) {
 				$next_page = $current_page + 1;
-				echo '<a href="' . esc_url( add_query_arg( 'bbirthday_page', $next_page, $current_url ) ) . '" class="bp-birthday-page-btn" aria-label="' . esc_attr__( 'Next page', 'buddypress-birthdays' ) . '">›</a>';
+				echo '<a href="' . esc_url( add_query_arg( $page_arg, $next_page, $current_url ) ) . '" class="bp-birthday-page-btn" aria-label="' . esc_attr__( 'Next page', 'buddypress-birthdays' ) . '">›</a>';
 			}
 
 			echo '</nav>';

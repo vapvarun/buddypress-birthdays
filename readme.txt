@@ -271,6 +271,7 @@ Birthday notifications now respect profile privacy and opt-outs, failed emails a
 * Fix      - Reinstalling BuddyPress emails no longer creates duplicate birthday email templates or PHP warnings, and a template that failed to install is created on the next admin visit.
 * Fix      - The admin summary email no longer starts with an extra "Hi ," line before "Hi Admin,".
 * Fix      - With the First Name or Nick Name display, a member without one shows their display name instead of a blank link.
+* Fix      - Two birthday lists on one page now change page on their own.
 * Compat   - Requires PHP 8.1 or higher.
 
 = 2.5.0 - July 2026 =

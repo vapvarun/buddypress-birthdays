@@ -119,7 +119,7 @@
       "render_at": "assets/inc/buddypress-birthdays-widget.php:58 (widget())",
       "pagination": {
         "control": "birthdays_per_page (widget form field at assets/inc/buddypress-birthdays-widget.php:1405-1406, default 10, sanitized absint at :1243, default map :1284)",
-        "query_var": "bbirthday_page (GET, absint at :135)",
+        "query_var": "bbirthday_page_{first 8 chars of the instance cache hash} (GET, absint at :146). One arg per list so lists on one page paginate independently; identical configs share it (same list).",
         "render": "In-PHP offset/slice over the already-fetched + bounded birthday list (:126-160), prev/next links at :328-352 (.bp-birthday-pagination / .bp-birthday-page-btn, aria-labelled)",
         "notes": "Pagination is applied to the in-memory list (bounded upstream by the SQL candidate cap), not via SQL LIMIT/OFFSET per page. total_pages derives from min(total, birthdays_to_display) / items_per_page (:132-133)."
       }
