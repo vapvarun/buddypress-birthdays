@@ -169,8 +169,15 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$birthdays_array = array_values( $birthdays );
 		$user_ids_array = array_keys( $birthdays );
 
-		// One users + usermeta query for this page instead of one per row.
-		cache_users( array_slice( $user_ids_array, $offset, $items_per_page ) );
+		// Prime this page's users, their meta and their display names (BuddyBoss also warms the
+		// profile name and visibility caches), so the avatar alt text and links below run no
+		// queries per row.
+		$page_ids = array_slice( $user_ids_array, $offset, $items_per_page );
+		if ( function_exists( 'bp_core_get_user_displaynames' ) ) {
+			bp_core_get_user_displaynames( $page_ids );
+		} else {
+			cache_users( $page_ids );
+		}
 		$c = 0;
 		$displayed = 0;
 
