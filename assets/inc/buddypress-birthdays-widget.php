@@ -474,8 +474,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 				// Order by distance from today's month-day so the LIMIT keeps the
 				// members whose birthdays are soonest -- the same members the PHP
-				// sort would surface and display.
-				$order_by_sql  = "CASE WHEN {$month_day_sql} >= %s THEN 0 ELSE 1 END ASC, {$month_day_sql} ASC";
+				// sort would surface and display. user_id breaks same-day ties so
+				// the LIMIT keeps the same members on every load.
+				$order_by_sql  = "CASE WHEN {$month_day_sql} >= %s THEN 0 ELSE 1 END ASC, {$month_day_sql} ASC, user_id ASC";
 				$order_by_args = array( $mysql_date_format, $start_md, $mysql_date_format );
 
 				if ( 'monthly' === $birthdays_limit || 'weekly' === $birthdays_limit ) {
@@ -499,12 +500,12 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 					// field_id is indexed; the DATE_FORMAT predicate only runs on
 					// this field's rows. ORDER BY + LIMIT bound the result set.
-					$query      = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND {$date_where} ORDER BY {$order_by_sql} LIMIT %d";
+					$query      = "SELECT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND {$date_where} ORDER BY {$order_by_sql} LIMIT %d";
 					$query_args = array_merge( array( $field_id ), $date_where_args, $order_by_args, array( $candidate_limit ) );
 				} else {
 					// No range limit: instead of fetching every member, order by
 					// upcoming-birthday proximity and pull only the bounded pool.
-					$query      = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' ORDER BY {$order_by_sql} LIMIT %d";
+					$query      = "SELECT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' ORDER BY {$order_by_sql} LIMIT %d";
 					$query_args = array_merge( array( $field_id ), $order_by_args, array( $candidate_limit ) );
 				}
 
@@ -650,6 +651,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		}
 
 		// Sort by next celebration date - today first, then chronological by next birthday.
+		// Members are put in user id order first; uasort() is stable, so same-day
+		// birthdays keep that order and every page load lists them identically.
+		ksort( $members_birthdays );
 		uasort(
 			$members_birthdays,
 			function ( $a, $b ) {
@@ -669,7 +673,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 				// If both are today, sort by name or age (optional secondary sort).
 				if ( $a_is_today && $b_is_today ) {
-					return 0; // Keep original order for same-day birthdays.
+					return 0; // Same day: keep the user id order set by ksort().
 				}
 
 				// For non-today birthdays, sort by next occurrence date.
@@ -879,12 +883,12 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		// string and month-day boundary are bound as %s values and the literal
 		// DATE_FORMAT mask is escaped as '%%m-%%d'.
 		$month_day_sql = "DATE_FORMAT(STR_TO_DATE(value, %s), '%%m-%%d')";
-		$order_by_sql  = "CASE WHEN {$month_day_sql} >= %s THEN 0 ELSE 1 END ASC, {$month_day_sql} ASC";
+		$order_by_sql  = "CASE WHEN {$month_day_sql} >= %s THEN 0 ELSE 1 END ASC, {$month_day_sql} ASC, user_id ASC";
 
 		$in_placeholders = implode( ',', array_fill( 0, count( $members ), '%d' ) );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in_placeholders is a generated list of %d tokens; every dynamic value is bound via $query_args.
-		$query      = "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND user_id IN ($in_placeholders) ORDER BY {$order_by_sql} LIMIT %d";
+		$query      = "SELECT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND user_id IN ($in_placeholders) ORDER BY {$order_by_sql} LIMIT %d";
 		$query_args = array_merge( array( $field_id ), $members, array( $mysql_date_format, $start_md, $mysql_date_format, $candidate_limit ) );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bounded per-render trim; results feed the widget's own object cache.

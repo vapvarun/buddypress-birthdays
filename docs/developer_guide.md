@@ -238,23 +238,19 @@ if ( 'friends' === $visibility ) {
 
 **Efficient Queries**:
 ```php
-// Query all users with birthday data directly from xProfile table
-global $wpdb;
-$users_with_birthday = $wpdb->get_col(
-    $wpdb->prepare(
-        "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != ''",
-        $field_id
-    )
-);
-
-$members = array_filter( array_map( 'absint', $users_with_birthday ) );
+// Bounded candidate pool: members whose next birthday is soonest, with
+// user_id as the final tie-break so same-day birthdays keep one order.
+$query = "SELECT user_id FROM {$wpdb->prefix}bp_xprofile_data
+	WHERE field_id = %d AND value != ''
+	ORDER BY CASE WHEN {$month_day_sql} >= %s THEN 0 ELSE 1 END ASC, {$month_day_sql} ASC, user_id ASC
+	LIMIT %d";
 ```
 
 **Query Reduction**:
 - Direct xProfile data query instead of get_users()
-- No artificial limit - fetches all users with birthday data
-- Filter by date range in PHP after fetching
-- Skip processing for inactive users
+- Candidate pool capped by `bb_birthdays_widget_candidate_multiplier` and `bb_birthdays_widget_candidate_cap`
+- Values primed in one batch query, no per-member queries
+- Same-day birthdays are ordered by user id, so pagination never repeats or skips a member
 
 ### Asset Loading Strategy
 

@@ -275,6 +275,7 @@ Birthday notifications now respect profile privacy and opt-outs, failed emails a
 * Fix      - The Overview shows activity posts and notifications as Off while their BuddyPress component is inactive, and saving those tabs keeps your choices.
 * Fix      - Turning notifications off and on again no longer clears Notify Friends Only.
 * Fix      - A role given the settings page with the bp_birthdays_admin_capability filter can now save the settings.
+* Fix      - Members who share a birthday now appear in the same order on every page load, so paging through the list no longer repeats or skips anyone.
 * Compat   - Requires PHP 8.1 or higher.
 
 = 2.5.0 - July 2026 =
