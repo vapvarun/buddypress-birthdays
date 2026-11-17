@@ -255,6 +255,23 @@ class BP_Birthdays_Helpers {
 	}
 
 	/**
+	 * Stored birthday month-days celebrated on a date.
+	 *
+	 * A Feb 29 birthday is celebrated on Feb 28 when the year has no Feb 29.
+	 * The cron and the widget's "Today!" check both read this rule.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param DateTimeInterface $date Day, site timezone.
+	 * @return string[] One or two m-d values.
+	 */
+	public static function birthday_month_days( DateTimeInterface $date ) {
+		$month_day = $date->format( 'm-d' );
+
+		return ( '02-28' === $month_day && '0' === $date->format( 'L' ) ) ? array( '02-28', '02-29' ) : array( $month_day );
+	}
+
+	/**
 	 * Get days until next birthday.
 	 *
 	 * @param string $date Birth date string.

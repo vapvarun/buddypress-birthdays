@@ -188,8 +188,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 			// Compare month-day only for "is today" check.
 			$birth_month_day = $birth_date->format( 'm-d' );
-			$today_month_day = $today->format( 'm-d' );
-			$is_today        = ( $birth_month_day === $today_month_day );
+			$is_today        = in_array( $birth_month_day, BP_Birthdays_Helpers::birthday_month_days( $today ), true );
 			$item_class      = $is_today ? 'bp-birthday-item today-birthday' : 'bp-birthday-item';
 
 			// We don't display negative ages.
@@ -645,15 +644,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		uasort(
 			$members_birthdays,
 			function ( $a, $b ) {
-				$today           = current_datetime();
-				$today_month_day = $today->format( 'm-d' );
+				$today_month_days = BP_Birthdays_Helpers::birthday_month_days( current_datetime() );
 
 				// Check if either is today's birthday (month-day comparison only).
-				$a_birth_month_day = $a['datetime']->format( 'm-d' );
-				$b_birth_month_day = $b['datetime']->format( 'm-d' );
-
-				$a_is_today = ( $a_birth_month_day === $today_month_day );
-				$b_is_today = ( $b_birth_month_day === $today_month_day );
+				$a_is_today = in_array( $a['datetime']->format( 'm-d' ), $today_month_days, true );
+				$b_is_today = in_array( $b['datetime']->format( 'm-d' ), $today_month_days, true );
 
 				// Today's birthdays always come first.
 				if ( $a_is_today && ! $b_is_today ) {

@@ -8,6 +8,8 @@ All of these are off by default. Enable them under WB Plugins > Birthdays.
 
 The daily check runs at the time set by the Email tab's Send Time (default 09:00, in 24-hour HH:MM). The cron re-schedules itself to that time and self-heals if the event is ever lost.
 
+If a send fails, that day is retried every hour until the end of the next day, and only the channels that failed are sent again. A daily check that runs late, after midnight but before the Send Time, still processes the day it was scheduled for. Members born on February 29 are celebrated on February 28 in years without a February 29.
+
 ## Birthday greeting email
 
 When Birthday Emails are enabled, each member receives a greeting on their birthday. The email is a BuddyPress email of type `birthday-greeting`, so you can edit its subject and body under BuddyPress > Emails.

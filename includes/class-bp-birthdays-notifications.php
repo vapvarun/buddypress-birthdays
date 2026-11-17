@@ -75,11 +75,8 @@ class BP_Birthdays_Notifications {
 		// Schedule cron job.
 		add_action( 'init', array( $this, 'schedule_cron' ) );
 
-		// Handle cron execution.
+		// Handle cron execution. A retry event carries the date it retries.
 		add_action( self::CRON_HOOK, array( $this, 'process_daily_birthdays' ) );
-
-		// Clear tracking on new day.
-		add_action( 'init', array( $this, 'maybe_clear_tracking' ) );
 
 		// Register BP notification component.
 		add_action( 'bp_setup_globals', array( $this, 'register_notification_component' ) );
@@ -391,6 +388,17 @@ class BP_Birthdays_Notifications {
 	}
 
 	/**
+	 * The configured Send Time (HH:MM, site time), 09:00 when unset or invalid.
+	 *
+	 * @return string
+	 */
+	private function get_send_time() {
+		$send_time = (string) $this->get_setting( 'email_send_time', '09:00' );
+
+		return preg_match( '/^([01]\d|2[0-3]):[0-5]\d$/', $send_time ) ? $send_time : '09:00';
+	}
+
+	/**
 	 * Schedule the daily cron job at the configured Send Time.
 	 *
 	 * Runs on every init. When an event already exists at a different time of
@@ -398,13 +406,9 @@ class BP_Birthdays_Notifications {
 	 * interval) it is cleared and scheduled again at the configured time.
 	 */
 	public function schedule_cron() {
-		$send_time = (string) $this->get_setting( 'email_send_time', '09:00' );
-		if ( ! preg_match( '/^([01]\d|2[0-3]):[0-5]\d$/', $send_time ) ) {
-			$send_time = '09:00';
-		}
-
-		$timezone = wp_timezone();
-		$next     = wp_next_scheduled( self::CRON_HOOK );
+		$send_time = $this->get_send_time();
+		$timezone  = wp_timezone();
+		$next      = wp_next_scheduled( self::CRON_HOOK );
 
 		if ( $next ) {
 			$next_time = ( new DateTime( '@' . $next ) )->setTimezone( $timezone )->format( 'H:i' );
@@ -425,38 +429,29 @@ class BP_Birthdays_Notifications {
 	}
 
 	/**
-	 * Clear sent tracking at the start of a new day.
-	 */
-	public function maybe_clear_tracking() {
-		$last_date = get_option( 'bp_birthdays_last_check_date', '' );
-		$today     = wp_date( 'Y-m-d' );
-
-		if ( $last_date !== $today ) {
-			delete_option( self::SENT_TRACKING_OPTION );
-			update_option( 'bp_birthdays_last_check_date', $today );
-		}
-	}
-
-	/**
-	 * Process daily birthdays - main cron handler.
+	 * Process the birthdays of one day - main cron handler.
 	 *
-	 * The tracking option (cleared each day) records, per member, which
-	 * channels already went out, plus whether the admin summary was sent. A
-	 * channel that fails is left unrecorded and a retry run is queued an hour
+	 * The tracking option holds, per day, which channels already went out for
+	 * each member, plus whether the admin summary was sent. A channel that
+	 * fails is left unrecorded and a retry for that same day is queued an hour
 	 * later, so a failed send is retried without repeating the channels that
-	 * worked. Older tracking rows (a plain timestamp) count as fully sent.
+	 * worked, even when the retry runs after midnight. Older tracking rows (a
+	 * plain timestamp) count as fully sent.
+	 *
+	 * @param string $date Day to process (Y-m-d, site time). Empty for the
+	 *                     daily event: see resolve_target_date().
 	 */
-	public function process_daily_birthdays() {
-		$birthdays = $this->get_todays_birthdays();
+	public function process_daily_birthdays( $date = '' ) {
+		$target    = $this->resolve_target_date( $date );
+		$day       = $target->format( 'Y-m-d' );
+		$birthdays = $this->get_todays_birthdays( $target );
 
 		if ( empty( $birthdays ) ) {
 			return;
 		}
 
-		$sent_tracking = get_option( self::SENT_TRACKING_OPTION, array() );
-		if ( ! is_array( $sent_tracking ) ) {
-			$sent_tracking = array();
-		}
+		$tracking      = $this->get_sent_tracking( $target );
+		$sent_tracking = isset( $tracking[ $day ] ) ? $tracking[ $day ] : array();
 
 		$channels = array(
 			'email'        => 'send_birthday_email',
@@ -495,19 +490,82 @@ class BP_Birthdays_Notifications {
 			}
 		}
 
-		update_option( self::SENT_TRACKING_OPTION, $sent_tracking, false );
+		$tracking[ $day ] = $sent_tracking;
+		update_option( self::SENT_TRACKING_OPTION, $tracking, false );
 
-		if ( $failed && ! wp_next_scheduled( self::CRON_HOOK, array( 'retry' ) ) ) {
-			wp_schedule_single_event( time() + HOUR_IN_SECONDS, self::CRON_HOOK, array( 'retry' ) );
+		// Retries stop once the day is older than yesterday, the same window
+		// the tracking keeps (get_sent_tracking()).
+		$yesterday = current_datetime()->modify( '-1 day' )->format( 'Y-m-d' );
+		if ( $failed && $day >= $yesterday && ! wp_next_scheduled( self::CRON_HOOK, array( $day ) ) ) {
+			wp_schedule_single_event( time() + HOUR_IN_SECONDS, self::CRON_HOOK, array( $day ) );
 		}
 	}
 
 	/**
-	 * Get today's birthdays.
+	 * The day a cron run processes.
 	 *
+	 * A retry passes its own day. The daily event runs at the Send Time, so a
+	 * run before today's Send Time is a late run of yesterday's event (a quiet
+	 * site, or a send time just before midnight) and processes yesterday.
+	 *
+	 * @param string $date Y-m-d from a retry event, or empty.
+	 * @return DateTimeImmutable Midnight of the day, site timezone.
+	 */
+	private function resolve_target_date( $date ) {
+		$now = current_datetime();
+
+		$target = is_string( $date ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date )
+			? DateTimeImmutable::createFromFormat( '!Y-m-d', $date, $now->getTimezone() )
+			: false;
+
+		if ( ! $target ) {
+			$target = $now->setTime( 0, 0 );
+			if ( $now->format( 'H:i' ) < $this->get_send_time() ) {
+				$target = $target->modify( '-1 day' );
+			}
+		}
+
+		return $target;
+	}
+
+	/**
+	 * Sent tracking keyed by day, pruned to yesterday and later.
+	 *
+	 * Rows written before 2.5.1 (one day, not keyed) move under the day
+	 * bp_birthdays_last_check_date recorded for them.
+	 *
+	 * @param DateTimeImmutable $target Day being processed.
+	 * @return array Y-m-d => tracking rows.
+	 */
+	private function get_sent_tracking( DateTimeImmutable $target ) {
+		$tracking = get_option( self::SENT_TRACKING_OPTION, array() );
+		if ( ! is_array( $tracking ) ) {
+			$tracking = array();
+		}
+
+		if ( $tracking && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) array_key_first( $tracking ) ) ) {
+			$legacy_day = (string) get_option( 'bp_birthdays_last_check_date', '' );
+			$tracking   = '' !== $legacy_day ? array( $legacy_day => $tracking ) : array();
+			delete_option( 'bp_birthdays_last_check_date' );
+		}
+
+		$oldest = min( $target->format( 'Y-m-d' ), current_datetime()->modify( '-1 day' )->format( 'Y-m-d' ) );
+		foreach ( array_keys( $tracking ) as $day ) {
+			if ( (string) $day < $oldest ) {
+				unset( $tracking[ $day ] );
+			}
+		}
+
+		return $tracking;
+	}
+
+	/**
+	 * Get the birthdays celebrated on a day.
+	 *
+	 * @param DateTimeImmutable $target Day, site timezone.
 	 * @return array Array of user_id => birthday_data.
 	 */
-	private function get_todays_birthdays() {
+	private function get_todays_birthdays( DateTimeImmutable $target ) {
 		global $wpdb;
 
 		$field_id = BP_Birthdays_Helpers::get_birthday_field_id();
@@ -516,7 +574,9 @@ class BP_Birthdays_Notifications {
 			return array();
 		}
 
-		$today_month_day = wp_date( 'm-d' );
+		// One or two stored month-days: Feb 29 birthdays are celebrated on
+		// Feb 28 in other years, the same rule the widget lists them by.
+		$month_days = BP_Birthdays_Helpers::birthday_month_days( $target );
 
 		/*
 		 * BB-2 scale fix: scope the scan to the configured birthday field_id,
@@ -536,8 +596,7 @@ class BP_Birthdays_Notifications {
 		 * column or a parallel index table, which is out of scope here and would
 		 * change BuddyPress-owned storage. The field_id scoping keeps the per-run
 		 * cost proportional to "members with a birthday set", not "all xProfile
-		 * data rows". Date-match semantics (timezone via wp_date, leap-day) are
-		 * unchanged.
+		 * data rows".
 		 */
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$results = $wpdb->get_results(
@@ -547,9 +606,10 @@ class BP_Birthdays_Notifications {
 				JOIN {$wpdb->users} u ON d.user_id = u.ID
 				WHERE d.field_id = %d
 				AND d.value != ''
-				AND DATE_FORMAT(d.value, '%%m-%%d') = %s",
+				AND DATE_FORMAT(d.value, '%%m-%%d') IN (%s, %s)",
 				$field_id,
-				$today_month_day
+				$month_days[0],
+				end( $month_days )
 			),
 			ARRAY_A
 		);
@@ -565,7 +625,9 @@ class BP_Birthdays_Notifications {
 					continue;
 				}
 
-				$age = BP_Birthdays_Helpers::calculate_age( $row['value'] );
+				// The age turned on this day: right for a late or retried run
+				// and for a Feb 29 birthday kept on Feb 28.
+				$age = (int) $target->format( 'Y' ) - (int) substr( $row['value'], 0, 4 );
 
 				$birthdays[ $row['user_id'] ] = array(
 					'user_id'      => $row['user_id'],
