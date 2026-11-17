@@ -274,6 +274,7 @@ Birthday notifications now respect profile privacy and opt-outs, failed emails a
 * Fix      - The admin summary email no longer starts with an extra "Hi ," line before "Hi Admin,".
 * Fix      - With the First Name or Nick Name display, a member without one shows their display name instead of a blank link.
 * Fix      - Two birthday lists on one page now change page on their own.
+* Fix      - The birthday list no longer runs several database queries per candidate member to check profile privacy, friendships and opt-outs; they are now read in one batch each.
 * Fix      - The Overview shows activity posts and notifications as Off while their BuddyPress component is inactive, and saving those tabs keeps your choices.
 * Fix      - Turning notifications off and on again no longer clears Notify Friends Only.
 * Fix      - A role given the settings page with the bp_birthdays_admin_capability filter can now save the settings.

@@ -33,6 +33,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	private $primed_date_formats = array();
 
 	/**
+	 * BuddyBoss visibility levels primed by prime_visibility_levels(), keyed "field_id:user_id".
+	 *
+	 * @var array<string,string>
+	 */
+	private $primed_visibility = array();
+
+	/**
 	 * Set up optional widget args.
 	 */
 	public function __construct() {
@@ -579,6 +586,15 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		// LIMIT above, so this prime is itself bounded.
 		$this->prime_birthday_values( absint( $field_id ), array_map( 'absint', (array) $members ) );
 
+		// One query each instead of one per member for the reads below: user meta (opt-out and
+		// BuddyPress visibility levels), the viewer's friendships, and BuddyBoss visibility rows.
+		// Bounded by the same candidate pool as the prime above.
+		update_meta_cache( 'user', $members );
+		if ( $current_user_id && bp_is_active( 'friends' ) && method_exists( 'BP_Friends_Friendship', 'update_bp_friends_cache' ) ) {
+			BP_Friends_Friendship::update_bp_friends_cache( $current_user_id, $members );
+		}
+		$this->prime_visibility_levels( absint( $field_id ), array_map( 'absint', (array) $members ) );
+
 		foreach ( $members as $user_id ) {
 			// Skip current user.
 			if ( (int) $user_id === (int) $current_user_id ) {
@@ -595,7 +611,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 			// Check visibility. "Only Me" stays hidden from the widget even for
 			// its owner, as before.
-			$visibility = xprofile_get_field_visibility_level( $field_id, $user_id );
+			$prime_key  = absint( $field_id ) . ':' . absint( $user_id );
+			$visibility = isset( $this->primed_visibility[ $prime_key ] ) ? $this->primed_visibility[ $prime_key ] : xprofile_get_field_visibility_level( $field_id, $user_id );
 			if ( 'onlyme' === $visibility ) {
 				continue;
 			}
@@ -770,6 +787,65 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				$val = $row['value'];
 				$this->primed_values[ $field_id . ':' . $uid ] = ( '' === $val || null === $val ) ? false : $val;
 			}
+		}
+	}
+
+	/**
+	 * BuddyBoss only: resolve one field's visibility level for a batch of members in one query.
+	 *
+	 * BuddyBoss's xprofile_get_field_visibility_level() runs an uncached query per member. This
+	 * resolves the same answer in the same order (bp-xprofile/bp-xprofile-functions.php): the
+	 * visibility table row, else the bp_xprofile_visibility_levels user meta, else the field's
+	 * default. Anything it cannot answer the same way (BuddyPress, an older BuddyBoss without the
+	 * table helpers, a missing table, a failed query, custom visibility disabled) is not primed,
+	 * so the loop asks the platform per member as before.
+	 *
+	 * @param int   $field_id The xProfile field id.
+	 * @param int[] $user_ids Bounded list of candidate user ids.
+	 * @return void
+	 */
+	private function prime_visibility_levels( $field_id, array $user_ids ) {
+		$user_ids = array_values( array_unique( array_filter( $user_ids ) ) );
+
+		if ( ! $field_id || ! $user_ids || ! method_exists( 'BB_XProfile_Visibility', 'visibility_table_exists' ) || true !== BB_XProfile_Visibility::visibility_table_exists() ) {
+			return;
+		}
+
+		$field = xprofile_get_field( $field_id );
+		if ( ! isset( $field->allow_custom_visibility ) || 'disabled' === $field->allow_custom_visibility ) {
+			return;
+		}
+
+		global $wpdb;
+
+		$table        = BB_XProfile_Visibility::get_visibility_table_name();
+		$placeholders = implode( ',', array_fill( 0, count( $user_ids ), '%d' ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Bounded batch read of BuddyBoss's own table; $placeholders is a generated list of %d tokens.
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT user_id, value FROM {$table} WHERE field_id = %d AND user_id IN ($placeholders)", array_merge( array( $field_id ), $user_ids ) ), ARRAY_A );
+
+		// A failed read is not "no rows": leave every member to the platform rather than guess.
+		if ( ! empty( $wpdb->last_error ) || ! is_array( $rows ) ) {
+			return;
+		}
+
+		$levels = array();
+		foreach ( $rows as $row ) {
+			$uid = absint( $row['user_id'] );
+			if ( ! isset( $levels[ $uid ] ) ) {
+				$levels[ $uid ] = stripslashes( (string) $row['value'] );
+			}
+		}
+
+		foreach ( $user_ids as $uid ) {
+			if ( isset( $levels[ $uid ] ) ) {
+				$level = $levels[ $uid ];
+			} else {
+				$meta  = bp_get_user_meta( $uid, 'bp_xprofile_visibility_levels', true );
+				$level = isset( $meta[ $field_id ] ) ? $meta[ $field_id ] : '';
+			}
+
+			$this->primed_visibility[ $field_id . ':' . $uid ] = empty( $level ) ? $field->default_visibility : $level;
 		}
 	}
 
