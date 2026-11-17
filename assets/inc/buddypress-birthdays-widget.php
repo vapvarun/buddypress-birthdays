@@ -62,8 +62,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			$instance['birthday_field_name'] = BP_Birthdays_Helpers::get_birthday_field_id();
 		}
 
-		// Simple validation.
-		if ( empty( $instance['birthday_field_name'] ) || ! function_exists( 'bp_is_active' ) ) {
+		if ( ! function_exists( 'bp_is_active' ) ) {
 			return;
 		}
 
@@ -93,7 +92,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$birthdays = wp_cache_get( $cache_key, $cache_group );
 
 		if ( false === $birthdays ) {
-			$birthdays = $this->bbirthdays_get_array( $instance );
+			// No birthday field configured yet: render the empty state, not nothing.
+			$birthdays = empty( $instance['birthday_field_name'] ) ? array() : $this->bbirthdays_get_array( $instance );
 
 			// Honour the admin-configured cache duration (in minutes)
 			// instead of a hardcoded 30 minutes. Previously the "Cache
@@ -119,15 +119,19 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			wp_cache_set( $cache_key, $birthdays, $cache_group, $cache_ttl );
 		}
 
-		// Don't render widget at all if there are no birthdays to display.
-		// This prevents empty widget containers from showing.
-		if ( empty( $birthdays ) ) {
-			return;
-		}
-
 		echo $args['before_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
-		echo $args['before_title'] . esc_html( $instance['title'] ) . $args['after_title']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		/** This filter is documented in wp-includes/widgets/class-wp-widget-pages.php */
+		$title = apply_filters( 'widget_title', isset( $instance['title'] ) ? $instance['title'] : '', $instance, $this->id_base );
+		if ( '' !== trim( (string) $title ) ) {
+			echo $args['before_title'] . esc_html( $title ) . $args['after_title']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		}
+
+		if ( empty( $birthdays ) ) {
+			echo '<p class="bp-birthday-empty">' . esc_html__( 'No upcoming birthdays.', 'buddypress-birthdays' ) . '</p>';
+			echo $args['after_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			return;
+		}
 
 		$birthdays_to_display = isset( $instance['birthdays_to_display'] ) ? (int) $instance['birthdays_to_display'] : 5;
 		$items_per_page = isset( $instance['birthdays_per_page'] ) ? (int) $instance['birthdays_per_page'] : 10;
@@ -148,10 +152,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		}
 		$offset = ( $current_page - 1 ) * $items_per_page;
 
-		echo '<div class="bp-birthday-users-list">';
+		echo '<ul class="bp-birthday-users-list">';
 
 		$birthdays_array = array_values( $birthdays );
 		$user_ids_array = array_keys( $birthdays );
+
+		// One users + usermeta query for this page instead of one per row.
+		cache_users( array_slice( $user_ids_array, $offset, $items_per_page ) );
 		$c = 0;
 		$displayed = 0;
 
@@ -190,23 +197,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 			// We don't display negative ages.
 			if ( $age > 0 ) {
-				echo '<div class="' . esc_attr( $item_class ) . '">';
+				echo '<li class="' . esc_attr( $item_class ) . '">';
 
 				$user_url = BP_Birthdays_Helpers::get_user_url( $user_id );
-
-				// Avatar.
-				echo '<div class="bp-birthday-avatar">';
-				echo '<a href="' . esc_url( $user_url ) . '">';
-				echo get_avatar( $user_id, 36 );
-				echo '</a>';
-				echo '</div>';
-
-				// Content.
-				echo '<div class="bp-birthday-content">';
-
-				// User name.
-				echo '<div class="bp-birthday-name">';
-				echo '<a href="' . esc_url( $user_url ) . '">';
 
 				// Get display name based on setting.
 				$display_name = '';
@@ -224,6 +217,20 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					$display_name = $this->get_name_to_display( $user_id );
 				}
 
+				// Avatar: the name link below carries the text, so this link is
+				// skipped by keyboard and screen readers instead of being read twice.
+				echo '<div class="bp-birthday-avatar">';
+				echo '<a href="' . esc_url( $user_url ) . '" tabindex="-1" aria-hidden="true">';
+				echo get_avatar( $user_id, 50, '', '' );
+				echo '</a>';
+				echo '</div>';
+
+				// Content.
+				echo '<div class="bp-birthday-content">';
+
+				// User name.
+				echo '<div class="bp-birthday-name">';
+				echo '<a href="' . esc_url( $user_url ) . '">';
 				echo esc_html( $display_name );
 				echo '</a>';
 				echo '</div>';
@@ -305,24 +312,22 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					$message_url = $this->bbirthday_get_send_private_message_to_user_url( $user_id );
 					echo '<a class="bp-send-wishes" href="' . esc_url( $message_url ) . '" data-user-id="' . esc_attr( $user_id ) . '" title="' . esc_attr__( 'Send birthday wishes', 'buddypress-birthdays' ) . '" aria-label="' . esc_attr__( 'Send birthday wishes', 'buddypress-birthdays' ) . '">';
 					echo '<span class="dashicons dashicons-email" aria-hidden="true"></span>';
-					// Visible only when the button goes full width on phones (bb-core.css).
-					echo '<span class="bp-send-wishes-text">' . esc_html__( 'Send wishes', 'buddypress-birthdays' ) . '</span>';
 					echo '</a>';
 					echo '</div>';
 				}
 
-				echo '</div>'; // .bp-birthday-item
+				echo '</li>'; // .bp-birthday-item
 				++$c;
 				++$displayed;
 			}
 		}
-		echo '</div>'; // .bp-birthday-users-list
+		echo '</ul>'; // .bp-birthday-users-list
 
 		if ( $total_pages > 1 ) {
 			$current_url = home_url( add_query_arg( null, null ) );
 			$current_url = remove_query_arg( 'bbirthday_page', $current_url );
 
-			echo '<div class="bp-birthday-pagination">';
+			echo '<nav class="bp-birthday-pagination" aria-label="' . esc_attr__( 'Birthdays pages', 'buddypress-birthdays' ) . '">';
 
 			if ( $current_page > 1 ) {
 				$prev_page = $current_page - 1;
@@ -338,7 +343,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 			for ( $i = $start; $i <= $end; $i++ ) {
 				if ( (int) $i === (int) $current_page ) {
-					echo '<span class="bp-birthday-page-current">' . esc_html( number_format_i18n( $i ) ) . '</span>';
+					echo '<span class="bp-birthday-page-current" aria-current="page">' . esc_html( number_format_i18n( $i ) ) . '</span>';
 				} else {
 					echo '<a href="' . esc_url( add_query_arg( 'bbirthday_page', $i, $current_url ) ) . '" class="bp-birthday-page-num">' . esc_html( number_format_i18n( $i ) ) . '</a>';
 				}
@@ -349,7 +354,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				echo '<a href="' . esc_url( add_query_arg( 'bbirthday_page', $next_page, $current_url ) ) . '" class="bp-birthday-page-btn" aria-label="' . esc_attr__( 'Next page', 'buddypress-birthdays' ) . '">›</a>';
 			}
 
-			echo '</div>';
+			echo '</nav>';
 		}
 
 		echo wp_kses_post( $args['after_widget'] );
@@ -1272,14 +1277,14 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		if ( empty( $fields ) ) :
 			$xprofile_url = admin_url( 'admin.php?page=bp-profile-setup' );
 			?>
-			<div class="notice notice-warning inline" style="margin: 0 0 15px; padding: 10px 12px;">
-				<p style="margin: 0 0 8px;">
+			<div class="notice notice-warning inline">
+				<p>
 					<strong><?php esc_html_e( 'Setup Required:', 'buddypress-birthdays' ); ?></strong>
 				</p>
-				<p style="margin: 0 0 8px;">
+				<p>
 					<?php esc_html_e( 'No birthday date field found. Please create a date field in BuddyPress profile fields first:', 'buddypress-birthdays' ); ?>
 				</p>
-				<ol style="margin: 0 0 8px; padding-left: 20px;">
+				<ol>
 					<li>
 						<?php
 						/* translators: %s: Link to BuddyPress profile fields admin page. */
@@ -1362,24 +1367,16 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'birthdays_per_page' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'birthdays_per_page' ) ); ?>" type="number" min="1" value="<?php echo esc_attr( isset( $instance['birthdays_per_page'] ) ? $instance['birthdays_per_page'] : 10 ); ?>"/>
 		</p>
 		<label><?php esc_html_e( 'Select Emoji', 'buddypress-birthdays' ); ?></label>
-		<div class="bbirthday_emojis">
-			<p style="display: inline-block; padding: 0 5px;">
-				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_none" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="none" <?php checked( $instance['emoji'], 'none' ); ?>/>
-				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_none"><?php esc_html_e( 'None', 'buddypress-birthdays' ); ?></label>
-			</p>
-			<p style="display: inline-block; padding: 0 5px;">
-				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_cake" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="cake" <?php checked( $instance['emoji'], 'cake' ); ?>/>
-				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_cake">&#x1F382;</label>
-			</p>
-			<p style="display: inline-block; padding: 0 5px;">
-				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_balloon" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="balloon" <?php checked( $instance['emoji'], 'balloon' ); ?>/>
-				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_balloon">&#x1F388;</label>
-			</p>
-			<p style="display: inline-block; padding: 0 5px;">
-				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_party" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="party" <?php checked( $instance['emoji'], 'party' ); ?>/>
-				<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_party">&#127881;</label>
-			</p>
-	</div>
+		<p class="bbirthday_emojis">
+			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_none" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="none" <?php checked( $instance['emoji'], 'none' ); ?>/>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_none"><?php esc_html_e( 'None', 'buddypress-birthdays' ); ?></label>
+			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_cake" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="cake" <?php checked( $instance['emoji'], 'cake' ); ?>/>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_cake">&#x1F382;</label>
+			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_balloon" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="balloon" <?php checked( $instance['emoji'], 'balloon' ); ?>/>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_balloon">&#x1F388;</label>
+			<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_party" name="<?php echo esc_attr( $this->get_field_name( 'emoji' ) ); ?>" type="radio" value="party" <?php checked( $instance['emoji'], 'party' ); ?>/>
+			<label for="<?php echo esc_attr( $this->get_field_id( 'emoji' ) ); ?>_party">&#127881;</label>
+		</p>
 		<?php
 	}
 }

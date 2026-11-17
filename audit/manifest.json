@@ -246,7 +246,7 @@
       "ui_gate": "assets/inc/buddypress-birthdays-widget.php:1369-1373 — the 'Followings' <option> is only rendered when bp_is_active('follow') is true, OR when BuddyBoss-style activity-follow is on (bb_follow_buttons, resolved at :1311-1312 via bp_admin_setting_callback_enable_activity_follow / bp_is_activity_follow_active) AND bp_add_follow_button() exists.",
       "data_path": "assets/inc/buddypress-birthdays-widget.php:391-399 — bp_follow_get_following() if available, else bp_get_following_ids() as fallback.",
       "cache_invalidation": "core-init.php:615-616 (bp_follow_start_following / bp_follow_stop_following) — dormant listeners when BP Follow is absent.",
-      "behaviour_if_absent": "The option is never offered in the widget form. A stored/shortcode value of 'followers' falls through to an empty member list (neither function_exists branch matches), so the widget renders nothing."
+      "behaviour_if_absent": "The option is never offered in the widget form. A stored/shortcode value of 'followers' falls through to an empty member list (neither function_exists branch matches), so the widget renders its empty state (\"No upcoming birthdays.\")."
     },
     {
       "name": "BuddyPress Friends component",
@@ -265,8 +265,8 @@
     {
       "name": "BuddyPress xProfile component",
       "required_for": "EVERYTHING — the birthday source of truth",
-      "ui_gate": "assets/inc/buddypress-birthdays-widget.php:60 (bails when birthday_field_name is empty or bp_is_active is undefined); includes/admin/class-bp-birthdays-admin-panel.php:359-361 (date-field select returns empty without it)",
-      "behaviour_if_absent": "No date field -> no birthdays -> the widget returns before emitting any markup (:116-118)."
+      "ui_gate": "assets/inc/buddypress-birthdays-widget.php:65 (bails only when bp_is_active is undefined; an empty birthday_field_name skips the fetch at :96); includes/admin/class-bp-birthdays-admin-panel.php:359-361 (date-field select returns empty without it)",
+      "behaviour_if_absent": "No date field -> no birthdays -> the widget renders the theme card with its title and the muted empty-state sentence (.bp-birthday-empty)."
     },
     {
       "name": "BuddyBoss / Youzify themes",

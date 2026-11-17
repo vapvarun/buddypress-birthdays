@@ -2,6 +2,8 @@
 
 ## No birthdays are showing
 
+When nothing matches, the widget and shortcode show "No upcoming birthdays." inside the card. If you see that line:
+
 - Confirm a date profile field exists at Users > Profile Fields, of type Date Selector (datebox) or Birthdate.
 - Confirm the widget or shortcode points at that field. In the shortcode, `field_name` is the numeric field ID, not the field label.
 - Confirm members have actually filled in their birthday.

@@ -28,6 +28,8 @@ If no date profile field exists yet, the widget form shows a setup notice with a
 
 For the Friends and Followings modes, a logged-out visitor sees nothing because the plugin cannot determine whose connections to show.
 
+When no birthday matches (or no birthday field is set up yet), the widget still shows its title with the line "No upcoming birthdays." inside the card. Leave the Title empty to show the list without a heading.
+
 ## Ranges
 
 - No Limit: upcoming birthdays within the next 365 days.

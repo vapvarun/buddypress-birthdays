@@ -14,9 +14,10 @@
     --bp-birthday-bg-light: rgba(0, 0, 0, 0.03);
     --bp-birthday-bg-medium: rgba(0, 0, 0, 0.05);
     --bp-birthday-bg-dark: rgba(0, 0, 0, 0.08);
-    --bp-birthday-text-muted: var(--bx-color-fg-muted, #666);
-    --bp-birthday-primary: var(--bx-color-accent, var(--reign-colors-theme, var(--color-theme-primary, #2271b1)));
-    --bp-birthday-primary-inverse: #fff;
+    /* Last fallbacks are colour-scheme aware (no raw hex) so a theme without tokens still works in dark mode. */
+    --bp-birthday-text-muted: var(--bx-color-fg-muted, var(--reign-site-alternate-text-color, color-mix(in srgb, currentColor 72%, transparent)));
+    --bp-birthday-primary: var(--bx-color-accent, var(--reign-colors-theme, var(--color-theme-primary, LinkText)));
+    --bp-birthday-primary-inverse: var(--reign-on-accent-color, Canvas);
 }
 
 :root[data-bx-mode="dark"] {
@@ -27,28 +28,17 @@
     --bp-birthday-bg-light: rgba(255, 255, 255, 0.04);
     --bp-birthday-bg-medium: rgba(255, 255, 255, 0.06);
     --bp-birthday-bg-dark: rgba(255, 255, 255, 0.1);
-    --bp-birthday-text-muted: var(--bx-color-fg-muted, #9aa0a6);
 }
 
 /* ====================================
    BASE WIDGET STYLING
    ==================================== */
 
-.widget_bp_birthdays {
-    background: inherit;
-    border: inherit;
-    color: inherit;
-    font-family: inherit;
-    overflow: hidden;
-}
+/* The widget card and its title belong to the theme (before_widget / before_title). */
 
-.widget_bp_birthdays .widget-title {
-    background: inherit;
-    color: inherit;
-    font-size: inherit;
-    font-weight: inherit;
-    margin: inherit;
-    padding: inherit;
+.widget_bp_birthdays a:focus-visible {
+    outline: 2px solid var(--bp-birthday-primary);
+    outline-offset: 2px;
 }
 
 /* ====================================
@@ -68,6 +58,7 @@
     padding: 12px 0;
     border-bottom: 1px solid var(--bp-birthday-border-color, rgba(0, 0, 0, 0.1));
     gap: 12px;
+    margin: 0;
     list-style: none !important;
     background: inherit !important;
     opacity: 1;
@@ -102,16 +93,20 @@
 ==================================== */
 
 .bp-birthday-avatar {
-    width: 48px;
-    height: 48px;
+    width: 50px;
+    height: 50px;
     flex-shrink: 0;
 }
 
+.bp-birthday-avatar a,
 .bp-birthday-avatar img {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: 1px solid var(--bp-birthday-border-color, rgba(0, 0, 0, 0.1));
+    display: block;
+}
+
+.bp-birthday-avatar img {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
     transition: transform 0.2s ease;
 }
 
@@ -141,6 +136,9 @@
 }
 
 .bp-birthday-name a {
+    display: inline-block;
+    min-height: 24px;
+    line-height: 24px;
     color: inherit;
     text-decoration: none;
 }
@@ -177,8 +175,8 @@
 }
 
 .bp-send-wishes {
-    padding: 12px 16px;
-    font-size: 14px;
+    padding: 12px 15px;
+    font-size: 15px;
     background: var(--bp-birthday-bg-light, rgba(0, 0, 0, 0.03));
     color: inherit;
     border: 1px solid var(--bp-birthday-border-light, rgba(0, 0, 0, 0.08));
@@ -190,8 +188,8 @@
     gap: 8px;
     transition: all 0.2s ease;
     opacity: 0.8;
-    min-height: 40px;
-    min-width: 48px;
+    min-height: 45px;
+    min-width: 45px;
     cursor: pointer;
     line-height: 1;
 }
@@ -202,10 +200,6 @@
     color: inherit;
     text-decoration: none;
     transform: translateY(-1px);
-}
-
-.bp-send-wishes-text {
-    display: none;
 }
 
 .bp-send-wishes .dashicons {
@@ -250,19 +244,8 @@
 ==================================== */
 
 .bp-birthday-empty {
-    text-align: center;
-    padding: 24px 16px;
-    opacity: 0.6;
-    color: inherit;
-    font-style: italic;
-}
-
-.bp-birthday-empty::before {
-    content: "🎂";
-    display: block;
-    font-size: 24px;
-    margin-bottom: 8px;
-    opacity: 0.5;
+    margin: 0;
+    color: var(--bp-birthday-text-muted);
 }
 
 /* ====================================
@@ -274,7 +257,7 @@
     margin: 8px 0;
     border-radius: 4px;
     font-size: 13px;
-    border-left: 3px solid currentColor;
+    border-inline-start: 3px solid currentColor;
     background: var(--bp-birthday-bg-medium, rgba(0, 0, 0, 0.05));
     opacity: 0.9;
 }
@@ -283,59 +266,10 @@
    RESPONSIVE DESIGN
 ==================================== */
 
-@media (max-width: 768px) {
-    .bp-birthday-item {
-        padding: 10px 0;
-        gap: 10px;
-    }
-    
-    .bp-birthday-avatar,
-    .bp-birthday-avatar img {
-        width: 40px;
-        height: 40px;
-    }
-    
-    .bp-birthday-name {
-        font-size: 14px;
-    }
-    
-    .bp-birthday-details {
-        font-size: 12px;
-    }
-    
-    .bp-send-wishes {
-        padding: 10px 14px;
-        font-size: 13px;
-        min-height: 40px;
-        min-width: 44px;
-        gap: 6px;
-    }
-}
-
+/* Rows stay avatar | text | button on phones, like the theme's own widget lists. */
 @media (max-width: 480px) {
     .bp-birthday-item {
-        flex-direction: column;
-        align-items: flex-start;
         padding: 10px 0;
-    }
-    
-    .bp-birthday-content {
-        width: 100%;
-        margin-top: 6px;
-    }
-    
-    .bp-birthday-action {
-        width: 100%;
-        margin-top: 6px;
-    }
-    
-    .bp-send-wishes {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .bp-send-wishes-text {
-        display: inline;
     }
 }
 
@@ -358,7 +292,7 @@
 .bp-birthday-zodiac .zodiac-name {
     margin-inline-start: 3px;
     font-size: 0.85em;
-    color: var(--bp-birthday-text-muted, #666);
+    color: var(--bp-birthday-text-muted);
 }
 
 /* ====================================
@@ -382,15 +316,6 @@
    UTILITY CLASSES
 ==================================== */
 
-.mobile-layout .bp-birthday-avatar,
-.mobile-layout .bp-birthday-avatar img {
-    width: 40px !important;
-    height: 40px !important;
-}
-
-.tablet-layout .bp-birthday-item {
-    padding: 11px 0;
-}
 
 /* ====================================
    CONFETTI STYLES - Professional Grade
@@ -435,15 +360,6 @@
 }
 
 /* ====================================
-   REIGN Theme CSS
-==================================== */
-
-.wb-reign-theme .widget_bp_birthdays .widget-title{
-    padding:0px;
-    margin:0px !important;
-}
-
-/* ====================================
    PAGINATION STYLING
 ==================================== */
 
@@ -464,10 +380,10 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 32px;
-    height: 32px;
+    min-width: 40px;
+    height: 40px;
     padding: 0 8px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 500;
     color: inherit;
     background: transparent;
@@ -486,9 +402,9 @@
 }
 
 .bp-birthday-pagination .bp-birthday-page-current {
-    background: var(--bp-birthday-primary, #2271b1);
-    border-color: var(--bp-birthday-primary, #2271b1);
-    color: var(--bp-birthday-primary-inverse, #fff);
+    background: var(--bp-birthday-primary);
+    border-color: var(--bp-birthday-primary);
+    color: var(--bp-birthday-primary-inverse);
     cursor: default;
 }
 
@@ -496,24 +412,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 32px;
-    height: 32px;
+    min-width: 40px;
+    height: 40px;
     color: inherit;
     opacity: 0.5;
-}
-
-/* Responsive pagination */
-@media (max-width: 480px) {
-    .bp-birthday-pagination {
-        gap: 2px;
-    }
-
-    .bp-birthday-pagination .bp-birthday-page-btn,
-    .bp-birthday-pagination .bp-birthday-page-num,
-    .bp-birthday-pagination .bp-birthday-page-current {
-        min-width: 28px;
-        height: 28px;
-        font-size: 12px;
-        padding: 0 6px;
-    }
 }
