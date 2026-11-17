@@ -446,13 +446,7 @@
             this.cache.$birthdayLists
                 .toggleClass('mobile-layout', isMobile)
                 .toggleClass('tablet-layout', isTablet);
-                
-            // Adjust avatar sizes for smaller screens
-            if (isMobile) {
-                this.cache.$birthdayLists.find('.avatar, .avatar-link').addClass('small-avatar');
-            } else {
-                this.cache.$birthdayLists.find('.avatar, .avatar-link').removeClass('small-avatar');
-            }
+            // Avatars stay 50x50 at every width (widget standard), so no size class here.
         },
 
         optimizeVisibleElements: function() {
@@ -701,11 +695,6 @@
                     opacity: 1;
                     transform: translateY(0);
                 }
-            }
-            
-            .small-avatar {
-                width: 40px !important;
-                height: 40px !important;
             }
             
             .paused-animations * {

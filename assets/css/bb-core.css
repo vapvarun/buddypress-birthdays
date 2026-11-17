@@ -136,7 +136,10 @@
 }
 
 .bp-birthday-name a {
-    display: inline-block;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     min-height: 24px;
     line-height: 24px;
     color: inherit;
@@ -148,7 +151,7 @@
 }
 
 .bp-birthday-details {
-    font-size: 13px;
+    font-size: 15px;
     opacity: 0.8;
     color: inherit;
     display: flex;
