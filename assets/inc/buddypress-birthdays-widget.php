@@ -213,6 +213,12 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 					$display_name = $this->get_name_to_display( $user_id );
 				}
 
+				// A member with no first name or nickname set still needs a
+				// visible label and an accessible name on the profile link.
+				if ( '' === trim( (string) $display_name ) ) {
+					$display_name = bp_core_get_user_displayname( $user_id );
+				}
+
 				// Avatar: the name link below carries the text, so this link is
 				// skipped by keyboard and screen readers instead of being read twice.
 				echo '<div class="bp-birthday-avatar">';

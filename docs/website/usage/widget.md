@@ -14,7 +14,7 @@ If no date profile field exists yet, the widget form shows a setup notice with a
 | Date Format | PHP date format for the displayed date, for example `F d` or `M j`. | F d |
 | Birthday range limit | No Limit, Next 7 Days, or Next 30 Days. | No Limit |
 | Show Birthdays of | All Members, Friends, or Followings. Friends and Followings only appear when their component or plugin is active. | All Members |
-| Display Name Type | User name, Nick name, or First Name. | User name |
+| Display Name Type | User name, Nick name, or First Name. A member with no first name or nickname set shows their display name. | User name |
 | Birthday Field | Which xProfile date field to read. Lists only Date Selector and Birthdate fields. | First available date field |
 | Number of birthdays to show | How many birthdays to display in total. | 5 |
 | Birthdays per page | How many birthdays per page in the paginated list. | 10 |
