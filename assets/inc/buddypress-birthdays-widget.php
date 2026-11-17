@@ -62,6 +62,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			$instance['birthday_field_name'] = BP_Birthdays_Helpers::get_birthday_field_id();
 		}
 
+		// A count that is not a positive number (abc, -2, 0, unset) shows the default 5, not an empty list.
+		if ( ! isset( $instance['birthdays_to_display'] ) || (int) $instance['birthdays_to_display'] < 1 ) {
+			$instance['birthdays_to_display'] = 5;
+		}
+
 		if ( ! function_exists( 'bp_is_active' ) ) {
 			return;
 		}
@@ -130,7 +135,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			return;
 		}
 
-		$birthdays_to_display = isset( $instance['birthdays_to_display'] ) ? (int) $instance['birthdays_to_display'] : 5;
+		$birthdays_to_display = (int) $instance['birthdays_to_display'];
 		$items_per_page = isset( $instance['birthdays_per_page'] ) ? (int) $instance['birthdays_per_page'] : 10;
 		if ( $items_per_page < 1 ) {
 			$items_per_page = 10;

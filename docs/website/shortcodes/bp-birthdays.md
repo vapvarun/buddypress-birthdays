@@ -13,7 +13,7 @@ There are eleven attributes.
 | Attribute | What it does | Values | Default |
 |---|---|---|---|
 | `title` | Heading above the list. | any text | Upcoming Birthdays |
-| `limit` | How many birthdays to display in total. `birthdays_to_display` (the widget setting name) is accepted as an alias. | number | 5 |
+| `limit` | How many birthdays to display in total. `birthdays_to_display` (the widget setting name) is accepted as an alias; when both are given, `limit` wins. Anything that is not a positive number shows 5, so `limit="abc" birthdays_to_display="7"` shows 5. | positive number | 5 |
 | `show_age` | Show "Turning X". | `yes` or `no` | yes |
 | `show_message_button` | Show the send-wishes button. Needs the Messages component and a logged-in viewer. | `yes` or `no` | yes |
 | `date_format` | PHP date format for the displayed date. | any PHP date format | F d |

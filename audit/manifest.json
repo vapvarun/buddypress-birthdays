@@ -95,7 +95,7 @@
       "attrs_defined_at": "core-init.php:269-279",
       "registered_at": "core-init.php:328",
       "render_path": "Instantiates Widget_Buddypress_Birthdays (core-init.php:300) and calls ->widget( $args, $instance ) (core-init.php:325) with the atts mapped to widget instance keys (:303-315) — SAME render path as the widget, so any widget render bug reproduces via the shortcode and vice versa.",
-      "notes": "When field_name is empty the handler auto-discovers the first datebox/birthdate xProfile field via a direct $wpdb query (core-init.php:291-297). Forces asset load via bb_force_load_assets() (:265)."
+      "notes": "When field_name is empty the handler auto-discovers the first datebox/birthdate xProfile field via a direct $wpdb query (core-init.php:291-297). Forces asset load via bb_force_load_assets() (:265). Count: limit wins when given, else the birthdays_to_display alias, else limit's default 5; widget() turns any birthdays_to_display below 1 (text, 0, negative, unset) into 5 before the cache key, so the shortcode and a hand-edited widget never render an empty list for a bad count."
     }
   ],
   "blocks": [],

@@ -177,7 +177,7 @@ Yes. Use the `[bp_birthdays]` shortcode anywhere in your content. See the full a
 All eleven, with their defaults:
 
 * `title` - heading above the list. Default: Upcoming Birthdays
-* `limit` - how many birthdays to fetch in total. Default: 5
+* `limit` - how many birthdays to show in total. `birthdays_to_display` is accepted as another name; when both are given, `limit` wins. Anything that is not a positive number shows 5. Default: 5
 * `show_age` - show "Turning X". `yes` or `no`. Default: yes
 * `show_message_button` - show the send-wishes button. `yes` or `no`. Default: yes. Needs the Messages component and a logged-in viewer
 * `date_format` - PHP date format for the displayed date. Default: `F d`
@@ -268,6 +268,7 @@ Birthday notifications now respect profile privacy and opt-outs, failed emails a
 * Fix      - The widget's styles and scripts now load only on pages that show the widget or the shortcode, not on every page.
 * Fix      - A birthday send that failed late in the evening is now retried for that day after midnight, and the next day's birthdays are no longer sent early.
 * Fix      - The [bp_birthdays] shortcode now also accepts birthdays_to_display as another name for limit, instead of silently ignoring it.
+* Fix      - In [bp_birthdays], limit now wins over birthdays_to_display, and a count of 0, a negative number or text shows 5 birthdays instead of a heading over an empty list.
 * Fix      - Members born on February 29 now get their birthday email, activity post and notifications on February 28 in other years.
 * Fix      - Reinstalling BuddyPress emails no longer creates duplicate birthday email templates or PHP warnings, and a template that failed to install is created on the next admin visit.
 * Fix      - The admin summary email no longer starts with an extra "Hi ," line before "Hi Admin,".

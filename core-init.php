@@ -131,6 +131,7 @@ if ( file_exists( BB_CORE_INC . 'buddypress-birthdays-widget.php' ) ) {
 function bb_birthdays_shortcode( $atts ) {
 	bb_enqueue_core_assets();
 
+	$raw  = (array) $atts;
 	$atts = shortcode_atts(
 		array(
 			'title'                => __( 'Upcoming Birthdays', 'buddypress-birthdays' ),
@@ -144,7 +145,7 @@ function bb_birthdays_shortcode( $atts ) {
 			'emoji'                => 'balloon',
 			'field_name'           => '',
 			'birthdays_per_page'   => 10,
-			// Alias of limit, the widget's own setting name. limit is the documented attribute and wins when this is not set.
+			// Alias of limit, the widget's own setting name. limit wins when both are given.
 			'birthdays_to_display' => 0,
 		),
 		$atts,
@@ -161,13 +162,16 @@ function bb_birthdays_shortcode( $atts ) {
 		$atts['field_name'] = BP_Birthdays_Helpers::get_birthday_field_id();
 	}
 
+	// limit wins when given, then the alias, then limit's default. widget() turns anything below 1 into 5.
+	$count = ( isset( $raw['birthdays_to_display'] ) && ! isset( $raw['limit'] ) ) ? $atts['birthdays_to_display'] : $atts['limit'];
+
 	// Create widget instance.
 	$widget = new Widget_Buddypress_Birthdays();
 
 	// Convert shortcode atts to widget instance format.
 	$instance = array(
 		'title'                 => $atts['title'],
-		'birthdays_to_display'  => (int) ( $atts['birthdays_to_display'] ? $atts['birthdays_to_display'] : $atts['limit'] ),
+		'birthdays_to_display'  => (int) $count,
 		'display_age'           => $atts['show_age'],
 		'birthday_send_message' => $atts['show_message_button'],
 		'birthday_date_format'  => $atts['date_format'],
