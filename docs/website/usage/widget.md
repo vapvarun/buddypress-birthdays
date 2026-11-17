@@ -42,4 +42,4 @@ When more birthdays match than fit on one page, previous and next controls appea
 
 ## Caching
 
-The rendered list is cached in the WordPress object cache (group `bp_birthdays`) for the configured cache duration (default 30 minutes). Friends and Followings lists are cached per viewer. Saving the widget, saving a member's profile date field, and friendship or follow changes all clear the cache automatically, as does a daily cron flush.
+The rendered list is cached in the WordPress object cache (group `bp_birthdays`) for the configured cache duration (default 30 minutes). Every list is cached per viewer (one shared copy for logged-out visitors), because profile field visibility decides who sees each birthday. Saving the widget, saving a member's profile date field, and friendship or follow changes all clear the cache automatically, as does a daily cron flush.

@@ -82,12 +82,9 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$cache_group = 'bp_birthdays';
 		$cache_key   = md5( wp_json_encode( $instance ) );
 
-		// Add user ID to cache key for user-specific filters (friends/followers).
-		if ( isset( $instance['show_birthdays_of'] ) &&
-			in_array( $instance['show_birthdays_of'], array( 'friends', 'followers' ), true ) &&
-			is_user_logged_in() ) {
-			$cache_key .= '_user_' . get_current_user_id();
-		}
+		// The list is filtered by field visibility and self-exclusion for the
+		// current viewer, so every mode is cached per viewer (0 = visitors).
+		$cache_key .= '_user_' . get_current_user_id();
 
 		$birthdays = wp_cache_get( $cache_key, $cache_group );
 

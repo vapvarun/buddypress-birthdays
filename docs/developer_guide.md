@@ -150,10 +150,8 @@ HTML Output
 $cache_group = 'bp_birthdays';
 $cache_key   = md5( wp_json_encode( $instance ) );
 
-// Add user ID to cache key for user-specific filters (friends/followers)
-if ( is_user_logged_in() && in_array( $instance['show_birthdays_of'], array( 'friends', 'followers' ), true ) ) {
-    $cache_key .= '_user_' . get_current_user_id();
-}
+// Visibility and self-exclusion depend on the viewer, so every mode is cached per viewer (0 = visitors)
+$cache_key .= '_user_' . get_current_user_id();
 
 // Cache check using object cache
 $birthdays = wp_cache_get( $cache_key, $cache_group );

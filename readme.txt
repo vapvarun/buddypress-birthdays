@@ -253,6 +253,7 @@ Birthday notifications now respect profile privacy and opt-outs, failed emails a
 * Improve  - The Overview shows a Turn on link for the admin summary email, and warns when the saved birthday field no longer exists.
 * Improve  - The Birthdays widget now matches your theme's sidebar widgets: theme title style, 50px rounded avatars, larger tap targets, and rows that stay side by side on phones.
 * Improve  - When no birthdays match, the widget shows "No upcoming birthdays." instead of disappearing, and an empty title no longer leaves an empty heading.
+* Fix      - On sites with a persistent object cache, the All Members list no longer shows one visitor's privacy-filtered birthdays to other visitors.
 * Fix      - A birthday field set to Only Me, Friends or All Members is no longer announced in the public activity feed, Only Me birthdays are no longer notified, and Friends birthdays only reach friends.
 * Fix      - Members who hid their birthday no longer receive birthday notifications about other members.
 * Fix      - Notify Friends Only no longer notifies every member when the Friends component is inactive.
