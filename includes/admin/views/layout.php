@@ -27,7 +27,7 @@ $bbd_version = defined( 'BIRTHDAY_WIDGET_VERSION' ) ? BIRTHDAY_WIDGET_VERSION : 
 		<div class="bbd-page-header__title">
 			<span class="dashicons dashicons-buddicons-community" aria-hidden="true"></span>
 			<div>
-				<h1><?php esc_html_e( 'Birthday Widget for BuddyPress', 'buddypress-birthdays' ); ?></h1>
+				<h1><?php echo esc_html( 'Birthday Widget for BuddyPress' ); ?></h1>
 				<p class="bbd-page-header__subtitle"><?php esc_html_e( 'Show upcoming member birthdays in a widget or shortcode, with optional birthday emails, activity posts, and notifications.', 'buddypress-birthdays' ); ?></p>
 			</div>
 		</div>

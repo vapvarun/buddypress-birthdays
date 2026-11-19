@@ -12,7 +12,7 @@
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 6.5
  * Requires PHP: 8.1
- * Tested up to: 7.0
+ * Tested up to: 7.1
  *
  * @link              https://wbcomdesigns.com/contact/
  * @since             1.0.0
@@ -171,7 +171,7 @@ add_action( 'admin_init', 'bb_check_bp_active' );
  * Display dependent plugin admin notice.
  */
 function bb_dependent_plugin_notice() {
-	$bb_plugin = esc_html__( 'Wbcom Designs - Birthday Widget for BuddyPress', 'buddypress-birthdays' );
+	$bb_plugin = esc_html( 'Wbcom Designs - Birthday Widget for BuddyPress' );
 	$bp_plugin = 'BuddyPress';
 
 	echo '<div class="error"><p>'

@@ -435,8 +435,16 @@ class BP_Birthdays_Helpers {
 		$owner_id  = absint( $owner_id );
 		$viewer_id = absint( $viewer_id );
 
-		// BuddyPress and BuddyBoss know every level, including ones an add-on registers, and hide
-		// the field for the viewer by their own rules. Ask them first.
+		// A level nobody registered (a typo, a removed add-on) stays hidden from everyone.
+		if ( ! self::is_known_visibility( $level ) ) {
+			return false;
+		}
+
+		if ( 'onlyme' === $level ) {
+			return $viewer_id && $viewer_id === $owner_id;
+		}
+
+		// BuddyPress and BuddyBoss hide each level for the viewer by their own rules. Ask them.
 		if ( function_exists( 'bp_xprofile_get_hidden_field_types_for_user' ) ) {
 			return ! in_array( (string) $level, (array) bp_xprofile_get_hidden_field_types_for_user( $owner_id, $viewer_id ), true );
 		}
@@ -444,8 +452,6 @@ class BP_Birthdays_Helpers {
 		switch ( $level ) {
 			case 'public':
 				return true;
-			case 'onlyme':
-				return $viewer_id && $viewer_id === $owner_id;
 			case 'adminsonly':
 				return $viewer_id && ( $viewer_id === $owner_id || user_can( $viewer_id, 'manage_options' ) );
 			case 'friends':
@@ -453,9 +459,33 @@ class BP_Birthdays_Helpers {
 			case 'loggedin':
 				return (bool) $viewer_id;
 			default:
-				// A level this plugin does not know stays hidden.
 				return false;
 		}
+	}
+
+	/**
+	 * Whether a visibility level is one BuddyPress or BuddyBoss registers.
+	 *
+	 * The five built-in levels plus any level the platform lists, including ones an add-on
+	 * adds. Everything else is unknown, and an unknown level is never shown or announced.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param mixed $level Visibility level read from a field.
+	 * @return bool
+	 */
+	public static function is_known_visibility( $level ) {
+		if ( ! is_string( $level ) || '' === $level ) {
+			return false;
+		}
+
+		$known = array( 'public', 'loggedin', 'friends', 'adminsonly', 'onlyme' );
+
+		if ( function_exists( 'bp_xprofile_get_visibility_levels' ) ) {
+			$known = array_merge( $known, array_map( 'strval', array_keys( (array) bp_xprofile_get_visibility_levels() ) ) );
+		}
+
+		return in_array( $level, $known, true );
 	}
 
 	/**

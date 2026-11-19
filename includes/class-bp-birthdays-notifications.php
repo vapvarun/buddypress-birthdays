@@ -512,7 +512,11 @@ class BP_Birthdays_Notifications {
 					continue;
 				}
 
-				if ( $this->$method( $user_id, $birthday_data ) ) {
+				$sent = ( 'email' === $channel )
+					? $this->in_recipient_locale( $user_id, self::EMAIL_TYPE_BIRTHDAY, array( $this, $method ), array( $user_id, $birthday_data ) )
+					: $this->$method( $user_id, $birthday_data );
+
+				if ( $sent ) {
 					$done[ $channel ] = time();
 				} else {
 					$failed = true;
@@ -524,7 +528,10 @@ class BP_Birthdays_Notifications {
 
 		// One admin summary per day, however many times the cron runs.
 		if ( $this->get_setting( 'admin_email_enabled' ) && empty( $sent_tracking['admin_summary'] ) ) {
-			if ( $this->send_admin_summary( $birthdays ) ) {
+			$summary_to   = (string) $this->get_setting( 'admin_email', get_option( 'admin_email' ) );
+			$summary_user = get_user_by( 'email', $summary_to );
+
+			if ( $this->in_recipient_locale( $summary_user ? $summary_user->ID : 0, self::EMAIL_TYPE_ADMIN_SUMMARY, array( $this, 'send_admin_summary' ), array( $birthdays ) ) ) {
 				$sent_tracking['admin_summary'] = time();
 			} else {
 				$failed = true;
@@ -898,9 +905,10 @@ class BP_Birthdays_Notifications {
 		}
 
 		// "Only Me" (BuddyPress stores it as adminsonly, BuddyBoss as onlyme)
-		// is never broadcast, not even to the admins who can see the profile.
+		// is never broadcast, not even to the admins who can see the profile, and
+		// neither is a level nobody registered.
 		$visibility = $birthday_data['visibility'];
-		if ( in_array( $visibility, array( 'onlyme', 'adminsonly' ), true ) ) {
+		if ( in_array( $visibility, array( 'onlyme', 'adminsonly' ), true ) || ! BP_Birthdays_Helpers::is_known_visibility( $visibility ) ) {
 			return true;
 		}
 
@@ -1098,7 +1106,7 @@ class BP_Birthdays_Notifications {
 		$birthdays = array_filter(
 			$birthdays,
 			static function ( $birthday ) {
-				return 'onlyme' !== $birthday['visibility'];
+				return 'onlyme' !== $birthday['visibility'] && BP_Birthdays_Helpers::is_known_visibility( $birthday['visibility'] );
 			}
 		);
 
@@ -1223,6 +1231,57 @@ class BP_Birthdays_Notifications {
 		}
 
 		return $value;
+	}
+
+	/**
+	 * Run a send in the recipient's language.
+	 *
+	 * BuddyPress renders its emails in the site language, and the two birthday templates are
+	 * stored once, at install, in the site language. So the send runs under the recipient's
+	 * locale, and a template that is still the untouched default is swapped for the default in
+	 * that locale. A template the site owner edited is sent exactly as edited.
+	 *
+	 * @param int      $user_id    Recipient, 0 when the address belongs to no member.
+	 * @param string   $email_type BuddyPress email type being sent.
+	 * @param callable $send       The send method.
+	 * @param array    $args       Its arguments.
+	 * @return bool What the send returned.
+	 */
+	private function in_recipient_locale( $user_id, $email_type, $send, array $args ) {
+		$switched = $user_id ? switch_to_user_locale( $user_id ) : false;
+		$fields   = array(
+			'bp_email_set_subject'           => 'post_title',
+			'bp_email_set_content_html'      => 'post_content',
+			'bp_email_set_content_plaintext' => 'post_excerpt',
+		);
+		$filters  = array();
+
+		if ( $switched ) {
+			foreach ( $fields as $hook => $field ) {
+				$filters[ $hook ] = function ( $value ) use ( $email_type, $field ) {
+					$here = $this->register_email_schema( array() );
+
+					// The default as it was installed: the site's language.
+					switch_to_locale( (string) ( get_option( 'WPLANG' ) ? get_option( 'WPLANG' ) : 'en_US' ) );
+					$installed = $this->register_email_schema( array() );
+					restore_previous_locale();
+
+					return ( isset( $installed[ $email_type ][ $field ] ) && $value === $installed[ $email_type ][ $field ] ) ? $here[ $email_type ][ $field ] : $value;
+				};
+				add_filter( $hook, $filters[ $hook ] );
+			}
+		}
+
+		try {
+			return (bool) call_user_func_array( $send, $args );
+		} finally {
+			foreach ( $filters as $hook => $callback ) {
+				remove_filter( $hook, $callback );
+			}
+			if ( $switched ) {
+				restore_previous_locale();
+			}
+		}
 	}
 
 	/**

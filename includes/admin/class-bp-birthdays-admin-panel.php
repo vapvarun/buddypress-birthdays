@@ -154,7 +154,7 @@ class BP_Birthdays_Admin_Panel {
 
 		add_submenu_page(
 			'wbcomplugins',
-			esc_html__( 'Birthday Widget for BuddyPress', 'buddypress-birthdays' ),
+			esc_html( 'Birthday Widget for BuddyPress' ),
 			esc_html__( 'Birthdays', 'buddypress-birthdays' ),
 			$cap,
 			self::MENU_SLUG,

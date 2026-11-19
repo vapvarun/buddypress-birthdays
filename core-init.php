@@ -177,7 +177,7 @@ function bb_debug_widget_loading() {
 	}
 
 	$post     = get_post();
-	$sidebars = function_exists( 'wp_get_sidebars_widgets' ) ? wp_get_sidebars_widgets() : array();
+	$sidebars = (array) get_option( 'sidebars_widgets', array() );
 	$placed   = array();
 	foreach ( $sidebars as $sidebar_id => $widgets ) {
 		foreach ( (array) $widgets as $widget ) {

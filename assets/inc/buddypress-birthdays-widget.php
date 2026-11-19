@@ -63,7 +63,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		/* Set up the widget. */
 		parent::__construct(
 			'buddypress_birthdays', // The id_base WordPress derived from the class name; keeps saved widgets.
-			__( '(BuddyPress) Birthdays', 'buddypress-birthdays' ),
+			/* translators: %s: BuddyPress, the product name. */
+			sprintf( __( '(%s) Birthdays', 'buddypress-birthdays' ), 'BuddyPress' ),
 			$widget_ops
 		);
 	}
@@ -75,6 +76,22 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 * @param array $instance Instance.
 	 */
 	public function widget( $args, $instance ) {
+		// the_widget(), a block or a hand-written instance may leave keys out: the form's defaults fill them.
+		$instance = wp_parse_args(
+			(array) $instance,
+			array(
+				'title'                 => '',
+				'display_age'           => 'yes',
+				'birthday_send_message' => 'yes',
+				'birthday_date_format'  => 'F d',
+				'birthdays_range_limit' => 'no_limit',
+				'show_birthdays_of'     => 'all',
+				'display_name_type'     => 'user_name',
+				'birthdays_per_page'    => 10,
+				'emoji'                 => 'balloon',
+			)
+		);
+
 		// A widget saved without a field reads the General tab's Default
 		// Birthday Field, the same field the shortcode and the cron use.
 		if ( empty( $instance['birthday_field_name'] ) && class_exists( 'BP_Birthdays_Helpers' ) ) {
@@ -658,6 +675,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				continue;
 			}
 
+			// visibility_allows() hides unknown levels from everyone, the owner included.
 			if ( BP_Birthdays_Helpers::visibility_allows( $visibility, $user_id, get_current_user_id() ) ) {
 
 				// Clean and validate birthday string using field's configured format.
