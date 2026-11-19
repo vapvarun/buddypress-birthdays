@@ -114,6 +114,10 @@ class BP_Birthdays_Notifications {
 	 * Register birthday celebration activity action with BuddyPress.
 	 */
 	public function register_activity_action() {
+		if ( ! function_exists( 'bp_activity_set_action' ) ) {
+			return;
+		}
+
 		bp_activity_set_action(
 			'birthdays',                                    // Component.
 			'birthday_celebration',                         // Action type.
@@ -956,7 +960,7 @@ class BP_Birthdays_Notifications {
 
 		$recipients = array_values( array_filter( array_map( 'absint', (array) $recipients ) ) );
 
-		if ( empty( $recipients ) ) {
+		if ( empty( $recipients ) || ! function_exists( 'bp_notifications_add_notification' ) ) {
 			return true;
 		}
 

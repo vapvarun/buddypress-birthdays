@@ -74,7 +74,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			$instance['birthdays_to_display'] = 5;
 		}
 
-		if ( ! function_exists( 'bp_is_active' ) ) {
+		if ( ! function_exists( 'bp_is_active' ) || ! function_exists( 'xprofile_get_field' ) ) {
 			return;
 		}
 
