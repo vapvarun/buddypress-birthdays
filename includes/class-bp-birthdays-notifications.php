@@ -960,7 +960,7 @@ class BP_Birthdays_Notifications {
 
 		$recipients = array_values( array_filter( array_map( 'absint', (array) $recipients ) ) );
 
-		if ( empty( $recipients ) || ! function_exists( 'bp_notifications_add_notification' ) ) {
+		if ( empty( $recipients ) ) {
 			return true;
 		}
 
