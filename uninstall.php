@@ -4,7 +4,7 @@
  *
  * Removes plugin CONFIGURATION and DERIVED data when the plugin is deleted via
  * the WordPress admin: the settings option, the notification tracking options,
- * the per-user wish-tracking meta, and any scheduled cron events.
+ * the leftover 2.5.0 wish-tracking meta, and any scheduled cron events.
  *
  * DELIBERATELY RETAINED - the `bb_birthday_hidden` user meta:
  *
@@ -45,7 +45,7 @@ if ( is_multisite() ) {
 	delete_site_option( 'bp_birthdays_sent_today' );
 }
 
-// Wish-tracking user meta (all users).
+// Wish-tracking user meta written by 2.5.0 and earlier (all users).
 delete_metadata( 'user', 0, 'bb_birthday_wished_users', '', true );
 
 // Scheduled events (already cleared on deactivation; belt and braces).
