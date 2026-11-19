@@ -1,8 +1,10 @@
 # BuddyPress Birthdays - Documentation
 
+> **Historical document.** The current reference is `docs/website/` (shortcode attributes: `docs/website/shortcodes/bp-birthdays.md`). Where this file disagrees with it, `docs/website/` and the code are right.
+
 **Version:** 2.4.1
-**Requires WordPress:** 5.0+
-**Requires PHP:** 7.4+
+**Requires WordPress:** 6.5+
+**Requires PHP:** 8.1+
 **Requires:** BuddyPress (latest stable version)
 **Tested up to:** WordPress 6.9
 
@@ -25,8 +27,8 @@
 
 ### Requirements
 
-- WordPress 5.0 or higher
-- PHP 7.4 or higher
+- WordPress 6.5 or higher
+- PHP 8.1 or higher
 - BuddyPress (latest stable version)
 - BuddyPress Extended Profile component enabled
 
@@ -79,7 +81,7 @@ If you don't already have a birthday field:
 ### Step 3: Add Widget
 
 1. Go to **Appearance > Widgets**
-2. Find "BuddyPress Birthdays" widget
+2. Find the "(BuddyPress) Birthdays" widget
 3. Drag it to your desired sidebar
 4. Configure widget options
 5. Save
@@ -214,12 +216,12 @@ Visual enhancements for birthday displays.
 | `date_format` | PHP date format | F d |
 | `range_limit` | Time range (weekly/monthly/no_limit) | no_limit |
 | `show_birthdays_of` | Filter (all/friends/followers) | all |
-| `display_name_type` | Name format (user_name/nickname/first_name) | user_name |
+| `display_name_type` | Name format (user_name/nick_name/first_name) | user_name |
 | `emoji` | Emoji style (cake/balloon/party/none) | balloon |
 | `field_name` | xProfile field ID | — |
 | `birthdays_per_page` | Number of birthdays per page (for pagination) | — |
-| `confetti` | Show confetti animation (yes/no) | Uses global setting |
-| `zodiac` | Show zodiac signs (yes/no) | Uses global setting |
+
+Confetti and zodiac signs are not shortcode attributes. They follow the global Display settings.
 
 ### Examples
 
@@ -263,23 +265,11 @@ Visual enhancements for birthday displays.
 [bp_birthdays emoji="cake"]
 ```
 
-**With confetti animation:**
-```
-[bp_birthdays confetti="yes"]
-```
-
-**With zodiac signs:**
-```
-[bp_birthdays zodiac="yes"]
-```
-
 **Complete example with all features:**
 ```
 [bp_birthdays 
     title="Team Birthdays" 
     limit="10" 
-    confetti="yes" 
-    zodiac="yes" 
     emoji="cake"
 ]
 ```
@@ -297,20 +287,6 @@ Visual enhancements for birthday displays.
 ### Hooks & Filters
 
 #### Filters
-
-**Modify Animation Speed**
-```php
-add_filter( 'bb_birthdays_animation_speed', function( $speed ) {
-    return 500; // milliseconds
-});
-```
-
-**Override Cache Duration**
-```php
-add_filter( 'bb_birthdays_cache_duration', function( $duration ) {
-    return 3600; // 1 hour in seconds
-});
-```
 
 **Force Asset Loading**
 ```php

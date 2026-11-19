@@ -6,23 +6,21 @@ The plugin fires filters only. It registers no custom action hooks. All names be
 
 ### bb_core_load_assets
 
-Last-resort override to force the front-end CSS and JS to load when none of the built-in context checks matched.
+The widget and the `[bp_birthdays]` shortcode load their CSS and JS when they render, so pages without them load nothing. Return `true` to load the files in the page head anyway, for example when a page builder or cache serves the birthday list.
 
 ```php
 add_filter( 'bb_core_load_assets', '__return_true' );
 ```
 
-### bb_birthdays_animation_speed
+### bp_birthdays_display_timezone
 
-Front-end animation speed in milliseconds. Default 300. Passed to the browser only.
+The timezone birthdays are calculated and shown in. Defaults to the site's timezone. Today, upcoming dates and ages all use it.
 
-### bb_birthdays_tooltip_delay
-
-Front-end tooltip delay in milliseconds. Default 300. Passed to the browser only.
-
-### bb_birthdays_cache_duration
-
-Value localized to the front-end script as `bbBirthdays.settings.cache_duration`. Default 1800 (seconds). This is JS-facing only; it does not set the server-side widget cache lifetime. The server TTL comes from the Cache Duration setting.
+```php
+add_filter( 'bp_birthdays_display_timezone', function ( $timezone, $user_id ) {
+    return $timezone;
+}, 10, 2 );
+```
 
 ### bbirthdays_get_name_to_display
 
@@ -38,15 +36,15 @@ add_filter( 'bbirthdays_get_name_to_display', function ( $display, $user_info ) 
 
 ### bb_birthdays_widget_candidate_multiplier
 
-Multiplier applied to the display count to size the SQL candidate pool (pool = display count x multiplier), before the cap. Default 4. Clamped to a minimum of 1. Receives the widget instance as a second argument.
+Multiplier applied to the display count to size the first SQL candidate batch (batch = display count x multiplier), before the cap. If members in a batch are private or opted out, the widget reads further batches, each twice the size of the last, up to the cap and at most 10 batches. Default 4. Clamped to a minimum of 1. Receives the widget instance as a second argument.
 
 ### bb_birthdays_widget_candidate_cap
 
-Absolute hard cap (the SQL LIMIT) on the widget candidate pool. Default 200. Clamped to a minimum of 1. Receives the widget instance as a second argument.
+Absolute hard cap (the SQL LIMIT) on one candidate batch. Default 200. Clamped to a minimum of 1. Receives the widget instance as a second argument.
 
 ### bb_birthdays_notification_recipient_limit
 
-Cap on how many recipients a single birthday notification fans out to when Notify Friends Only is off. Default 500. Use 0 or -1 for unbounded. Truncation is logged. Receives the birthday user ID as a second argument.
+Size of one chunk of a birthday notification fan-out. Every eligible member is notified; the first chunk is written when the daily check runs and each further chunk is its own scheduled action (Action Scheduler when present, WP-Cron otherwise). Default 500; a value below 1 uses 500. Receives the birthday user ID as a second argument.
 
 ## Privacy
 
@@ -64,7 +62,7 @@ add_filter( 'bb_birthday_user_opted_out', function ( $opted_out, $user_id ) {
 
 ### bp_birthdays_admin_capability
 
-Capability required to view the admin menu and settings page. Default `manage_options`.
+Capability required to open the admin menu and settings page and to save its settings. Default `manage_options`.
 
 ### bp_birthdays_admin_tabs
 

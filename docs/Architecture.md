@@ -194,9 +194,7 @@ The plugin relies on BuddyPress capabilities:
 
 | Filter | Location | Purpose |
 |--------|----------|---------|
-| `bb_birthdays_animation_speed` | core-init.php | Customize JS animation speed |
-| `bb_birthdays_tooltip_delay` | core-init.php | Customize tooltip delay |
-| `bb_birthdays_cache_duration` | core-init.php | Customize cache duration |
+| `bp_birthdays_display_timezone` | includes/class-bp-birthdays-helpers.php | Timezone birthdays are calculated and shown in |
 | `bb_core_load_assets` | core-init.php | Force asset loading |
 | `bbirthdays_get_name_to_display` | widget.php | Customize name display |
 
@@ -206,7 +204,6 @@ The plugin relies on BuddyPress capabilities:
 
 | Action | Location | Purpose |
 |--------|----------|---------|
-| `bb_cleanup_old_wishes` | core-init.php | Daily cleanup cron |
 | `bb_daily_cache_clear` | core-init.php | Daily cache refresh |
 | `xprofile_data_after_save` | core-init.php | Clear cache on profile update |
 | `friends_friendship_accepted` | core-init.php | Clear cache on new friendship |
@@ -231,9 +228,9 @@ None - uses existing BuddyPress tables
 ## Dependencies
 
 ### Required
-- WordPress 5.0+
-- PHP 7.4+
-- BuddyPress 5.0+
+- WordPress 6.5+
+- PHP 8.1+
+- BuddyPress
 
 ### Optional
 - BuddyPress Friends component (for friends filter)

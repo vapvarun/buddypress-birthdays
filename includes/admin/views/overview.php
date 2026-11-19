@@ -1,6 +1,6 @@
 <?php
 /**
- * Overview dashboard partial: rendered inside shell.php.
+ * Overview dashboard partial: rendered inside layout.php.
  *
  * @package BP_Birthdays
  * @since   2.5.0
@@ -19,14 +19,17 @@ $bbd_field_id    = isset( $settings['default_field_id'] ) ? (int) $settings['def
 $bbd_date_fields = BP_Birthdays_Admin_Panel::get_date_fields();
 $bbd_field_count = count( $bbd_date_fields );
 
-// Resolve the configured field's label, if any.
-$bbd_field_label = '';
+// Resolve the field actually in use: the same resolver the cron, shortcode
+// and widget read (the pick on General, else the first date field).
+$bbd_used_field_id = BP_Birthdays_Helpers::get_birthday_field_id();
+$bbd_field_label   = '';
 foreach ( $bbd_date_fields as $bbd_field ) {
-	if ( (int) $bbd_field['id'] === $bbd_field_id && $bbd_field_id > 0 ) {
+	if ( (int) $bbd_field['id'] === $bbd_used_field_id && $bbd_used_field_id > 0 ) {
 		$bbd_field_label = $bbd_field['name'];
 		break;
 	}
 }
+$bbd_field_is_fallback = '' !== $bbd_field_label && $bbd_used_field_id !== $bbd_field_id;
 
 // Feature status flags.
 $bbd_email_on        = ! empty( $settings['email_enabled'] );
@@ -36,10 +39,17 @@ $bbd_notification_on = ! empty( $settings['notification_enabled'] );
 $bbd_confetti_on     = ! empty( $settings['confetti_enabled'] );
 $bbd_zodiac_on       = ! empty( $settings['zodiac_enabled'] );
 
+// A channel only runs while its BuddyPress component is active (the cron
+// skips it otherwise), so the status below reports the effective state.
+$bbd_activity_component = function_exists( 'bp_is_active' ) && bp_is_active( 'activity' );
+$bbd_notif_component    = function_exists( 'bp_is_active' ) && bp_is_active( 'notifications' );
+$bbd_activity_on        = $bbd_activity_on && $bbd_activity_component;
+$bbd_notification_on    = $bbd_notification_on && $bbd_notif_component;
+
 // Count of channels currently switched on.
 $bbd_channels_on = (int) $bbd_email_on + (int) $bbd_activity_on + (int) $bbd_notification_on;
 
-$bbd_cache_minutes = isset( $settings['cache_duration'] ) ? (int) $settings['cache_duration'] : 30;
+$bbd_cache_minutes = BP_Birthdays_Admin::clamp_cache_duration( isset( $settings['cache_duration'] ) ? $settings['cache_duration'] : 30 );
 
 $bbd_general_url  = $page_url . '&tab=general';
 $bbd_email_url    = $page_url . '&tab=email';
@@ -48,12 +58,26 @@ $bbd_notif_url    = $page_url . '&tab=notifications';
 $bbd_display_url  = $page_url . '&tab=display';
 ?>
 
-<?php if ( 0 === $bbd_field_id ) : ?>
+<?php if ( '' === $bbd_field_label ) : ?>
 	<div class="bbd-notice bbd-notice--warn">
 		<span class="dashicons dashicons-warning" aria-hidden="true"></span>
 		<span>
-			<?php esc_html_e( 'No default birthday field is set yet. Pick the xProfile date field that holds member birthdays so emails, activity posts, and notifications know where to read from.', 'buddypress-birthdays' ); ?>
+			<?php esc_html_e( 'This site has no date field for birthdays yet. Add a Date Selector field under Users > Profile Fields, then pick it here so emails, activity posts, and notifications know where to read from.', 'buddypress-birthdays' ); ?>
 			<a href="<?php echo esc_url( $bbd_general_url ); ?>" class="bbd-inline-hint"><?php esc_html_e( 'Set it now', 'buddypress-birthdays' ); ?></a>
+		</span>
+	</div>
+<?php elseif ( $bbd_field_is_fallback ) : ?>
+	<div class="bbd-notice bbd-notice--info">
+		<span class="dashicons dashicons-info" aria-hidden="true"></span>
+		<span>
+			<?php
+			printf(
+				/* translators: %s: xProfile field name, e.g. "Birthday". */
+				esc_html__( 'Using %s, the first date field on this site. Birthdays already work; pick a different field only if this is the wrong one.', 'buddypress-birthdays' ),
+				'<strong>' . esc_html( $bbd_field_label ) . '</strong>'
+			);
+			?>
+			<a href="<?php echo esc_url( $bbd_general_url ); ?>" class="bbd-inline-hint"><?php esc_html_e( 'Pick a field', 'buddypress-birthdays' ); ?></a>
 		</span>
 	</div>
 <?php endif; ?>
@@ -123,6 +147,7 @@ $bbd_display_url  = $page_url . '&tab=display';
 					<span class="bbd-status bbd-status--on"><?php esc_html_e( 'On: a daily summary of birthdays is emailed to the admin', 'buddypress-birthdays' ); ?></span>
 				<?php else : ?>
 					<span class="bbd-status bbd-status--off"><?php esc_html_e( 'Off', 'buddypress-birthdays' ); ?></span>
+					<a href="<?php echo esc_url( $bbd_email_url ); ?>" class="bbd-inline-hint"><?php esc_html_e( 'Turn on', 'buddypress-birthdays' ); ?></a>
 				<?php endif; ?>
 			</td>
 		</tr>
@@ -131,6 +156,8 @@ $bbd_display_url  = $page_url . '&tab=display';
 			<td>
 				<?php if ( $bbd_activity_on ) : ?>
 					<span class="bbd-status bbd-status--on"><?php esc_html_e( 'On: a post is added to the activity feed on each birthday', 'buddypress-birthdays' ); ?></span>
+				<?php elseif ( ! $bbd_activity_component ) : ?>
+					<span class="bbd-status bbd-status--off"><?php esc_html_e( 'Off: the BuddyPress Activity component is inactive', 'buddypress-birthdays' ); ?></span>
 				<?php else : ?>
 					<span class="bbd-status bbd-status--off"><?php esc_html_e( 'Off', 'buddypress-birthdays' ); ?></span>
 					<a href="<?php echo esc_url( $bbd_activity_url ); ?>" class="bbd-inline-hint"><?php esc_html_e( 'Turn on', 'buddypress-birthdays' ); ?></a>
@@ -142,6 +169,8 @@ $bbd_display_url  = $page_url . '&tab=display';
 			<td>
 				<?php if ( $bbd_notification_on ) : ?>
 					<span class="bbd-status bbd-status--on"><?php esc_html_e( 'On: members are notified about birthdays', 'buddypress-birthdays' ); ?></span>
+				<?php elseif ( ! $bbd_notif_component ) : ?>
+					<span class="bbd-status bbd-status--off"><?php esc_html_e( 'Off: the BuddyPress Notifications component is inactive', 'buddypress-birthdays' ); ?></span>
 				<?php else : ?>
 					<span class="bbd-status bbd-status--off"><?php esc_html_e( 'Off', 'buddypress-birthdays' ); ?></span>
 					<a href="<?php echo esc_url( $bbd_notif_url ); ?>" class="bbd-inline-hint"><?php esc_html_e( 'Turn on', 'buddypress-birthdays' ); ?></a>

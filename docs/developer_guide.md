@@ -61,17 +61,10 @@ buddypress-birthdays/
 **Critical Functions**:
 
 ```php
-// Smart asset loading
-function bb_should_load_assets() {
-    // Checks widget active, customizer, BuddyPress pages, etc.
-}
-
-// Asset loading with cache busting
-function bb_register_core_css() {
-    if ( bb_should_load_assets() ) {
-        wp_enqueue_style( 'bb-core', BB_CORE_CSS . 'bb-core.css', array(), BIRTHDAY_WIDGET_VERSION );
-    }
-}
+// Assets load where a birthday list renders: the widget and the shortcode
+// call this. bb_maybe_enqueue_core_assets() also loads them in the head on a
+// post using the shortcode, or wherever the bb_core_load_assets filter says.
+function bb_enqueue_core_assets() { /* CSS + JS + bbBirthdays config */ }
 
 // Shortcode implementation
 function bb_birthdays_shortcode( $atts ) {
@@ -157,10 +150,8 @@ HTML Output
 $cache_group = 'bp_birthdays';
 $cache_key   = md5( wp_json_encode( $instance ) );
 
-// Add user ID to cache key for user-specific filters (friends/followers)
-if ( is_user_logged_in() && in_array( $instance['show_birthdays_of'], array( 'friends', 'followers' ), true ) ) {
-    $cache_key .= '_user_' . get_current_user_id();
-}
+// Visibility and self-exclusion depend on the viewer, so every mode is cached per viewer (0 = visitors)
+$cache_key .= '_user_' . get_current_user_id();
 
 // Cache check using object cache
 $birthdays = wp_cache_get( $cache_key, $cache_group );
@@ -212,18 +203,17 @@ echo esc_attr( $item_class );
 echo wp_kses_post( $args['after_widget'] );
 ```
 
+### Debug panel
+
+With `WP_DEBUG` on, an administrator can add `?debug_birthdays=1` to any page to see whether the widget is placed, the assets are loaded and the shortcode is used.
+
+### Analytics events
+
+Clicking Send wishes reports `birthday_wish_sent` to Google Analytics 4 (`gtag`) or Universal Analytics (`ga`) when the site has them, and calls `window.customBirthdayTracking( 'wish_sent', { user, timestamp } )` when you define it.
+
 ### AJAX Security
 
-```php
-// Nonce verification
-if ( ! wp_verify_nonce( $_POST['nonce'], 'bb_birthdays_nonce' ) ) {
-    wp_die( 'Security check failed' );
-}
-
-// Input sanitization
-$action = sanitize_text_field( $_POST['birthday_action'] ?? '' );
-$user_id = (int) ( $_POST['user_id'] ?? 0 );
-```
+The plugin registers no AJAX actions.
 
 ### Privacy Compliance
 
@@ -247,47 +237,23 @@ if ( 'friends' === $visibility ) {
 
 **Efficient Queries**:
 ```php
-// Query all users with birthday data directly from xProfile table
-global $wpdb;
-$users_with_birthday = $wpdb->get_col(
-    $wpdb->prepare(
-        "SELECT DISTINCT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != ''",
-        $field_id
-    )
-);
-
-$members = array_filter( array_map( 'absint', $users_with_birthday ) );
+// Bounded candidate pool: members whose next birthday is soonest, with
+// user_id as the final tie-break so same-day birthdays keep one order.
+$query = "SELECT user_id FROM {$wpdb->prefix}bp_xprofile_data
+	WHERE field_id = %d AND value != ''
+	ORDER BY CASE WHEN {$month_day_sql} >= %s THEN 0 ELSE 1 END ASC, {$month_day_sql} ASC, user_id ASC
+	LIMIT %d";
 ```
 
 **Query Reduction**:
 - Direct xProfile data query instead of get_users()
-- No artificial limit - fetches all users with birthday data
-- Filter by date range in PHP after fetching
-- Skip processing for inactive users
+- Candidate pool capped by `bb_birthdays_widget_candidate_multiplier` and `bb_birthdays_widget_candidate_cap`
+- Values primed in one batch query, no per-member queries
+- Same-day birthdays are ordered by user id, so pagination never repeats or skips a member
 
 ### Asset Loading Strategy
 
-**Smart Loading Logic**:
-```php
-function bb_should_load_assets() {
-    // Widget active check
-    if ( is_active_widget( false, false, 'widget_buddypress_birthdays' ) ) {
-        return true;
-    }
-    
-    // Shortcode usage check
-    if ( has_shortcode( $post->post_content, 'bp_birthdays' ) ) {
-        return true;
-    }
-    
-    // BuddyPress context check
-    if ( function_exists( 'bp_is_directory' ) && bp_is_directory() ) {
-        return true;
-    }
-    
-    return false;
-}
-```
+The widget's `widget()` method and the `[bp_birthdays]` shortcode call `bb_enqueue_core_assets()` when they render, so CSS and JS load only on pages that show a birthday list. On a post whose content uses the shortcode the files load in the head; force head loading elsewhere with the `bb_core_load_assets` filter.
 
 **Benefits**:
 - **Reduces HTTP Requests**: Only loads when needed
@@ -323,21 +289,6 @@ function destroy() {
 ### Available Filters
 
 ```php
-// Customize animation speed (default: 300ms)
-add_filter( 'bb_birthdays_animation_speed', function( $speed ) {
-    return 500;
-} );
-
-// Customize tooltip delay (default: 300ms)
-add_filter( 'bb_birthdays_tooltip_delay', function( $delay ) {
-    return 500;
-} );
-
-// Customize cache duration (default: 3600 seconds = 60 minutes)
-add_filter( 'bb_birthdays_cache_duration', function( $duration ) {
-    return 7200; // 2 hours
-} );
-
 // Force asset loading
 add_filter( 'bb_core_load_assets', '__return_true' );
 
@@ -382,8 +333,8 @@ function my_custom_name_format( $display, $user_info ) {
 
 | Platform | Version | Status | Notes |
 |----------|---------|---------|-------|
-| WordPress | 5.0+ | ✅ Full | Requires WordPress 5.0+ |
-| BuddyPress | 8.0+ | ✅ Full | All versions supported |
+| WordPress | 6.5+ | ✅ Full | Requires WordPress 6.5+ and PHP 8.1+ |
+| BuddyPress | 12.0+ | ✅ Full | All versions supported |
 | BuddyPress 12.0+ | Latest | ✅ Full | Uses new BP functions |
 | BuddyBoss Platform | All | ✅ Full | Special BP compatibility |
 | Youzify | All | ✅ Full | Profile extension support |
@@ -482,17 +433,6 @@ $user_id = (int) $user_id;
 - Capability checks for admin functions
 
 ### Debugging Tools
-
-**Debug Mode**:
-```php
-// Enable debug mode
-define( 'WP_DEBUG', true );
-define( 'WP_DEBUG_LOG', true );
-
-// View debug info (admin only)
-add_query_var( 'debug_birthdays', '1' );
-// Shows widget status, asset loading, member data
-```
 
 **Performance Monitoring**:
 ```javascript

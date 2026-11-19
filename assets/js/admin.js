@@ -119,13 +119,14 @@
 	/* ─── Dependent-field toggles ────────────────────────────── */
 
 	/**
-	 * Enable/disable a group of dependent rows based on a checkbox.
+	 * Enable/disable a group of dependent rows based on a checkbox. A disabled
+	 * switch (its BuddyPress component is inactive) counts as off.
 	 *
 	 * @param {jQuery} $checkbox      The controlling checkbox.
 	 * @param {string} dependentClass Class on the dependent <tr> rows.
 	 */
 	function toggleDependentFields( $checkbox, dependentClass ) {
-		var isChecked = $checkbox.is( ':checked' );
+		var isChecked = $checkbox.filter( ':checkbox' ).is( ':checked:enabled' );
 		var $rows     = $( '.' + dependentClass );
 		if ( isChecked ) {
 			$rows.removeClass( 'disabled' );

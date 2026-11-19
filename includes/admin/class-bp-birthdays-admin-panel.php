@@ -107,15 +107,33 @@ class BP_Birthdays_Admin_Panel {
 		// the wbcomplugins top-level menu.
 		add_action( 'admin_menu', array( $this, 'takeover_hub_landing' ), 999 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		// options.php checks this cap on save; it must match the page's cap.
+		add_filter( 'option_page_capability_' . self::OPTION_GROUP, array( $this, 'get_capability' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'in_admin_header', array( $this, 'suppress_foreign_notices' ), 1 );
+	}
+
+	/**
+	 * Capability that opens and saves the settings page.
+	 *
+	 * @return string
+	 */
+	public function get_capability() {
+		/**
+		 * Filters the capability required to open and save the Birthdays settings.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param string $cap Default 'manage_options'.
+		 */
+		return (string) apply_filters( 'bp_birthdays_admin_capability', 'manage_options' );
 	}
 
 	/**
 	 * Attach as a single submenu under the shared WB Plugins hub.
 	 */
 	public function add_menu() {
-		$cap = apply_filters( 'bp_birthdays_admin_capability', 'manage_options' );
+		$cap = $this->get_capability();
 
 		// First Wbcom plugin to load creates the shared WB Plugins hub.
 		// Whichever plugin wins the race provides the hub's landing
@@ -136,7 +154,7 @@ class BP_Birthdays_Admin_Panel {
 
 		add_submenu_page(
 			'wbcomplugins',
-			esc_html__( 'Birthday Widget for BuddyPress', 'buddypress-birthdays' ),
+			esc_html( 'Birthday Widget for BuddyPress' ),
 			esc_html__( 'Birthdays', 'buddypress-birthdays' ),
 			$cap,
 			self::MENU_SLUG,
@@ -323,9 +341,9 @@ class BP_Birthdays_Admin_Panel {
 		$settings_form_group = self::OPTION_GROUP;
 
 		$view_path = BIRTHDAY_WIDGET_PLUGIN_PATH . 'includes/admin/views/' . $view . '.php';
-		$shell     = BIRTHDAY_WIDGET_PLUGIN_PATH . 'includes/admin/views/shell.php';
+		$layout    = BIRTHDAY_WIDGET_PLUGIN_PATH . 'includes/admin/views/layout.php';
 
-		include $shell;
+		include $layout;
 	}
 
 	/**

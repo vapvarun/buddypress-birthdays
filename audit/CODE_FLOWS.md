@@ -50,7 +50,7 @@ Widget::update() also flushes group + deletes old instance key on settings chang
 
 ## Flow E — Asset loading
 ```
-wp_enqueue_scripts → bb_register_core_css/js → bb_should_load_assets() (active widget, admin, shortcode, BP pages, BuddyBoss/Youzify, common templates, bb_core_load_assets filter)
+widget()/[bp_birthdays] render → bb_enqueue_core_assets(); wp_enqueue_scripts → bb_maybe_enqueue_core_assets() (singular post with the shortcode, or bb_core_load_assets filter)
 wp_footer@5 → bb_footer_asset_check (late widget/shortcode fallback)
 JS localized as bbBirthdays { ajaxurl, nonce(bb_birthdays_nonce), settings.confetti_enabled, filtered animation/tooltip/cache }
 ```

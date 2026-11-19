@@ -1,5 +1,7 @@
 # BuddyPress Birthdays - User Guide
 
+> **Historical document.** The current reference is `docs/website/` (shortcode attributes: `docs/website/shortcodes/bp-birthdays.md`). Where this file disagrees with it, `docs/website/` and the code are right.
+
 ## Overview
 
 The BuddyPress Birthdays plugin displays upcoming birthdays of your community members in a beautiful, responsive format. Perfect for keeping your community engaged and celebrating special moments together! Features automatic birthday greetings, email notifications, activity posts, and more.
@@ -247,8 +249,6 @@ Display birthdays anywhere with the shortcode:
     range_limit="weekly"
     show_birthdays_of="friends"
     emoji="cake"
-    confetti="yes"
-    zodiac="yes"
 ]
 ```
 
@@ -260,12 +260,12 @@ Display birthdays anywhere with the shortcode:
 - `date_format`: PHP date format
 - `range_limit`: weekly/monthly/no_limit
 - `show_birthdays_of`: all/friends/followers
-- `display_name_type`: user_name/nickname/first_name
+- `display_name_type`: user_name/nick_name/first_name
 - `emoji`: none/cake/balloon/party
 - `field_name`: Birthday field ID
 - `birthdays_per_page`: Number per page for pagination
-- `confetti`: yes/no (overrides global setting)
-- `zodiac`: yes/no (overrides global setting)
+
+Confetti and zodiac signs are not shortcode attributes. They follow the global Display settings.
 
 ## Automatic Features
 
@@ -439,8 +439,8 @@ Users can control birthday visibility via:
 
 ### Version Information
 - **Current Version**: 2.4.1
-- **WordPress Requirements**: 5.0+
-- **PHP Requirements**: 7.4+
+- **WordPress Requirements**: 6.5+
+- **PHP Requirements**: 8.1+
 - **BuddyPress Requirements**: Latest stable version
 - **Tested Up To**: WordPress 6.9
 

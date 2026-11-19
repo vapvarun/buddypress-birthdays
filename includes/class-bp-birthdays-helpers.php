@@ -206,6 +206,77 @@ class BP_Birthdays_Helpers {
 	}
 
 	/**
+	 * The one timezone every birthday date is read and shown in.
+	 *
+	 * A birthday is a calendar date, so "today", "upcoming" and age all follow
+	 * the site's day, never the server's or the browser's. Filterable so a
+	 * site can show each member their own day.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param int $user_id Member the date is shown to, 0 for the site.
+	 * @return DateTimeZone
+	 */
+	public static function display_timezone( $user_id = 0 ) {
+		/**
+		 * Filters the timezone birthdays are calculated and shown in.
+		 *
+		 * @since 2.5.1
+		 *
+		 * @param DateTimeZone $timezone The site's timezone.
+		 * @param int          $user_id  Member the date is shown to, 0 for the site.
+		 */
+		$timezone = apply_filters( 'bp_birthdays_display_timezone', wp_timezone(), absint( $user_id ) );
+
+		return $timezone instanceof DateTimeZone ? $timezone : wp_timezone();
+	}
+
+	/**
+	 * Today, at the start of the display timezone's day.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param int $user_id Member the date is shown to, 0 for the site.
+	 * @return DateTimeImmutable
+	 */
+	public static function today( $user_id = 0 ) {
+		return ( new DateTimeImmutable( 'now', self::display_timezone( $user_id ) ) )->setTime( 0, 0, 0 );
+	}
+
+	/**
+	 * The one formatter for a birthday date shown to a person.
+	 *
+	 * Takes a calendar date (Y-m-d, optionally with a time that is ignored) and
+	 * prints it with the site's language in the display timezone, so the day
+	 * never shifts. Month and day names are translated by WordPress.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param string|DateTimeInterface $date     Calendar date.
+	 * @param string                   $format   PHP date format.
+	 * @param string                   $fallback Returned when the date cannot be read.
+	 * @param int                      $user_id  Member the date is shown to, 0 for the site.
+	 * @return string
+	 */
+	public static function date_label( $date, $format = 'F j', $fallback = '', $user_id = 0 ) {
+		$timezone = self::display_timezone( $user_id );
+
+		if ( $date instanceof DateTimeInterface ) {
+			$ymd = $date->format( 'Y-m-d' );
+		} else {
+			$ymd = substr( trim( (string) $date ), 0, 10 );
+		}
+
+		$day = DateTimeImmutable::createFromFormat( '!Y-m-d', $ymd, $timezone );
+		if ( ! $day || $day->format( 'Y-m-d' ) !== $ymd ) {
+			return $fallback;
+		}
+
+		// time-ok: the one formatter; midnight in the display timezone, printed in that timezone.
+		return wp_date( $format, $day->getTimestamp(), $timezone );
+	}
+
+	/**
 	 * Calculate age from birth date.
 	 *
 	 * @param string $birth_date Birth date string.
@@ -213,10 +284,10 @@ class BP_Birthdays_Helpers {
 	 */
 	public static function calculate_age( $birth_date ) {
 		try {
-			$birth = new DateTime( $birth_date );
-			$today = new DateTime();
-			$age   = $today->diff( $birth )->y;
-			return $age;
+			$timezone = self::display_timezone();
+			$birth    = new DateTimeImmutable( substr( trim( (string) $birth_date ), 0, 10 ), $timezone );
+
+			return $birth->diff( self::today() )->y;
 		} catch ( Exception $e ) {
 			return false;
 		}
@@ -230,12 +301,7 @@ class BP_Birthdays_Helpers {
 	 * @return string Formatted date.
 	 */
 	public static function format_birthday( $date, $format = 'F j' ) {
-		try {
-			$datetime = new DateTime( $date );
-			return wp_date( $format, $datetime->getTimestamp() );
-		} catch ( Exception $e ) {
-			return '';
-		}
+		return self::date_label( $date, $format );
 	}
 
 	/**
@@ -246,96 +312,29 @@ class BP_Birthdays_Helpers {
 	 */
 	public static function is_birthday_today( $date ) {
 		try {
-			$birth = new DateTime( $date );
-			$today = new DateTime();
-			return $birth->format( 'm-d' ) === $today->format( 'm-d' );
+			$birth = new DateTimeImmutable( substr( trim( (string) $date ), 0, 10 ), self::display_timezone() );
+
+			return in_array( $birth->format( 'm-d' ), self::birthday_month_days( self::today() ), true );
 		} catch ( Exception $e ) {
 			return false;
 		}
 	}
 
 	/**
-	 * Convert a PHP date format string to its MySQL DATE_FORMAT / STR_TO_DATE
-	 * equivalent.
+	 * Stored birthday month-days celebrated on a date.
 	 *
-	 * BuddyPress stores a datebox field's `date_format` meta as a PHP date
-	 * format (e.g. `Y-m-d`). MySQL's STR_TO_DATE()/DATE_FORMAT() use their own
-	 * `%`-prefixed specifiers (e.g. `%Y-%m-%d`), so passing the PHP format
-	 * straight into SQL makes STR_TO_DATE() return NULL for every row.
+	 * A Feb 29 birthday is celebrated on Feb 28 when the year has no Feb 29.
+	 * The cron and the widget's "Today!" check both read this rule.
 	 *
-	 * Tokens without a MySQL equivalent (ordinal suffix `S`, timezone tokens)
-	 * are dropped; backslash-escaped characters become literals; a literal `%`
-	 * is escaped as `%%` for MySQL.
+	 * @since 2.5.1
 	 *
-	 * @since 2.5.0
-	 *
-	 * @param string $php_format PHP date format (e.g. 'Y-m-d', 'd/m/Y').
-	 * @return string MySQL format string (e.g. '%Y-%m-%d', '%d/%m/%Y').
+	 * @param DateTimeInterface $date Day, site timezone.
+	 * @return string[] One or two m-d values.
 	 */
-	public static function php_to_mysql_date_format( $php_format ) {
-		$map = array(
-			// Day.
-			'd' => '%d',
-			'j' => '%e',
-			'D' => '%a',
-			'l' => '%W',
-			'N' => '%w',
-			'w' => '%w',
-			'z' => '%j',
-			'S' => '', // Ordinal suffix — no standalone MySQL token.
-			// Month.
-			'm' => '%m',
-			'n' => '%c',
-			'M' => '%b',
-			'F' => '%M',
-			// Year.
-			'Y' => '%Y',
-			'y' => '%y',
-			'o' => '%Y',
-			// Time.
-			'H' => '%H',
-			'G' => '%k',
-			'h' => '%h',
-			'g' => '%l',
-			'i' => '%i',
-			's' => '%s',
-			'A' => '%p',
-			'a' => '%p',
-			'u' => '%f',
-			// No MySQL equivalent — dropped.
-			'v' => '',
-			'e' => '',
-			'T' => '',
-			'P' => '',
-			'O' => '',
-			'U' => '',
-		);
+	public static function birthday_month_days( DateTimeInterface $date ) {
+		$month_day = $date->format( 'm-d' );
 
-		$php_format = (string) $php_format;
-		$mysql      = '';
-		$length     = strlen( $php_format );
-
-		for ( $i = 0; $i < $length; $i++ ) {
-			$char = $php_format[ $i ];
-
-			// A backslash escapes the next character to a literal in PHP formats.
-			if ( '\\' === $char && $i + 1 < $length ) {
-				++$i;
-				$literal = $php_format[ $i ];
-				$mysql  .= ( '%' === $literal ) ? '%%' : $literal;
-				continue;
-			}
-
-			if ( isset( $map[ $char ] ) ) {
-				$mysql .= $map[ $char ];
-			} elseif ( '%' === $char ) {
-				$mysql .= '%%';
-			} else {
-				$mysql .= $char;
-			}
-		}
-
-		return $mysql;
+		return ( '02-28' === $month_day && '0' === $date->format( 'L' ) ) ? array( '02-28', '02-29' ) : array( $month_day );
 	}
 
 	/**
@@ -346,28 +345,147 @@ class BP_Birthdays_Helpers {
 	 */
 	public static function days_until_birthday( $date ) {
 		try {
-			$birth = new DateTime( $date );
-			$today = new DateTime();
-			$today->setTime( 0, 0, 0 );
+			$today     = self::today();
+			$month_day = ( new DateTimeImmutable( substr( trim( (string) $date ), 0, 10 ), self::display_timezone() ) )->format( 'm-d' );
 
-			// Set birthday to this year.
-			$next_birthday = new DateTime();
-			$next_birthday->setDate(
-				(int) $today->format( 'Y' ),
-				(int) $birth->format( 'm' ),
-				(int) $birth->format( 'd' )
-			);
-			$next_birthday->setTime( 0, 0, 0 );
-
-			// If birthday has passed this year, use next year.
-			if ( $next_birthday < $today ) {
-				$next_birthday->modify( '+1 year' );
+			// Next day it is celebrated: this year, else next. Feb 29 falls on Feb 28 in a year without one.
+			foreach ( array( 0, 1 ) as $add_years ) {
+				$year    = (int) $today->format( 'Y' ) + $add_years;
+				$leap    = '1' === $today->setDate( $year, 1, 1 )->format( 'L' );
+				$day     = ( '02-29' === $month_day && ! $leap ) ? '02-28' : $month_day;
+				$next    = $today->setDate( $year, (int) substr( $day, 0, 2 ), (int) substr( $day, 3, 2 ) );
+				if ( $next >= $today ) {
+					return (int) $today->diff( $next )->days;
+				}
 			}
 
-			return (int) $today->diff( $next_birthday )->days;
+			return 0;
 		} catch ( Exception $e ) {
 			return 0;
 		}
+	}
+
+	/**
+	 * A member's profile URL on any supported BuddyPress version.
+	 *
+	 * BuddyPress 12.0 deprecated bp_core_get_user_domain() in favour of
+	 * bp_members_get_user_url(). Every plugin surface links members through
+	 * this one helper.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param int $user_id Member ID.
+	 * @return string Profile URL.
+	 */
+	public static function get_user_url( $user_id ) {
+		if ( function_exists( 'bp_members_get_user_url' ) ) {
+			return bp_members_get_user_url( $user_id );
+		}
+
+		return bp_core_get_user_domain( $user_id );
+	}
+
+	/**
+	 * The xProfile field that holds member birthdays.
+	 *
+	 * The General tab's Default Birthday Field when it still points at a real
+	 * datebox/birthdate field, otherwise the first such field. The cron
+	 * channels, the shortcode and the widget all resolve the field here, so a
+	 * deleted field never leaves one surface reading nothing.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @return int Field ID, 0 when the site has no date field.
+	 */
+	public static function get_birthday_field_id() {
+		global $wpdb;
+
+		$settings   = get_option( 'bp_birthdays_settings', array() );
+		$configured = is_array( $settings ) && isset( $settings['default_field_id'] ) ? absint( $settings['default_field_id'] ) : 0;
+		$table      = $wpdb->prefix . 'bp_xprofile_fields';
+
+		if ( $configured ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Primary-key lookup; only the table name is interpolated.
+			$field_id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d AND type IN ('datebox', 'birthdate')", $configured ) );
+			if ( $field_id ) {
+				return $field_id;
+			}
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Static query, table name only.
+		return (int) $wpdb->get_var( "SELECT id FROM {$table} WHERE type IN ('datebox', 'birthdate') ORDER BY id ASC LIMIT 1" );
+	}
+
+	/**
+	 * Whether a BuddyPress field visibility level lets a viewer see a member's birthday.
+	 *
+	 * Mirrors BuddyPress' own levels. BuddyPress labels `adminsonly` "Only Me"
+	 * (the member and site admins); BuddyBoss adds a stricter `onlyme`. A
+	 * viewer ID of 0 is an anonymous visitor, which is who a public activity
+	 * post is shown to.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param string $level     Visibility level (public, loggedin, friends, adminsonly, onlyme).
+	 * @param int    $owner_id  Member whose birthday it is.
+	 * @param int    $viewer_id Member looking at it, 0 for a visitor.
+	 * @return bool
+	 */
+	public static function visibility_allows( $level, $owner_id, $viewer_id ) {
+		$owner_id  = absint( $owner_id );
+		$viewer_id = absint( $viewer_id );
+
+		// A level nobody registered (a typo, a removed add-on) stays hidden from everyone.
+		if ( ! self::is_known_visibility( $level ) ) {
+			return false;
+		}
+
+		if ( 'onlyme' === $level ) {
+			return $viewer_id && $viewer_id === $owner_id;
+		}
+
+		// BuddyPress and BuddyBoss hide each level for the viewer by their own rules. Ask them.
+		if ( function_exists( 'bp_xprofile_get_hidden_field_types_for_user' ) ) {
+			return ! in_array( (string) $level, (array) bp_xprofile_get_hidden_field_types_for_user( $owner_id, $viewer_id ), true );
+		}
+
+		switch ( $level ) {
+			case 'public':
+				return true;
+			case 'adminsonly':
+				return $viewer_id && ( $viewer_id === $owner_id || user_can( $viewer_id, 'manage_options' ) );
+			case 'friends':
+				return $viewer_id && ( $viewer_id === $owner_id || ( function_exists( 'friends_check_friendship' ) && friends_check_friendship( $viewer_id, $owner_id ) ) );
+			case 'loggedin':
+				return (bool) $viewer_id;
+			default:
+				return false;
+		}
+	}
+
+	/**
+	 * Whether a visibility level is one BuddyPress or BuddyBoss registers.
+	 *
+	 * The five built-in levels plus any level the platform lists, including ones an add-on
+	 * adds. Everything else is unknown, and an unknown level is never shown or announced.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param mixed $level Visibility level read from a field.
+	 * @return bool
+	 */
+	public static function is_known_visibility( $level ) {
+		if ( ! is_string( $level ) || '' === $level ) {
+			return false;
+		}
+
+		$known = array( 'public', 'loggedin', 'friends', 'adminsonly', 'onlyme' );
+
+		if ( function_exists( 'bp_xprofile_get_visibility_levels' ) ) {
+			$known = array_merge( $known, array_map( 'strval', array_keys( (array) bp_xprofile_get_visibility_levels() ) ) );
+		}
+
+		return in_array( $level, $known, true );
 	}
 
 	/**

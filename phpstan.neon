@@ -3,18 +3,25 @@ parameters:
     paths:
         - .
     excludePaths:
-        - vendor
-        - node_modules
-        - dist
-        - assets
+        - vendor (?)
+        - node_modules (?)
+        - dist (?)
     treatPhpDocTypesAsCertain: false
     ignoreErrors:
         - '#Function buddypress not found\.#'
         - '#Function bp_\w+ not found\.#'
+        # Action Scheduler: used only when present (function_exists guard), no stubs installed.
+        - '#Function as_\w+ not found\.#'
         - '#Constant BIRTHDAY_WIDGET_PLUGIN_(URL|PATH) not found\.#'
         - '#has invalid type BP_XProfile_ProfileData\.#'
         - '#has invalid type BP_Follow\.#'
         - '#Action callback returns .+ but should not return anything\.#'
-        - '#Unreachable statement - code above always terminates\.#'
         - '#is_wp_error\(.+\) will always evaluate to false\.#'
-        - '#Variable \$birthdays in empty\(\) always exists and is not falsy\.#'
+        # BuddyPress component APIs (Friends, xProfile): no BP stubs are installed,
+        # same reason as the bp_* pattern above. Every call is guarded at runtime.
+        - '#Function (friends|xprofile)_\w+ not found\.#'
+        # BuddyPress Friends and BuddyBoss visibility classes: no stubs installed, every call is guarded
+        # by method_exists() or a component check at runtime.
+        - '#unknown class (BP_Friends_Friendship|BB_XProfile_Visibility|BP_Notifications_Notification)\.#'
+        - '#Call to function method_exists\(\) with .+ will always evaluate to false\.#'
+        - '#Access to an undefined property object::\$default_visibility\.#'

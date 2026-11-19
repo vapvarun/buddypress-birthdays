@@ -10,7 +10,7 @@ The plugin owns no database tables. It reads BuddyPress xProfile data only, and 
 - `bp_xprofile_fields` to discover the date field,
 - `bp_xprofile_meta` for the field's stored date format.
 
-The one small piece of plugin-owned data is per-member user meta: `bb_birthday_hidden` (the GDPR opt-out) and `bb_birthday_wished_users` (a short-lived record of who wished whom, pruned after seven days).
+The one small piece of plugin-owned data is per-member user meta: `bb_birthday_hidden` (the GDPR opt-out) .
 
 ## Render surfaces
 
@@ -30,16 +30,13 @@ Rendered lists are stored in the WordPress object cache under the group `bp_birt
 
 ## Scale bounds
 
-Every widget mode (all members, friends, followers) trims candidates in SQL, ordered by upcoming-birthday proximity, to a bounded pool before the per-member loop runs. The pool size is `display count x bb_birthdays_widget_candidate_multiplier` (default 4), hard-capped by `bb_birthdays_widget_candidate_cap` (default 200). Per-member values are batch-primed in one query, so the render does not run a query per member. Pagination slices the already-fetched, bounded list rather than paging in SQL.
+Every widget mode (all members, friends, followers) trims candidates in SQL, ordered by upcoming-birthday proximity, to a bounded pool before the per-member loop runs. The pool size is `display count x bb_birthdays_widget_candidate_multiplier` (default 4), hard-capped by `bb_birthdays_widget_candidate_cap` (default 200). Per-member values are batch-primed in one query, and so are the reads the privacy checks make: member meta (opt-out, BuddyPress visibility levels), the viewer's friendships, and on BuddyBoss the profile visibility rows, resolved in BuddyBoss's own order (visibility row, then the member's saved level, then the field default; fields with custom visibility disabled ask BuddyBoss per member). So the data loop costs the same handful of queries whatever the pool size. Before rendering a page the widget primes that page's users and display names with `bp_core_get_user_displaynames()` (on BuddyBoss this also warms the profile name and visibility caches), so the avatar alt text, names and links add no queries per row. The one query that still reads every stored value of the birthday field is the candidate query itself: it sorts by month and day computed from the value, and BuddyPress's profile table has no index on that, so a cold render is a scan of that one field's rows. The plugin owns no table, so it cannot add one; the object cache keeps warm renders off it. Pagination slices the already-fetched, bounded list rather than paging in SQL.
 
 ## Cron
 
-Two daily WordPress cron events are used:
+One daily WordPress cron event is used: `bp_birthdays_daily_check` runs the birthday processing (emails, activity, notifications, admin summary) at the configured send time. It is scheduled on activation, self-heals if lost, and is cleared on deactivation and uninstall.
 
-- `bp_birthdays_daily_check` runs the birthday processing (emails, activity, notifications, admin summary) at the configured send time.
-- `bb_cleanup_old_wishes` prunes the wished-users meta older than seven days and flushes the birthday cache.
-
-Both are scheduled on activation, self-heal if lost, and are cleared on deactivation and uninstall.
+The cached birthday lists live in the `bp_birthdays` object cache group. Every key carries the site's date and the group's last-changed token, so the lists roll over at the site's midnight and are retired together when a profile, friendship or follow changes.
 
 ## BuddyPress version awareness
 
@@ -47,4 +44,4 @@ The widget branches on `buddypress()->version >= 12.0` to choose between the new
 
 ## AJAX
 
-A single AJAX action, `bb_birthdays_action`, is registered for both logged-in and logged-out requests and is nonce-verified. It dispatches two sub-actions: `refresh_widget` (clears the birthday cache; requires a logged-in user with the `read` capability) and `mark_wished` (records that the current member wished a birthday member; requires a logged-in actor and a target user ID).
+The plugin registers no AJAX actions. The send-wishes button is a plain link to the BuddyPress private-message compose screen.

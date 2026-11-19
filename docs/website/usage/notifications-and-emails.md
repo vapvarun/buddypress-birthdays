@@ -8,6 +8,8 @@ All of these are off by default. Enable them under WB Plugins > Birthdays.
 
 The daily check runs at the time set by the Email tab's Send Time (default 09:00, in 24-hour HH:MM). The cron re-schedules itself to that time and self-heals if the event is ever lost.
 
+If a send fails, that day is retried every hour until the end of the next day, and only the channels that failed are sent again. A daily check that runs late, after midnight but before the Send Time, still processes the day it was scheduled for. Members born on February 29 are celebrated on February 28 in years without a February 29.
+
 ## Birthday greeting email
 
 When Birthday Emails are enabled, each member receives a greeting on their birthday. The email is a BuddyPress email of type `birthday-greeting`, so you can edit its subject and body under BuddyPress > Emails.
@@ -33,16 +35,16 @@ Default template: `Today is {name}'s birthday! Send your wishes!`
 
 ## BuddyPress notification
 
-When Notifications are enabled, members receive an in-app BuddyPress notification. Turn on Notify Friends Only to restrict it to the birthday member's friends. Set the text on the Notifications tab using the `{name}` placeholder.
+When Notifications are enabled, members receive an in-app BuddyPress notification. Turn on Notify Friends Only to restrict it to the birthday member's friends. Notify Friends Only needs the BuddyPress Friends component; while that component is off, no birthday notifications are sent and the Notifications tab shows a warning. Members who hid their birthday receive no birthday notifications. Set the text on the Notifications tab using the `{name}` placeholder.
 
 Default text: `It's {name}'s birthday today!`
 
-When Notify Friends Only is off, the number of recipients per birthday is capped (default 500) to protect large sites. Adjust or remove the cap with the `bb_birthdays_notification_recipient_limit` filter.
+When Notify Friends Only is off, every member who may see the birthday is notified. On large sites the notifications are written in chunks of 500 members, one scheduled action per chunk, so a birthday can take a few minutes to reach everyone. Change the chunk size with the `bb_birthdays_notification_recipient_limit` filter.
 
 ## Admin summary email
 
-When the Admin Summary Email is enabled, the recipient (the Admin Email setting, or the site admin email when empty) receives a daily list of the day's birthdays. It is a BuddyPress email of type `birthday-admin-summary`, also editable under BuddyPress > Emails, with a `wp_mail` fallback.
+When the Daily Summary Email is enabled, the recipient (the Summary Recipient setting, or the site admin email when empty) receives one list of the day's birthdays per day. It is a BuddyPress email of type `birthday-admin-summary`, also editable under BuddyPress > Emails, with a `wp_mail` fallback. It opens with its own "Hi Admin,", so BuddyPress does not add its usual "Hi name," line.
 
 ## Emails not appearing under BuddyPress > Emails
 
-The two email templates are created once, automatically, in the admin. If you do not see them, load any admin page while the plugin is active. See Troubleshooting if they are still missing.
+The two email templates are created automatically in the admin, and again after BuddyPress > Tools > Reinstall emails. If one could not be created, the plugin tries again on the next admin page load. If you do not see them, load any admin page while the plugin is active. See Troubleshooting if they are still missing.

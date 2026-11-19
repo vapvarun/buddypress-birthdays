@@ -1,7 +1,6 @@
 # Wrapper Audit: buddypress-birthdays (branch 2.5.0)
 
 **Date:** 2026-06-05
-**Auditor:** AutoVAP (READ-ONLY — no code was changed)
 **Classification:** NONE — self-contained WP Settings API tabbed page
 
 ---

@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin page shell: page header, sidebar nav, body slot.
+ * Admin page layout: page header, sidebar nav, body slot.
  *
  * Receives from BP_Birthdays_Admin_Panel::render_page():
  *
@@ -27,7 +27,7 @@ $bbd_version = defined( 'BIRTHDAY_WIDGET_VERSION' ) ? BIRTHDAY_WIDGET_VERSION : 
 		<div class="bbd-page-header__title">
 			<span class="dashicons dashicons-buddicons-community" aria-hidden="true"></span>
 			<div>
-				<h1><?php esc_html_e( 'Birthday Widget for BuddyPress', 'buddypress-birthdays' ); ?></h1>
+				<h1><?php echo esc_html( 'Birthday Widget for BuddyPress' ); ?></h1>
 				<p class="bbd-page-header__subtitle"><?php esc_html_e( 'Show upcoming member birthdays in a widget or shortcode, with optional birthday emails, activity posts, and notifications.', 'buddypress-birthdays' ); ?></p>
 			</div>
 		</div>
@@ -37,6 +37,29 @@ $bbd_version = defined( 'BIRTHDAY_WIDGET_VERSION' ) ? BIRTHDAY_WIDGET_VERSION : 
 			<?php endif; ?>
 		</div>
 	</header>
+
+	<?php
+	// Rendered here, not through admin_notices: this screen removes the other plugins' notices.
+	$bbd_stuck = class_exists( 'BP_Birthdays_Notifications' ) ? BP_Birthdays_Notifications::get_instance()->count_stuck_fanouts() : 0;
+	if ( $bbd_stuck ) :
+		?>
+		<div class="bbd-notice bbd-notice--warn" role="status">
+			<?php
+			echo esc_html(
+				sprintf(
+					/* translators: %d: number of birthdays */
+					_n(
+						'The notifications for %d birthday have not finished sending. They resume on the next scheduled run; check that WP-Cron or Action Scheduler is running.',
+						'The notifications for %d birthdays have not finished sending. They resume on the next scheduled run; check that WP-Cron or Action Scheduler is running.',
+						$bbd_stuck,
+						'buddypress-birthdays'
+					),
+					$bbd_stuck
+				)
+			);
+			?>
+		</div>
+	<?php endif; ?>
 
 	<?php
 	/*

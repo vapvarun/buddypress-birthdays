@@ -19,8 +19,12 @@ $bbd_notif_active = function_exists( 'bp_is_active' ) && bp_is_active( 'notifica
 $bbd_notif_on     = ! empty( $settings['notification_enabled'] );
 $bbd_friends_only = ! empty( $settings['notification_friends_only'] );
 
-// Sentinel for this tab's bool keys.
-$bbd_rendered_keys = array( 'notification_enabled', 'notification_friends_only' );
+// Sentinel for this tab's bool keys. A disabled switch posts nothing and a
+// key missing then must keep the stored choice, so: Notify Friends Only is
+// never listed (its row is disabled while notifications are off; its hidden
+// "0" companion still clears it when unticked), and Enable Notifications is
+// listed only while the component is active.
+$bbd_rendered_keys = $bbd_notif_active ? array( 'notification_enabled' ) : array();
 foreach ( $bbd_rendered_keys as $bbd_rendered_key ) :
 	?>
 	<input type="hidden" name="<?php echo esc_attr( $bbd_option ); ?>[bp_birthdays_tab_rendered_keys][]" value="<?php echo esc_attr( $bbd_rendered_key ); ?>">
@@ -30,6 +34,13 @@ foreach ( $bbd_rendered_keys as $bbd_rendered_key ) :
 	<div class="bbd-notice bbd-notice--warn">
 		<span class="dashicons dashicons-warning" aria-hidden="true"></span>
 		<span><?php esc_html_e( 'The BuddyPress Notifications component is not active. Enable it in BuddyPress → Settings → Components to use this feature.', 'buddypress-birthdays' ); ?></span>
+	</div>
+<?php endif; ?>
+
+<?php if ( $bbd_friends_only && ! ( function_exists( 'bp_is_active' ) && bp_is_active( 'friends' ) ) ) : ?>
+	<div class="bbd-notice bbd-notice--warn">
+		<span class="dashicons dashicons-warning" aria-hidden="true"></span>
+		<span><?php esc_html_e( 'Notify Friends Only is on, but the BuddyPress Friends component is not active, so no birthday notifications are sent. Enable Friend Connections in BuddyPress → Settings → Components, or turn Notify Friends Only off to notify all members.', 'buddypress-birthdays' ); ?></span>
 	</div>
 <?php endif; ?>
 
@@ -43,7 +54,7 @@ foreach ( $bbd_rendered_keys as $bbd_rendered_key ) :
 			<th scope="row"><?php esc_html_e( 'Enable Notifications', 'buddypress-birthdays' ); ?></th>
 			<td>
 				<label>
-					<input type="hidden" name="<?php echo esc_attr( $bbd_option ); ?>[notification_enabled]" value="0">
+					<input type="hidden" name="<?php echo esc_attr( $bbd_option ); ?>[notification_enabled]" value="0"<?php disabled( ! $bbd_notif_active ); ?>>
 					<input type="checkbox"
 							name="<?php echo esc_attr( $bbd_option ); ?>[notification_enabled]"
 							value="1"

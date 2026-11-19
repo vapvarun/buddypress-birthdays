@@ -18,8 +18,9 @@ $bbd_option          = BP_Birthdays_Admin_Panel::OPTION_NAME;
 $bbd_activity_active = function_exists( 'bp_is_active' ) && bp_is_active( 'activity' );
 $bbd_activity_on     = ! empty( $settings['activity_enabled'] );
 
-// Sentinel for this tab's bool keys.
-$bbd_rendered_keys = array( 'activity_enabled' );
+// Sentinel for this tab's bool keys. With the component inactive the switch
+// is disabled and posts nothing, so saving keeps the stored choice.
+$bbd_rendered_keys = $bbd_activity_active ? array( 'activity_enabled' ) : array();
 foreach ( $bbd_rendered_keys as $bbd_rendered_key ) :
 	?>
 	<input type="hidden" name="<?php echo esc_attr( $bbd_option ); ?>[bp_birthdays_tab_rendered_keys][]" value="<?php echo esc_attr( $bbd_rendered_key ); ?>">
@@ -42,7 +43,7 @@ foreach ( $bbd_rendered_keys as $bbd_rendered_key ) :
 			<th scope="row"><?php esc_html_e( 'Enable Activity Posts', 'buddypress-birthdays' ); ?></th>
 			<td>
 				<label>
-					<input type="hidden" name="<?php echo esc_attr( $bbd_option ); ?>[activity_enabled]" value="0">
+					<input type="hidden" name="<?php echo esc_attr( $bbd_option ); ?>[activity_enabled]" value="0"<?php disabled( ! $bbd_activity_active ); ?>>
 					<input type="checkbox"
 							name="<?php echo esc_attr( $bbd_option ); ?>[activity_enabled]"
 							value="1"

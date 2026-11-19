@@ -1,238 +1,88 @@
 /*-----------------------------
-* BuddyPress Birthdays Widget JS
-* Professional Production Version
-* Enhanced User Experience & Performance
+* BuddyPress Birthdays: today's-birthday celebration, the send-wishes
+* click state and its analytics events. The list itself is server-rendered.
 -----------------------------*/
 
 (function($) {
     "use strict";
 
-    // Enhanced birthday widget functionality
     var BPBirthdays = {
-        settings: {
-            tooltipDelay: 300,
-            debounceDelay: 250,
-            fadeSpeed: 200,
-            animationDuration: 300
-        },
-
-        cache: {},
-
         init: function() {
-            this.cacheElements();
-            this.initTooltips();
-            this.initAccessibility();
-            this.bindEvents();
-            this.optimizeLayout();
-            this.initSpecialEffects();
-        },
+            var $today = $('.widget_bp_birthdays .today-birthday');
 
-        cacheElements: function() {
-            this.cache.$document = $(document);
-            this.cache.$window = $(window);
-            this.cache.$body = $('body');
-            this.cache.$birthdayWidgets = $('.widget_bp_birthdays');
-            this.cache.$birthdayLists = $('.bp-birthday-users-list');
-            this.cache.$sendWishesButtons = $('.bp-send-wishes');
-            this.cache.$todayBirthdays = $('.today-birthday');
-        },
-
-        bindEvents: function() {
-            // Use event delegation for better performance
-            this.cache.$document.on('click.bpBirthdays', '.bp-send-wishes', this.handleWishesClick.bind(this));
-            
-            // Handle widget updates
-            this.cache.$document.on('widget-updated.bpBirthdays', this.handleWidgetUpdate.bind(this));
-            
-            // Handle responsive behavior
-            this.cache.$window.on('resize.bpBirthdays', this.debounce(this.handleResize.bind(this), this.settings.debounceDelay));
-            
-            // Handle visibility changes for performance
-            this.cache.$document.on('visibilitychange.bpBirthdays', this.handleVisibilityChange.bind(this));
-            
-            // Handle scroll events for animations
-            this.cache.$window.on('scroll.bpBirthdays', this.debounce(this.handleScroll.bind(this), 100));
-        },
-
-        handleWishesClick: function(e) {
-            const $button = $(e.currentTarget);
-            const href = $button.attr('href');
-
-            if (!href || href === '#') {
-                e.preventDefault();
-                this.showMessage(this.s('wishes_error', 'Unable to send wishes at this time.'), 'error');
+            if (!$today.length) {
                 return;
             }
 
-            // Prevent multiple clicks and layout shift
+            // The pulse is plain CSS; reduced motion switches it off there.
+            $today.each(function(index) {
+                var $item = $(this);
+                setTimeout(function() {
+                    $item.addClass('birthday-celebrate');
+                }, index * 200);
+            });
+
+            // Confetti is the Display tab's switch, passed in by core-init.php.
+            if (typeof bbBirthdays !== 'undefined' && bbBirthdays.confetti) {
+                $today.each(function(index, element) {
+                    setTimeout(function() {
+                        BPBirthdays.createConfetti($(element));
+                    }, index * 500);
+                });
+            }
+        },
+
+        // Send wishes opens the private-message compose screen. The button shows a short
+        // loading state so a second click does not start a second navigation.
+        handleWishesClick: function(e) {
+            var $button = $(e.currentTarget);
+
             if ($button.hasClass('loading')) {
                 e.preventDefault();
                 return;
             }
 
-            // Add loading state without changing button dimensions
             $button.addClass('loading').attr('aria-disabled', 'true');
+            BPBirthdays.trackWishEvent($button);
 
-            // Record the wish server-side (fire-and-forget) before the
-            // browser navigates to the private-message compose screen.
-            this.recordWish($button);
-
-            // Optional: Track analytics
-            this.trackWishEvent($button);
-
-            // No redirect message - let the browser handle navigation naturally
-            
-            // Remove loading state after navigation starts
-            setTimeout(() => {
+            setTimeout(function() {
                 $button.removeClass('loading').removeAttr('aria-disabled');
             }, 1000);
         },
 
-        recordWish: function($button) {
-            // Fire-and-forget: persist "current user wished this member today"
-            // via the mark_wished AJAX sub-action. Uses sendBeacon so the
-            // request survives the imminent navigation to the compose screen;
-            // falls back to a keepalive fetch, then jQuery POST.
-            if (typeof bbBirthdays === 'undefined' || !bbBirthdays.ajaxurl || !bbBirthdays.nonce) {
-                return;
-            }
+        // Reports a click to Google Analytics 4 / Universal Analytics when the site has them,
+        // and to window.customBirthdayTracking( 'wish_sent', { user, timestamp } ) when defined.
+        trackWishEvent: function($button) {
+            var userName = $button.closest('.bp-birthday-item').find('.bp-birthday-name a').text() || 'Unknown';
 
-            const userId = parseInt($button.data('user-id'), 10);
-            if (!userId) {
-                return;
-            }
-
-            const data = new FormData();
-            data.append('action', 'bb_birthdays_action');
-            data.append('birthday_action', 'mark_wished');
-            data.append('user_id', userId);
-            data.append('nonce', bbBirthdays.nonce);
-
-            if (navigator.sendBeacon && navigator.sendBeacon(bbBirthdays.ajaxurl, data)) {
-                return;
-            }
-
-            if (window.fetch) {
-                fetch(bbBirthdays.ajaxurl, { method: 'POST', body: data, keepalive: true, credentials: 'same-origin' })
-                    .catch(function() { /* fire-and-forget */ });
-                return;
-            }
-
-            $.post(bbBirthdays.ajaxurl, {
-                action: 'bb_birthdays_action',
-                birthday_action: 'mark_wished',
-                user_id: userId,
-                nonce: bbBirthdays.nonce
-            });
-        },
-
-        initTooltips: function() {
-            if (this.cache.$sendWishesButtons.length === 0) return;
-
-            // Enhanced tooltip behavior with better timing
-            this.cache.$sendWishesButtons.each((index, element) => {
-                const $button = $(element);
-                const $tooltip = $button.find('.tooltip_wishes');
-                
-                if ($tooltip.length === 0) return;
-
-                let tooltipTimer;
-
-                $button
-                    .on('mouseenter.tooltip', () => {
-                        clearTimeout(tooltipTimer);
-                        tooltipTimer = setTimeout(() => {
-                            $tooltip.addClass('visible');
-                            this.positionTooltip($button, $tooltip);
-                        }, this.settings.tooltipDelay);
-                    })
-                    .on('mouseleave.tooltip', () => {
-                        clearTimeout(tooltipTimer);
-                        $tooltip.removeClass('visible');
-                    })
-                    .on('focus.tooltip', () => {
-                        $tooltip.addClass('visible');
-                        this.positionTooltip($button, $tooltip);
-                    })
-                    .on('blur.tooltip', () => {
-                        $tooltip.removeClass('visible');
-                    });
-            });
-        },
-
-        positionTooltip: function($button, $tooltip) {
-            // Smart tooltip positioning to avoid viewport edges
-            const buttonOffset = $button.offset();
-            const tooltipWidth = $tooltip.outerWidth();
-            const viewportWidth = $(window).width();
-            
-            if (buttonOffset.left + tooltipWidth > viewportWidth) {
-                $tooltip.addClass('tooltip-right');
-            } else {
-                $tooltip.removeClass('tooltip-right');
-            }
-        },
-
-        // Read a localized string, falling back to the English text. Every key
-        // used here MUST be seeded in the bbBirthdays.strings array in
-        // core-init.php — a key read but not seeded renders English on every
-        // locale forever. The fallback only covers the case where the localize
-        // script did not run at all.
-        s: function(key, fallback) {
-            return (typeof bbBirthdays !== 'undefined' && bbBirthdays.strings && bbBirthdays.strings[key])
-                ? bbBirthdays.strings[key]
-                : fallback;
-        },
-
-        initAccessibility: function() {
-            // Add ARIA labels for better accessibility
-            const sendWishesLabel = this.s('send_wishes_aria', 'Send birthday wishes');
-            this.cache.$sendWishesButtons.each(function() {
-                const $button = $(this);
-                if (!$button.attr('aria-label')) {
-                    $button.attr('aria-label', sendWishesLabel);
-                }
-                $button.attr('role', 'button');
-            });
-
-            // Add role attributes where needed
-            this.cache.$birthdayLists.attr('role', 'list');
-            this.cache.$birthdayLists.find('.bp-birthday-item').attr('role', 'listitem');
-
-            // Add landmark roles
-            this.cache.$birthdayWidgets.attr('role', 'complementary').attr('aria-label', this.s('widget_aria_label', 'Birthday notifications'));
-        },
-
-        initSpecialEffects: function() {
-            // Initialize special effects for today's birthdays
-            if (this.cache.$todayBirthdays.length > 0) {
-                this.initBirthdayAnimations();
-                this.initConfettiEffect();
-            }
-            
-            // Initialize intersection observer for scroll animations
-            this.initScrollAnimations();
-        },
-
-        initBirthdayAnimations: function() {
-            // Add special animations for today's birthdays
-            this.cache.$todayBirthdays.each(function(index) {
-                const $item = $(this);
-                setTimeout(() => {
-                    $item.addClass('birthday-celebrate');
-                }, index * 200);
-            });
-        },
-
-        initConfettiEffect: function() {
-            // Confetti effect for today's birthdays (optional)
-            if ( typeof bbBirthdays !== 'undefined' && bbBirthdays.settings && bbBirthdays.settings.confetti_enabled && typeof this.createConfetti === 'function' ) {
-                this.cache.$todayBirthdays.each((index, element) => {
-                    setTimeout(() => {
-                        this.createConfetti($(element));
-                    }, index * 500);
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'birthday_wish_sent', {
+                    event_category: 'engagement',
+                    event_label: 'buddypress_birthdays',
+                    custom_parameters: { user_name: userName }
                 });
             }
+
+            if (typeof ga !== 'undefined') {
+                ga('send', 'event', 'Birthday Wishes', 'Send', userName);
+            }
+
+            if (typeof window.customBirthdayTracking === 'function') {
+                window.customBirthdayTracking('wish_sent', { user: userName, timestamp: new Date().toISOString() });
+            }
+        },
+
+        // Public helpers kept from 2.5.0.
+        refresh: function() {
+            this.init();
+        },
+
+        getTodaysBirthdays: function() {
+            return $('.widget_bp_birthdays .today-birthday').length;
+        },
+
+        getUpcomingBirthdays: function() {
+            return $('.widget_bp_birthdays .bp-birthday-item').length;
         },
 
         createConfetti: function( $target, options = {} ) {
@@ -384,336 +234,24 @@
             } catch (e) {
                 // Fail silently
             }
-        },
-
-        initScrollAnimations: function() {
-            // Use Intersection Observer for performance
-            if ('IntersectionObserver' in window) {
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            $(entry.target).addClass('animate-in');
-                        }
-                    });
-                }, {
-                    threshold: 0.1,
-                    rootMargin: '50px'
-                });
-
-                this.cache.$birthdayLists.find('.bp-birthday-item').each(function() {
-                    observer.observe(this);
-                });
-            }
-        },
-
-        handleWidgetUpdate: function(e, widget) {
-            // Re-cache elements after widget update
-            if ($(widget).hasClass('widget_bp_birthdays')) {
-                setTimeout(() => {
-                    this.cacheElements();
-                    this.initTooltips();
-                    this.initAccessibility();
-                    this.initSpecialEffects();
-                }, 100);
-            }
-        },
-
-        handleResize: function() {
-            // Handle any responsive adjustments if needed
-            this.optimizeLayout();
-            this.repositionTooltips();
-        },
-
-        handleVisibilityChange: function() {
-            // Pause animations when page is not visible
-            if (document.hidden) {
-                this.cache.$birthdayWidgets.addClass('paused-animations');
-            } else {
-                this.cache.$birthdayWidgets.removeClass('paused-animations');
-            }
-        },
-
-        handleScroll: function() {
-            // Handle scroll-based optimizations
-            this.optimizeVisibleElements();
-        },
-
-        optimizeLayout: function() {
-            // Optimize layout for current viewport
-            const isMobile = window.innerWidth <= 768;
-            const isTablet = window.innerWidth <= 1024 && window.innerWidth > 768;
-            
-            this.cache.$birthdayLists
-                .toggleClass('mobile-layout', isMobile)
-                .toggleClass('tablet-layout', isTablet);
-                
-            // Adjust avatar sizes for smaller screens
-            if (isMobile) {
-                this.cache.$birthdayLists.find('.avatar, .avatar-link').addClass('small-avatar');
-            } else {
-                this.cache.$birthdayLists.find('.avatar, .avatar-link').removeClass('small-avatar');
-            }
-        },
-
-        optimizeVisibleElements: function() {
-            // Only animate elements that are visible
-            const viewportTop = this.cache.$window.scrollTop();
-            const viewportBottom = viewportTop + this.cache.$window.height();
-            
-            this.cache.$birthdayWidgets.each(function() {
-                const $widget = $(this);
-                const elementTop = $widget.offset().top;
-                const elementBottom = elementTop + $widget.height();
-                
-                const isVisible = elementBottom > viewportTop && elementTop < viewportBottom;
-                $widget.toggleClass('in-viewport', isVisible);
-            });
-        },
-
-        repositionTooltips: function() {
-            // Reposition visible tooltips after resize
-            this.cache.$sendWishesButtons.find('.tooltip_wishes.visible').each((index, element) => {
-                const $tooltip = $(element);
-                const $button = $tooltip.closest('.bp-send-wishes');
-                this.positionTooltip($button, $tooltip);
-            });
-        },
-
-        trackWishEvent: function($button) {
-            // Enhanced analytics tracking
-            const userName = $button.closest('.bp-birthday-item').find('.bp-birthday-name a').text() || 'Unknown';
-            
-            // Google Analytics 4
-            if (typeof gtag !== 'undefined') {
-                gtag('event', 'birthday_wish_sent', {
-                    event_category: 'engagement',
-                    event_label: 'buddypress_birthdays',
-                    custom_parameters: {
-                        user_name: userName,
-                        widget_location: this.getWidgetLocation($button)
-                    }
-                });
-            }
-            
-            // Universal Analytics fallback
-            if (typeof ga !== 'undefined') {
-                ga('send', 'event', 'Birthday Wishes', 'Send', userName);
-            }
-            
-            // Custom tracking
-            if (typeof window.customBirthdayTracking === 'function') {
-                window.customBirthdayTracking('wish_sent', {
-                    user: userName,
-                    timestamp: new Date().toISOString()
-                });
-            }
-        },
-
-        getWidgetLocation: function($button) {
-            // Determine widget location for analytics
-            const $widget = $button.closest('.widget_bp_birthdays');
-            
-            if ($widget.closest('.sidebar').length) return 'sidebar';
-            if ($widget.closest('.footer').length) return 'footer';
-            if ($widget.closest('.header').length) return 'header';
-            return 'content';
-        },
-
-        showMessage: function(message, type = 'info') {
-            // Enhanced message display with better UX
-            const messageClass = `bp-birthday-message bp-birthday-${type}`;
-            const $message = $(`<div class="${messageClass}" role="alert">${message}</div>`);
-            
-            // Find the best location to show the message
-            let $container = $('.widget_bp_birthdays').first();
-            if ($container.length === 0) {
-                $container = $('body');
-            }
-            
-            $message.prependTo($container)
-                .hide()
-                .fadeIn(this.settings.fadeSpeed)
-                .delay(3000)
-                .fadeOut(this.settings.fadeSpeed, function() {
-                    $(this).remove();
-                });
-        },
-
-        // NOTE: the browser Notification subsystem (createNotification +
-        // requestNotificationPermission) was removed in 2.5.0. createNotification
-        // was never called from anywhere, which made requestNotificationPermission
-        // a dead end: it prompted every visitor for browser-notification
-        // permission (2s after load, with no user gesture) for a capability the
-        // plugin never used. Do not reintroduce a permission prompt without a
-        // caller that actually sends notifications, and trigger it from a user
-        // gesture - browsers penalise or auto-block non-gesture prompts.
-
-        debounce: function(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func.apply(this, args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        },
-
-        throttle: function(func, limit) {
-            let inThrottle;
-            return function() {
-                const args = arguments;
-                const context = this;
-                if (!inThrottle) {
-                    func.apply(context, args);
-                    inThrottle = true;
-                    setTimeout(() => inThrottle = false, limit);
-                }
-            };
-        },
-
-        preloadImages: function() {
-            // No external images to preload - using SVG data URIs instead
-            // This function is kept for future use if actual image files are added
-            const imagesToPreload = [
-                // Add actual image paths here when images are available
-            ];
-            
-            imagesToPreload.forEach(src => {
-                const img = new Image();
-                img.src = src;
-            });
-        },
-
-        destroy: function() {
-            // Clean up event listeners and resources
-            this.cache.$document.off('.bpBirthdays');
-            this.cache.$window.off('.bpBirthdays');
-            this.cache.$sendWishesButtons.off('.tooltip');
-            
-            // Clear any running timeouts
-            if (this.tooltipTimer) {
-                clearTimeout(this.tooltipTimer);
-            }
-            
-            // Remove added classes
-            this.cache.$birthdayLists.removeClass('mobile-layout tablet-layout');
-            this.cache.$birthdayWidgets.removeClass('paused-animations in-viewport');
-        },
-
-        // Public API methods
-        refresh: function() {
-            this.destroy();
-            this.init();
-        },
-
-        updateSettings: function(newSettings) {
-            this.settings = $.extend(this.settings, newSettings);
-        },
-
-        getTodaysBirthdays: function() {
-            return this.cache.$todayBirthdays.length;
-        },
-
-        getUpcomingBirthdays: function() {
-            return this.cache.$birthdayLists.find('.bp-birthday-item').length;
         }
     };
 
-    // Initialize when DOM is ready
-    $(document).ready(function() {
+    $(function() {
         BPBirthdays.init();
-        BPBirthdays.preloadImages();
     });
 
-    // Handle page unload cleanup
-    $(window).on('beforeunload', function() {
-        BPBirthdays.destroy();
+    $(document).on('click.bpBirthdays', '.bp-send-wishes', BPBirthdays.handleWishesClick);
+
+    // Re-run the effects after a widget is saved in the Customizer or the Widgets screen.
+    $(document).on('widget-updated.bpBirthdays', function(e, widget) {
+        if ($(widget).hasClass('widget_bp_birthdays')) {
+            setTimeout(function() {
+                BPBirthdays.init();
+            }, 100);
+        }
     });
 
-    // Expose to global scope for external access
     window.BPBirthdays = BPBirthdays;
-
-    // NOTE: `window.BirthdayUtils` was removed in 2.5.0. It exposed date/greeting
-    // helpers (formatDate, calculateAge, isToday, isTomorrow, getDaysUntilBirthday,
-    // getUpcomingBirthdays, getBirthdayGreeting, generateBirthdayMessage) that
-    // nothing in this plugin ever called, and that carried ~30 hardcoded English
-    // literals (month names, greeting text) which could never be translated.
-    // All real formatting is done server-side via BP_Birthdays_Helpers, which
-    // honours the site locale and date format. If a helper is needed on the
-    // client again, seed its strings through bbBirthdays.strings (see core-init.php).
-
-    // Add CSS classes for enhanced animations
-    $('<style>')
-        .prop('type', 'text/css')
-        .html(`
-            .bp-birthday-message {
-                padding: 12px 16px;
-                margin: 10px 0;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: 500;
-            }
-            
-            .bp-birthday-info {
-                background: #dbeafe;
-                color: #1e40af;
-                border-left: 4px solid #3b82f6;
-            }
-            
-            .bp-birthday-success {
-                background: #dcfce7;
-                color: #166534;
-                border-left: 4px solid #22c55e;
-            }
-            
-            .bp-birthday-error {
-                background: #fee2e2;
-                color: #dc2626;
-                border-left: 4px solid #ef4444;
-            }
-            
-            .birthday-celebrate {
-                animation: celebrate 0.6s ease-out;
-            }
-            
-            @keyframes celebrate {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.02); }
-                100% { transform: scale(1); }
-            }
-            
-            .animate-in {
-                animation: slideInUp 0.4s ease-out;
-            }
-            
-            @keyframes slideInUp {
-                from {
-                    opacity: 0;
-                    transform: translateY(20px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-            
-            .small-avatar {
-                width: 40px !important;
-                height: 40px !important;
-            }
-            
-            .paused-animations * {
-                animation-play-state: paused !important;
-            }
-            
-            .tooltip-right {
-                left: auto !important;
-                right: 0 !important;
-                transform: translateX(0) !important;
-            }
-        `)
-        .appendTo('head');
 
 })(jQuery);

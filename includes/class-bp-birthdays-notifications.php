@@ -36,6 +36,35 @@ class BP_Birthdays_Notifications {
 	const SENT_TRACKING_OPTION = 'bp_birthdays_sent_today';
 
 	/**
+	 * Temporary progress of a notification fan-out that spans several chunks: one entry per
+	 * birthday and day, removed when its last chunk is written. Autoload off.
+	 *
+	 * @var string
+	 */
+	const NOTIFY_STATE_OPTION = 'bp_birthdays_notify_state';
+
+	/**
+	 * Hook of the scheduled action that writes the next chunk of a notification fan-out.
+	 *
+	 * @var string
+	 */
+	const NOTIFY_CHUNK_HOOK = 'bp_birthdays_notify_chunk';
+
+	/**
+	 * Action Scheduler group of the plugin's queued work.
+	 *
+	 * @var string
+	 */
+	const AS_GROUP = 'buddypress-birthdays';
+
+	/**
+	 * Day (Y-m-d) the daily check is processing, so a fan-out knows which day it belongs to.
+	 *
+	 * @var string
+	 */
+	private $processing_day = '';
+
+	/**
 	 * Email type for birthday greeting.
 	 *
 	 * @var string
@@ -48,6 +77,15 @@ class BP_Birthdays_Notifications {
 	 * @var string
 	 */
 	const EMAIL_TYPE_ADMIN_SUMMARY = 'birthday-admin-summary';
+
+	/**
+	 * Value of bp_birthdays_emails_installed once both email posts exist and
+	 * their types are described. Older installs stored true (1), so they run
+	 * the check once more and get the type descriptions.
+	 *
+	 * @var int
+	 */
+	const EMAILS_INSTALLED_VERSION = 2;
 
 	/**
 	 * Instance of this class.
@@ -75,11 +113,11 @@ class BP_Birthdays_Notifications {
 		// Schedule cron job.
 		add_action( 'init', array( $this, 'schedule_cron' ) );
 
-		// Handle cron execution.
+		// Handle cron execution. A retry event carries the date it retries.
 		add_action( self::CRON_HOOK, array( $this, 'process_daily_birthdays' ) );
 
-		// Clear tracking on new day.
-		add_action( 'init', array( $this, 'maybe_clear_tracking' ) );
+		// Later chunks of a large notification fan-out, one scheduled action each.
+		add_action( self::NOTIFY_CHUNK_HOOK, array( $this, 'run_notification_chunk' ), 10, 2 );
 
 		// Register BP notification component.
 		add_action( 'bp_setup_globals', array( $this, 'register_notification_component' ) );
@@ -88,10 +126,14 @@ class BP_Birthdays_Notifications {
 		add_filter( 'bp_notifications_get_registered_components', array( $this, 'register_notification_component_filter' ) );
 		add_filter( 'bp_notifications_get_notifications_for_user', array( $this, 'format_notification' ), 10, 8 );
 
-		// Register email types with BuddyPress.
+		// Install the email posts after BuddyPress installs its own (fresh
+		// install, upgrades, Tools > Reinstall emails). The types are kept out
+		// of bp_email_get_schema: BuddyPress would insert them too (duplicates)
+		// and read a type description it has no filter for (PHP warnings).
 		add_action( 'bp_core_install_emails', array( $this, 'install_emails' ) );
-		add_filter( 'bp_email_get_schema', array( $this, 'register_email_schema' ) );
-		add_filter( 'bp_email_get_type_schema', array( $this, 'register_email_type_schema' ) );
+
+		// The admin summary greets the admin in its own body.
+		add_filter( 'bp_email_get_salutation', array( $this, 'filter_admin_summary_salutation' ) );
 
 		// Create emails on plugin load if they don't exist.
 		add_action( 'admin_init', array( $this, 'maybe_install_emails' ) );
@@ -104,6 +146,10 @@ class BP_Birthdays_Notifications {
 	 * Register birthday celebration activity action with BuddyPress.
 	 */
 	public function register_activity_action() {
+		if ( ! function_exists( 'bp_activity_set_action' ) ) {
+			return;
+		}
+
 		bp_activity_set_action(
 			'birthdays',                                    // Component.
 			'birthday_celebration',                         // Action type.
@@ -129,11 +175,7 @@ class BP_Birthdays_Notifications {
 
 		// Fallback for activities without proper action set.
 		if ( function_exists( 'bp_is_active' ) ) {
-			if ( function_exists( 'buddypress' ) && version_compare( buddypress()->version, '12.0', '>=' ) ) {
-				$user_link = bp_members_get_user_url( $activity->user_id );
-			} else {
-				$user_link = bp_core_get_user_domain( $activity->user_id );
-			}
+			$user_link = BP_Birthdays_Helpers::get_user_url( $activity->user_id );
 			$user_name = bp_core_get_user_displayname( $activity->user_id );
 
 			$action = sprintf(
@@ -147,7 +189,7 @@ class BP_Birthdays_Notifications {
 	}
 
 	/**
-	 * Register email schema for our custom email types.
+	 * Email post content for our custom email types.
 	 *
 	 * @param array $schema Email schema.
 	 * @return array
@@ -169,23 +211,33 @@ class BP_Birthdays_Notifications {
 	}
 
 	/**
-	 * Register email type schema.
+	 * Situation text BuddyPress shows for an email type under Emails.
 	 *
-	 * @param array $type_schema Type schema.
-	 * @return array
+	 * @param string $email_type Email type.
+	 * @return string
 	 */
-	public function register_email_type_schema( $type_schema ) {
-		$type_schema[ self::EMAIL_TYPE_BIRTHDAY ] = array(
-			'description'      => __( 'A member receives a birthday greeting from the site.', 'buddypress-birthdays' ),
-			'named_salutation' => true,
-		);
+	private function get_email_description( $email_type ) {
+		return self::EMAIL_TYPE_ADMIN_SUMMARY === $email_type
+			? __( 'Site admin receives a daily summary of member birthdays.', 'buddypress-birthdays' )
+			: __( 'A member receives a birthday greeting from the site.', 'buddypress-birthdays' );
+	}
 
-		$type_schema[ self::EMAIL_TYPE_ADMIN_SUMMARY ] = array(
-			'description'      => __( 'Site admin receives a daily summary of member birthdays.', 'buddypress-birthdays' ),
-			'named_salutation' => false,
-		);
+	/**
+	 * Drop BuddyPress' "Hi {{recipient.name}}," from the admin summary.
+	 *
+	 * The summary goes to an address, not a member, and opens with its own
+	 * "Hi Admin,". BuddyPress has no filter to mark a plugin email type as
+	 * unnamed, so the salutation is cleared for this type here.
+	 *
+	 * @param string $salutation Salutation BuddyPress is about to print.
+	 * @return string
+	 */
+	public function filter_admin_summary_salutation( $salutation ) {
+		if ( function_exists( 'bp_email_get_type' ) && self::EMAIL_TYPE_ADMIN_SUMMARY === bp_email_get_type() ) {
+			return '';
+		}
 
-		return $type_schema;
+		return $salutation;
 	}
 
 	/**
@@ -194,7 +246,7 @@ class BP_Birthdays_Notifications {
 	 * @return string
 	 */
 	private function get_birthday_email_content() {
-		$content = '<p>' . __( '<strong>Happy Birthday!</strong>', 'buddypress-birthdays' ) . '</p>' . "\n\n";
+		$content = '<p>' . '<strong>' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</strong>' . '</p>' . "\n\n";
 
 		$content .= '<p>' . __( 'Wishing you a fantastic birthday filled with joy, laughter, and wonderful moments! The entire {{{site.name}}} community sends you warm birthday wishes on your special day.', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 
@@ -271,11 +323,33 @@ class BP_Birthdays_Notifications {
 	}
 
 	/**
-	 * Install email templates.
+	 * Install email templates after BuddyPress installs its own.
 	 */
 	public function install_emails() {
-		$this->create_email_post( self::EMAIL_TYPE_BIRTHDAY );
-		$this->create_email_post( self::EMAIL_TYPE_ADMIN_SUMMARY );
+		$this->ensure_email_posts();
+	}
+
+	/**
+	 * Create each birthday email that has no published post, and describe its type.
+	 *
+	 * @return bool True when both email posts exist.
+	 */
+	private function ensure_email_posts() {
+		$installed = true;
+
+		foreach ( array( self::EMAIL_TYPE_BIRTHDAY, self::EMAIL_TYPE_ADMIN_SUMMARY ) as $email_type ) {
+			if ( ! $this->email_post_exists( $email_type ) && ! $this->create_email_post( $email_type ) ) {
+				$installed = false;
+				continue;
+			}
+
+			$term = get_term_by( 'slug', $email_type, bp_get_email_tax_type() );
+			if ( $term && '' === $term->description ) {
+				wp_update_term( $term->term_id, bp_get_email_tax_type(), array( 'description' => $this->get_email_description( $email_type ) ) );
+			}
+		}
+
+		return $installed;
 	}
 
 	/**
@@ -292,7 +366,7 @@ class BP_Birthdays_Notifications {
 	 */
 	public function maybe_install_emails() {
 		// Check if already installed.
-		if ( get_option( 'bp_birthdays_emails_installed' ) ) {
+		if ( self::EMAILS_INSTALLED_VERSION <= (int) get_option( 'bp_birthdays_emails_installed' ) ) {
 			return;
 		}
 
@@ -307,17 +381,10 @@ class BP_Birthdays_Notifications {
 			return;
 		}
 
-		// Install birthday greeting email.
-		if ( ! $this->email_post_exists( self::EMAIL_TYPE_BIRTHDAY ) ) {
-			$this->create_email_post( self::EMAIL_TYPE_BIRTHDAY );
+		// A failed insert leaves the flag unset, so the next admin_init retries.
+		if ( $this->ensure_email_posts() ) {
+			update_option( 'bp_birthdays_emails_installed', self::EMAILS_INSTALLED_VERSION );
 		}
-
-		// Install admin summary email.
-		if ( ! $this->email_post_exists( self::EMAIL_TYPE_ADMIN_SUMMARY ) ) {
-			$this->create_email_post( self::EMAIL_TYPE_ADMIN_SUMMARY );
-		}
-
-		update_option( 'bp_birthdays_emails_installed', true );
 	}
 
 	/**
@@ -355,12 +422,13 @@ class BP_Birthdays_Notifications {
 	 * Create an email post for BuddyPress.
 	 *
 	 * @param string $email_type Email type.
+	 * @return bool True when the post was created with its email type.
 	 */
 	private function create_email_post( $email_type ) {
 		$schema = $this->register_email_schema( array() );
 
 		if ( ! isset( $schema[ $email_type ] ) ) {
-			return;
+			return false;
 		}
 
 		$email_data = $schema[ $email_type ];
@@ -375,124 +443,556 @@ class BP_Birthdays_Notifications {
 			)
 		);
 
-		if ( $post_id && ! is_wp_error( $post_id ) ) {
-			// Set the email type term.
-			$term = term_exists( $email_type, bp_get_email_tax_type() );
-
-			if ( ! $term ) {
-				$term = wp_insert_term(
-					$email_type,
-					bp_get_email_tax_type(),
-					array( 'slug' => $email_type )
-				);
-			}
-
-			if ( ! is_wp_error( $term ) ) {
-				$term_id = is_array( $term ) ? $term['term_id'] : $term;
-				wp_set_object_terms( $post_id, (int) $term_id, bp_get_email_tax_type() );
-			}
+		if ( ! $post_id || is_wp_error( $post_id ) ) {
+			return false;
 		}
+
+		// Same call BuddyPress uses: creates the type term on first use.
+		$terms = wp_set_object_terms( $post_id, $email_type, bp_get_email_tax_type() );
+
+		if ( empty( $terms ) || is_wp_error( $terms ) ) {
+			// A post without its type is never sent; drop it so the retry
+			// does not leave a stray template behind.
+			wp_delete_post( $post_id, true );
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
-	 * Schedule the daily cron job.
+	 * The configured Send Time (HH:MM, site time), 09:00 when unset or invalid.
+	 *
+	 * @return string
+	 */
+	private function get_send_time() {
+		$send_time = (string) $this->get_setting( 'email_send_time', '09:00' );
+
+		return preg_match( '/^([01]\d|2[0-3]):[0-5]\d$/', $send_time ) ? $send_time : '09:00';
+	}
+
+	/**
+	 * Schedule the daily cron job at the configured Send Time.
+	 *
+	 * Runs on every init. When an event already exists at a different time of
+	 * day (the Send Time was changed, or a DST shift moved the fixed 24h
+	 * interval) it is cleared and scheduled again at the configured time.
 	 */
 	public function schedule_cron() {
-		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			$send_time = $this->get_setting( 'email_send_time', '09:00' );
-			$timezone  = wp_timezone();
+		$send_time = $this->get_send_time();
+		$timezone  = wp_timezone();
+		$next      = wp_next_scheduled( self::CRON_HOOK );
 
-			$now       = new DateTime( 'now', $timezone );
-			$scheduled = new DateTime( 'today ' . $send_time, $timezone );
-
-			if ( $now > $scheduled ) {
-				$scheduled->modify( '+1 day' );
+		if ( $next ) {
+			$next_time = ( new DateTime( '@' . $next ) )->setTimezone( $timezone )->format( 'H:i' );
+			if ( $next_time === $send_time ) {
+				return;
 			}
-
-			wp_schedule_event( $scheduled->getTimestamp(), 'daily', self::CRON_HOOK );
+			wp_clear_scheduled_hook( self::CRON_HOOK );
 		}
+
+		$now       = new DateTime( 'now', $timezone );
+		$scheduled = new DateTime( 'today ' . $send_time, $timezone );
+
+		if ( $now > $scheduled ) {
+			$scheduled->modify( '+1 day' );
+		}
+
+		wp_schedule_event( $scheduled->getTimestamp(), 'daily', self::CRON_HOOK );
 	}
 
 	/**
-	 * Clear sent tracking at the start of a new day.
+	 * Process the birthdays of one day - main cron handler.
+	 *
+	 * The tracking option holds, per day, which channels already went out for
+	 * each member, plus whether the admin summary was sent. A channel that
+	 * fails is left unrecorded and a retry for that same day is queued an hour
+	 * later, so a failed send is retried without repeating the channels that
+	 * worked, even when the retry runs after midnight. Older tracking rows (a
+	 * plain timestamp) count as fully sent.
+	 *
+	 * @param string $date Day to process (Y-m-d, site time). Empty for the
+	 *                     daily event: see resolve_target_date().
 	 */
-	public function maybe_clear_tracking() {
-		$last_date = get_option( 'bp_birthdays_last_check_date', '' );
-		$today     = wp_date( 'Y-m-d' );
+	public function process_daily_birthdays( $date = '' ) {
+		$this->resume_unfinished_fanouts();
 
-		if ( $last_date !== $today ) {
-			delete_option( self::SENT_TRACKING_OPTION );
-			update_option( 'bp_birthdays_last_check_date', $today );
-		}
-	}
-
-	/**
-	 * Process daily birthdays - main cron handler.
-	 */
-	public function process_daily_birthdays() {
-		$birthdays = $this->get_todays_birthdays();
+		$target    = $this->resolve_target_date( $date );
+		$day       = $target->format( 'Y-m-d' );
+		$birthdays = $this->get_todays_birthdays( $target );
 
 		if ( empty( $birthdays ) ) {
 			return;
 		}
 
-		$sent_tracking = get_option( self::SENT_TRACKING_OPTION, array() );
+		$this->processing_day = $day;
 
-		foreach ( $birthdays as $user_id => $birthday_data ) {
-			// Skip if already processed today.
-			if ( isset( $sent_tracking[ $user_id ] ) ) {
-				continue;
+		// Drop days older than yesterday and move a pre-2.5.1 shape, under the option's lock.
+		$housekeeping = $this->mutate_option(
+			self::SENT_TRACKING_OPTION,
+			function ( $tracking ) use ( $target ) {
+				return $this->normalise_tracking( $tracking, $target );
 			}
+		);
 
-			// Send email notification.
-			if ( $this->get_setting( 'email_enabled' ) ) {
-				$this->send_birthday_email( $user_id, $birthday_data );
-			}
+		$channels = array(
+			'email'        => 'send_birthday_email',
+			'activity'     => 'post_birthday_activity',
+			'notification' => 'send_bp_notifications',
+		);
+		$failed   = ! $housekeeping;
 
-			// Post to activity feed.
-			if ( $this->get_setting( 'activity_enabled' ) ) {
-				$this->post_birthday_activity( $user_id, $birthday_data );
-			}
-
-			// Send BP notifications.
-			if ( $this->get_setting( 'notification_enabled' ) ) {
-				$this->send_bp_notifications( $user_id, $birthday_data );
-			}
-
-			// Mark as processed.
-			$sent_tracking[ $user_id ] = time();
+		// A request that dies part way (a fatal, a killed worker) must not lose the rest of the
+		// day: arm the hourly retry first. A clean finish disarms it below.
+		$yesterday = current_datetime()->modify( '-1 day' )->format( 'Y-m-d' );
+		$armed     = $day >= $yesterday && ! wp_next_scheduled( self::CRON_HOOK, array( $day ) );
+		if ( $armed ) {
+			wp_schedule_single_event( time() + HOUR_IN_SECONDS, self::CRON_HOOK, array( $day ) );
 		}
 
-		update_option( self::SENT_TRACKING_OPTION, $sent_tracking );
+		foreach ( $birthdays as $user_id => $birthday_data ) {
+			// The member's row exists before any channel runs, so a chunk action that finishes the
+			// notifications later (or after a crash) always has a row to mark. A pre-2.5.1 row
+			// that is not an array means the member was fully processed.
+			$row = $this->tracking_row( $day, $user_id, true );
+			if ( false === $row || null === $row ) {
+				// The lock or the write failed: the member is not served and not skipped as done, so the
+				// hourly retry stays armed and tries again.
+				$failed = true;
+				continue;
+			}
+			if ( ! is_array( $row ) ) {
+				continue; // Pre-2.5.1 row: fully processed.
+			}
 
-		// Send admin summary if enabled.
-		if ( $this->get_setting( 'admin_email_enabled' ) && ! empty( $birthdays ) ) {
-			$this->send_admin_summary( $birthdays );
+			foreach ( $channels as $channel => $method ) {
+				if ( ! $this->get_setting( $channel . '_enabled' ) ) {
+					continue;
+				}
+
+				// The notification fan-out is idempotent and holds its own lock; the email and the
+				// activity post are claimed first, so two overlapping runs can never both send.
+				if ( 'notification' !== $channel ) {
+					$claimed = $this->claim_slot( $day, array( $user_id, $channel ) );
+					if ( null === $claimed ) {
+						$failed = true; // The claim could not be recorded: retry, never send unclaimed.
+						continue;
+					}
+					if ( ! $claimed ) {
+						continue; // Done already, or another run is sending it right now.
+					}
+				} elseif ( $this->slot_is_done( $day, array( $user_id, $channel ) ) ) {
+					continue;
+				}
+
+				$sent = ( 'email' === $channel )
+					? $this->in_recipient_locale( $user_id, self::EMAIL_TYPE_BIRTHDAY, array( $this, $method ), array( $user_id, $birthday_data ) )
+					: $this->$method( $user_id, $birthday_data );
+
+				if ( 'pending' === $sent ) {
+					continue; // A later chunk finishes it; the scheduled action marks the channel done.
+				}
+
+				if ( 'notification' === $channel ) {
+					if ( $sent ) {
+						if ( ! $this->finish_slot( $day, array( $user_id, $channel ), true ) ) {
+							$failed = true; // Idempotent: the retry finds nothing left to write and marks it.
+						}
+					} else {
+						$failed = true;
+					}
+					continue;
+				}
+
+				// A send that succeeded but could not be recorded is not repeated by the retry: its
+				// claim stays in place and is logged by mutate_option().
+				$this->finish_slot( $day, array( $user_id, $channel ), (bool) $sent );
+				if ( ! $sent ) {
+					$failed = true;
+				}
+			}
+		}
+
+		// One admin summary per day, however many times (or how many runs at once) the cron runs.
+		$summary_claim = $this->get_setting( 'admin_email_enabled' ) ? $this->claim_slot( $day, array( 'admin_summary' ) ) : false;
+		if ( null === $summary_claim ) {
+			$failed = true;
+		}
+		if ( $summary_claim ) {
+			$summary_to   = (string) $this->get_setting( 'admin_email', get_option( 'admin_email' ) );
+			$summary_user = get_user_by( 'email', $summary_to );
+
+			$sent = $this->in_recipient_locale( $summary_user ? $summary_user->ID : 0, self::EMAIL_TYPE_ADMIN_SUMMARY, array( $this, 'send_admin_summary' ), array( $birthdays ) );
+			$this->finish_slot( $day, array( 'admin_summary' ), (bool) $sent );
+			if ( ! $sent ) {
+				$failed = true;
+			}
+		}
+
+		// Retries stop once the day is older than yesterday, the same window the tracking keeps
+		// (normalise_tracking()). A clean finish removes the retry armed above.
+		if ( ! $failed && $armed ) {
+			wp_clear_scheduled_hook( self::CRON_HOOK, array( $day ) );
 		}
 	}
 
 	/**
-	 * Get today's birthdays.
+	 * Run a change to one of the plugin's option arrays so no other run's change is lost.
 	 *
-	 * @return array Array of user_id => birthday_data.
+	 * Two runs can overlap (the daily check, its hourly retry, a safety action, Action Scheduler
+	 * and WP-Cron at once). The option is re-read INSIDE a short lock and only the caller's own
+	 * key is changed, so a run never overwrites another's work with a copy it read earlier.
+	 *
+	 * @param string   $option Option name.
+	 * @param callable $change Receives the fresh array, returns the array to store.
+	 * @return bool False when the lock could not be taken (the change was not made).
 	 */
-	private function get_todays_birthdays() {
+	private function mutate_option( $option, $change ) {
+		$lock = 'bp_birthdays_lock_opt_' . md5( $option );
+
+		if ( ! $this->lock_acquire( $lock, 30, 10 ) ) {
+			$this->log( 'BP Birthdays: could not lock ' . $option . '; change skipped.' );
+			return false;
+		}
+
+		$stored = false;
+
+		try {
+			// Two tries: a database deadlock rolls the write back without telling update_option()
+			// anything useful (it also returns false for an unchanged value), so each write is
+			// checked by reading the option again.
+			for ( $attempt = 0; $attempt < 2 && ! $stored; $attempt++ ) {
+				wp_cache_delete( $option, 'options' );
+				wp_cache_delete( 'notoptions', 'options' );
+				$current = get_option( $option, array() );
+				$current = is_array( $current ) ? $current : array();
+				$new     = $change( $current );
+
+				if ( $new !== $current ) {
+					if ( array() === $new ) {
+						delete_option( $option );
+					} else {
+						update_option( $option, $new, false );
+					}
+
+					wp_cache_delete( $option, 'options' );
+					wp_cache_delete( 'notoptions', 'options' );
+					$check = get_option( $option, array() );
+					$check = is_array( $check ) ? $check : array();
+					$stored = ( $check === $new );
+				} else {
+					$stored = true;
+				}
+			}
+		} finally {
+			$this->lock_release( $lock );
+		}
+
+		if ( ! $stored ) {
+			$this->log( 'BP Birthdays: could not store ' . $option . ' after retrying; change not made.' );
+		}
+
+		return $stored;
+	}
+
+	/**
+	 * Take a lock: one INSERT IGNORE on the options table's unique key, so only one run gets it.
+	 *
+	 * A lock older than $stale seconds belongs to a dead run and is taken over with a
+	 * compare-and-swap, so only one run takes it over.
+	 *
+	 * @param string $name  Lock option name.
+	 * @param int    $stale Seconds after which a lock is a dead run's.
+	 * @param int    $wait  Seconds to keep trying; 0 tries once.
+	 * @return bool Whether this run holds the lock.
+	 */
+	private function lock_acquire( $name, $stale, $wait = 0 ) {
 		global $wpdb;
 
-		$field_id = $this->get_setting( 'default_field_id' );
+		$deadline = microtime( true ) + $wait;
 
-		if ( empty( $field_id ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$field_id = $wpdb->get_var(
-				"SELECT id FROM {$wpdb->prefix}bp_xprofile_fields WHERE type IN ('datebox', 'birthdate') LIMIT 1"
+		do {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- A lock must be atomic; no WordPress API gives INSERT IGNORE.
+			if ( 1 === (int) $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $name, (string) time() ) ) ) {
+				return true;
+			}
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Same.
+			$held = (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) );
+			if ( '' !== $held && time() - (int) $held >= $stale ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Compare-and-swap takeover.
+				if ( 1 === (int) $wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->options} SET option_value = %s WHERE option_name = %s AND option_value = %s", (string) time(), $name, $held ) ) ) {
+					return true;
+				}
+			}
+
+			if ( microtime( true ) >= $deadline ) {
+				return false;
+			}
+			usleep( 20000 );
+		} while ( true );
+	}
+
+	/**
+	 * Release a lock taken with lock_acquire().
+	 *
+	 * @param string $name Lock option name.
+	 */
+	private function lock_release( $name ) {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Pairs with lock_acquire().
+		$wpdb->delete( $wpdb->options, array( 'option_name' => $name ) );
+	}
+
+	/**
+	 * Seconds since a held lock was taken, or -1 when nobody holds it.
+	 *
+	 * @param string $name Lock option name.
+	 * @return int
+	 */
+	private function lock_age( $name ) {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Reads a lock row.
+		$held = (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) );
+
+		return '' === $held ? -1 : max( 0, time() - (int) $held );
+	}
+
+	/**
+	 * The member's tracking row for a day, read fresh; optionally created first.
+	 *
+	 * @param string $day     Day (Y-m-d).
+	 * @param int    $user_id Member.
+	 * @param bool   $create  Create an empty row when there is none.
+	 * @return mixed The row (an array), a non-array for a pre-2.5.1 row, null when there is none,
+	 *               or false when the row could not be created (lock or write failed).
+	 */
+	private function tracking_row( $day, $user_id, $create = false ) {
+		if ( $create ) {
+			$made = $this->mutate_option(
+				self::SENT_TRACKING_OPTION,
+				static function ( $tracking ) use ( $day, $user_id ) {
+					if ( ! isset( $tracking[ $day ][ $user_id ] ) ) {
+						$tracking[ $day ][ $user_id ] = array();
+					}
+					return $tracking;
+				}
 			);
+
+			if ( ! $made ) {
+				return false;
+			}
 		}
+
+		wp_cache_delete( self::SENT_TRACKING_OPTION, 'options' );
+		$tracking = get_option( self::SENT_TRACKING_OPTION, array() );
+
+		return isset( $tracking[ $day ][ $user_id ] ) ? $tracking[ $day ][ $user_id ] : null;
+	}
+
+	/**
+	 * Read one tracking slot: a member's channel, or the day's admin summary.
+	 *
+	 * A positive time means done; a negative time is a claim (-time of the claim) that is in
+	 * progress, and stops being one after 15 minutes so a crashed send can be taken again.
+	 *
+	 * @param string $day  Day (Y-m-d).
+	 * @param array  $path [ user_id, channel ] or [ 'admin_summary' ].
+	 * @return int
+	 */
+	private function slot_value( $day, array $path ) {
+		wp_cache_delete( self::SENT_TRACKING_OPTION, 'options' );
+		$tracking = get_option( self::SENT_TRACKING_OPTION, array() );
+		$day_rows = isset( $tracking[ $day ] ) && is_array( $tracking[ $day ] ) ? $tracking[ $day ] : array();
+		$value    = self::path_get( $day_rows, $path );
+
+		return is_array( $value ) ? 0 : (int) $value;
+	}
+
+	/**
+	 * Read a nested value; null when any step is missing.
+	 *
+	 * @param array $data Array to read.
+	 * @param array $path Keys, outermost first.
+	 * @return mixed
+	 */
+	private static function path_get( array $data, array $path ) {
+		foreach ( $path as $step ) {
+			if ( ! is_array( $data ) || ! array_key_exists( $step, $data ) ) {
+				return null;
+			}
+			$data = $data[ $step ];
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Set (or, with null, remove) a nested value and return the new array.
+	 *
+	 * @param array $data  Array to change.
+	 * @param array $path  Keys, outermost first.
+	 * @param mixed $value New value; null removes the key.
+	 * @return array
+	 */
+	private static function path_set( array $data, array $path, $value ) {
+		$key = array_shift( $path );
+
+		if ( $path ) {
+			$child        = isset( $data[ $key ] ) && is_array( $data[ $key ] ) ? $data[ $key ] : array();
+			$data[ $key ] = self::path_set( $child, $path, $value );
+		} elseif ( null === $value ) {
+			unset( $data[ $key ] );
+		} else {
+			$data[ $key ] = $value;
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Whether a slot is finished.
+	 *
+	 * @param string $day  Day (Y-m-d).
+	 * @param array  $path Slot path.
+	 * @return bool
+	 */
+	private function slot_is_done( $day, array $path ) {
+		return $this->slot_value( $day, $path ) > 0;
+	}
+
+	/**
+	 * Claim a slot before sending, so two runs never both send it.
+	 *
+	 * @param string $day  Day (Y-m-d).
+	 * @param array  $path Slot path.
+	 * @return bool|null True when this run now owns the send; false when it is done or in progress;
+	 *                    null when the claim could not be recorded (lock or write failed).
+	 */
+	private function claim_slot( $day, array $path ) {
+		$won = false;
+
+		$stored = $this->mutate_option(
+			self::SENT_TRACKING_OPTION,
+			static function ( $tracking ) use ( $day, $path, &$won ) {
+				$won      = false;
+				$day_rows = isset( $tracking[ $day ] ) && is_array( $tracking[ $day ] ) ? $tracking[ $day ] : array();
+				$value    = (int) self::path_get( $day_rows, $path );
+
+				if ( $value > 0 || ( $value < 0 && time() + $value < 15 * MINUTE_IN_SECONDS ) ) {
+					return $tracking; // Done, or someone is sending it.
+				}
+
+				$tracking[ $day ] = self::path_set( $day_rows, $path, -time() );
+				$won              = true;
+
+				return $tracking;
+			}
+		);
+
+		if ( ! $stored ) {
+			return null;
+		}
+
+		return $won;
+	}
+
+	/**
+	 * Settle a claimed slot: done, or released so a retry can claim it.
+	 *
+	 * @param string $day  Day (Y-m-d).
+	 * @param array  $path Slot path.
+	 * @param bool   $done Whether the send succeeded.
+	 * @return bool Whether the change was stored.
+	 */
+	private function finish_slot( $day, array $path, $done ) {
+		return $this->mutate_option(
+			self::SENT_TRACKING_OPTION,
+			static function ( $tracking ) use ( $day, $path, $done ) {
+				$day_rows = isset( $tracking[ $day ] ) && is_array( $tracking[ $day ] ) ? $tracking[ $day ] : array();
+
+				$tracking[ $day ] = $done ? self::path_set( $day_rows, $path, time() ) : self::path_set( $day_rows, $path, null );
+
+				return $tracking;
+			}
+		);
+	}
+
+	/**
+	 * The day a cron run processes.
+	 *
+	 * A retry passes its own day. The daily event runs at the Send Time, so a
+	 * run before today's Send Time is a late run of yesterday's event (a quiet
+	 * site, or a send time just before midnight) and processes yesterday.
+	 *
+	 * @param string $date Y-m-d from a retry event, or empty.
+	 * @return DateTimeImmutable Midnight of the day, site timezone.
+	 */
+	private function resolve_target_date( $date ) {
+		$now = current_datetime();
+
+		$target = is_string( $date ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date )
+			? DateTimeImmutable::createFromFormat( '!Y-m-d', $date, $now->getTimezone() )
+			: false;
+
+		if ( ! $target ) {
+			$target = $now->setTime( 0, 0 );
+			if ( $now->format( 'H:i' ) < $this->get_send_time() ) {
+				$target = $target->modify( '-1 day' );
+			}
+		}
+
+		return $target;
+	}
+
+	/**
+	 * Bring a tracking array to the current shape: day keys only, nothing older than yesterday.
+	 *
+	 * @param mixed             $tracking Stored value.
+	 * @param DateTimeImmutable $target   Day being processed.
+	 * @return array Y-m-d => tracking rows.
+	 */
+	private function normalise_tracking( $tracking, DateTimeImmutable $target ) {
+		if ( ! is_array( $tracking ) ) {
+			$tracking = array();
+		}
+
+		if ( $tracking && ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) array_key_first( $tracking ) ) ) {
+			$legacy_day = (string) get_option( 'bp_birthdays_last_check_date', '' );
+			$tracking   = '' !== $legacy_day ? array( $legacy_day => $tracking ) : array();
+			delete_option( 'bp_birthdays_last_check_date' );
+		}
+
+		$oldest = min( $target->format( 'Y-m-d' ), current_datetime()->modify( '-1 day' )->format( 'Y-m-d' ) );
+		foreach ( array_keys( $tracking ) as $day ) {
+			if ( (string) $day < $oldest ) {
+				unset( $tracking[ $day ] );
+			}
+		}
+
+		return $tracking;
+	}
+
+	/**
+	 * Get the birthdays celebrated on a day.
+	 *
+	 * @param DateTimeImmutable $target Day, site timezone.
+	 * @return array Array of user_id => birthday_data.
+	 */
+	private function get_todays_birthdays( DateTimeImmutable $target ) {
+		global $wpdb;
+
+		$field_id = BP_Birthdays_Helpers::get_birthday_field_id();
 
 		if ( empty( $field_id ) ) {
 			return array();
 		}
 
-		$today_month_day = wp_date( 'm-d' );
+		// One or two stored month-days: Feb 29 birthdays are celebrated on
+		// Feb 28 in other years, the same rule the widget lists them by.
+		$month_days = BP_Birthdays_Helpers::birthday_month_days( $target );
 
 		/*
 		 * BB-2 scale fix: scope the scan to the configured birthday field_id,
@@ -512,8 +1012,7 @@ class BP_Birthdays_Notifications {
 		 * column or a parallel index table, which is out of scope here and would
 		 * change BuddyPress-owned storage. The field_id scoping keeps the per-run
 		 * cost proportional to "members with a birthday set", not "all xProfile
-		 * data rows". Date-match semantics (timezone via wp_date, leap-day) are
-		 * unchanged.
+		 * data rows".
 		 */
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$results = $wpdb->get_results(
@@ -523,9 +1022,10 @@ class BP_Birthdays_Notifications {
 				JOIN {$wpdb->users} u ON d.user_id = u.ID
 				WHERE d.field_id = %d
 				AND d.value != ''
-				AND DATE_FORMAT(d.value, '%%m-%%d') = %s",
+				AND DATE_FORMAT(d.value, '%%m-%%d') IN (%s, %s)",
 				$field_id,
-				$today_month_day
+				$month_days[0],
+				end( $month_days )
 			),
 			ARRAY_A
 		);
@@ -537,13 +1037,13 @@ class BP_Birthdays_Notifications {
 				// GDPR: skip members who opted out of showing their birthday.
 				// This single gate excludes them from greeting emails, activity
 				// posts, BuddyPress notifications and the admin summary at once.
-				if ( class_exists( 'BP_Birthdays_Helpers' ) && BP_Birthdays_Helpers::is_user_opted_out( $row['user_id'] ) ) {
+				if ( BP_Birthdays_Helpers::is_user_opted_out( $row['user_id'] ) ) {
 					continue;
 				}
 
-				$birth_date = new DateTime( $row['value'] );
-				$today      = new DateTime();
-				$age        = $today->format( 'Y' ) - $birth_date->format( 'Y' );
+				// The age turned on this day: right for a late or retried run
+				// and for a Feb 29 birthday kept on Feb 28.
+				$age = (int) $target->format( 'Y' ) - (int) substr( $row['value'], 0, 4 );
 
 				$birthdays[ $row['user_id'] ] = array(
 					'user_id'      => $row['user_id'],
@@ -551,6 +1051,12 @@ class BP_Birthdays_Notifications {
 					'user_email'   => $row['user_email'],
 					'birth_date'   => $row['value'],
 					'age'          => $age,
+					// BuddyPress field privacy, honoured per channel: the
+					// activity post, notification recipients and admin summary
+					// only see a birthday the member allows them to see.
+					'visibility'   => function_exists( 'xprofile_get_field_visibility_level' )
+						? xprofile_get_field_visibility_level( $field_id, (int) $row['user_id'] )
+						: 'public',
 				);
 			}
 		}
@@ -561,33 +1067,50 @@ class BP_Birthdays_Notifications {
 	/**
 	 * Send birthday email to user using BuddyPress email system.
 	 *
+	 * The greeting goes only to the member, so it is sent whatever their field
+	 * visibility (the opt-out still removes them from every channel).
+	 *
 	 * @param int   $user_id User ID.
 	 * @param array $birthday_data Birthday data.
+	 * @return bool Whether the greeting was handed to a mailer.
 	 */
 	private function send_birthday_email( $user_id, $birthday_data ) {
 		$user = get_userdata( $user_id );
 
 		if ( ! $user || empty( $user->user_email ) ) {
-			return;
+			return true; // Nothing to send to; retrying would not help.
 		}
 
-		// Use BuddyPress email system if available.
 		if ( function_exists( 'bp_send_email' ) ) {
-			$args = array(
-				'tokens' => array(
-					'recipient.name' => $birthday_data['display_name'],
-					'recipient.url'  => bp_core_get_user_domain( $user_id ),
-					'birthday.age'   => $birthday_data['age'],
-					'site.name'      => get_bloginfo( 'name' ),
-					'site.url'       => home_url(),
-				),
+			$result = bp_send_email(
+				self::EMAIL_TYPE_BIRTHDAY,
+				$user_id,
+				array(
+					'tokens' => array(
+						'recipient.name' => $birthday_data['display_name'],
+						'recipient.url'  => BP_Birthdays_Helpers::get_user_url( $user_id ),
+						'birthday.age'   => $birthday_data['age'],
+						'site.name'      => get_bloginfo( 'name' ),
+						'site.url'       => home_url(),
+					),
+				)
 			);
 
-			bp_send_email( self::EMAIL_TYPE_BIRTHDAY, $user_id, $args );
-		} else {
-			// Fallback to wp_mail if BP emails not available.
-			$this->send_birthday_email_fallback( $user_id, $birthday_data );
+			if ( ! is_wp_error( $result ) ) {
+				return true;
+			}
+
+			// A missing or trashed BP email template, or a delivery error:
+			// send the plain greeting instead of dropping it.
+			$this->log_failure( 'birthday greeting to user ' . $user_id . ' via BuddyPress', $result );
 		}
+
+		$sent = $this->send_birthday_email_fallback( $user_id, $birthday_data );
+		if ( ! $sent ) {
+			$this->log_failure( 'birthday greeting to user ' . $user_id . ' via wp_mail' );
+		}
+
+		return $sent;
 	}
 
 	/**
@@ -595,6 +1118,7 @@ class BP_Birthdays_Notifications {
 	 *
 	 * @param int   $user_id User ID.
 	 * @param array $birthday_data Birthday data.
+	 * @return bool wp_mail() result.
 	 */
 	private function send_birthday_email_fallback( $user_id, $birthday_data ) {
 		$user = get_userdata( $user_id );
@@ -633,8 +1157,10 @@ class BP_Birthdays_Notifications {
 		) . '</p>';
 
 		add_filter( 'wp_mail_content_type', array( $this, 'set_html_content_type' ) );
-		wp_mail( $user->user_email, $subject, $message );
+		$sent = wp_mail( $user->user_email, $subject, $message );
 		remove_filter( 'wp_mail_content_type', array( $this, 'set_html_content_type' ) );
+
+		return $sent;
 	}
 
 	/**
@@ -649,12 +1175,20 @@ class BP_Birthdays_Notifications {
 	/**
 	 * Post birthday to activity feed.
 	 *
+	 * The sitewide feed can be read by visitors, so only a birthday whose
+	 * field visibility is public is announced there.
+	 *
 	 * @param int   $user_id User ID.
 	 * @param array $birthday_data Birthday data.
+	 * @return bool False only when BuddyPress failed to save the post.
 	 */
 	private function post_birthday_activity( $user_id, $birthday_data ) {
 		if ( ! function_exists( 'bp_activity_add' ) || ! bp_is_active( 'activity' ) ) {
-			return;
+			return true;
+		}
+
+		if ( ! BP_Birthdays_Helpers::visibility_allows( $birthday_data['visibility'], $user_id, 0 ) ) {
+			return true;
 		}
 
 		// Cron/CLI fallback: BP_Birthdays_Admin (which owns the canonical
@@ -668,7 +1202,7 @@ class BP_Birthdays_Notifications {
 			__( "Today is {name}'s birthday! Send your wishes!", 'buddypress-birthdays' )
 		);
 
-		$profile_url = bp_core_get_user_domain( $user_id );
+		$profile_url = BP_Birthdays_Helpers::get_user_url( $user_id );
 		$name_link   = '<a href="' . esc_url( $profile_url ) . '">' . esc_html( $birthday_data['display_name'] ) . '</a>';
 
 		$replacements = array(
@@ -679,7 +1213,7 @@ class BP_Birthdays_Notifications {
 
 		$action = str_replace( array_keys( $replacements ), array_values( $replacements ), $message );
 
-		bp_activity_add(
+		return (bool) bp_activity_add(
 			array(
 				'user_id'   => $user_id,
 				'action'    => $action,
@@ -707,82 +1241,442 @@ class BP_Birthdays_Notifications {
 	}
 
 	/**
+	 * Record a failed birthday send in the PHP error log.
+	 *
+	 * Always logged (not WP_DEBUG-gated): a lost email is something the site
+	 * owner needs to find, and it only fires on failure.
+	 *
+	 * @param string        $what  What failed.
+	 * @param WP_Error|null $error The error, when there is one.
+	 * @return void
+	 */
+	private function log_failure( $what, $error = null ) {
+		$detail = is_wp_error( $error ) ? ' (' . $error->get_error_code() . ': ' . $error->get_error_message() . ')' : '';
+
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Failure record for the site owner.
+		error_log( 'BP Birthdays: could not send ' . $what . $detail . '.' );
+	}
+
+	/**
 	 * Send BuddyPress notifications about birthday.
+	 *
+	 * Recipients are limited to members who may see the birthday under the
+	 * field's visibility, and members who opted out never get these pings.
 	 *
 	 * @param int   $user_id User ID.
 	 * @param array $birthday_data Birthday data.
+	 * @return bool|string True when done, false when BuddyPress could not save a row (the retry
+	 *                     writes it), 'pending' while later chunks are queued.
 	 */
 	private function send_bp_notifications( $user_id, $birthday_data ) {
 		if ( ! function_exists( 'bp_notifications_add_notification' ) || ! bp_is_active( 'notifications' ) ) {
-			return;
+			return true;
 		}
 
-		$friends_only = $this->get_setting( 'notification_friends_only' );
+		// "Only Me" (BuddyPress stores it as adminsonly, BuddyBoss as onlyme)
+		// is never broadcast, not even to the admins who can see the profile, and
+		// neither is a level nobody registered.
+		$visibility = $birthday_data['visibility'];
+		if ( in_array( $visibility, array( 'onlyme', 'adminsonly' ), true ) || ! BP_Birthdays_Helpers::is_known_visibility( $visibility ) ) {
+			return true;
+		}
 
-		if ( $friends_only && function_exists( 'friends_get_friend_user_ids' ) ) {
-			$recipients = friends_get_friend_user_ids( $user_id );
-		} else {
+		$day = '' !== $this->processing_day ? $this->processing_day : BP_Birthdays_Helpers::today()->format( 'Y-m-d' );
+
+		return $this->notify_chunk( $day, $user_id, $visibility );
+	}
+
+	/**
+	 * Write one chunk of a member's birthday notifications and arrange the rest.
+	 *
+	 * The audience is every member BuddyPress lets see the birthday: all members, or the
+	 * member's friends for the Friends level and the Notify Friends Only setting. It is read in
+	 * chunks of bb_birthdays_notification_recipient_limit members by ascending ID after a
+	 * cursor, and each chunk is filtered for visibility and opt-out, so a restricted level never
+	 * loses its audience to a cut made before the filter. The cursor is kept in a temporary
+	 * option until the last chunk; each further chunk is its own scheduled action.
+	 *
+	 * @param string $day        Day (Y-m-d) the birthday belongs to.
+	 * @param int    $user_id    Birthday member.
+	 * @param string $visibility Visibility level of the birthday.
+	 * @return bool|string True when every chunk is written, false when BuddyPress could not
+	 *                     save a row (retried), 'pending' when more chunks are queued.
+	 */
+	private function notify_chunk( $day, $user_id, $visibility ) {
+		global $wpdb;
+
+		// A lock older than 3 minutes is a crashed run's (a chunk takes seconds) and is taken over;
+		// a fresh one means another run is on this birthday, so come back once it would have expired.
+		$lock = 'bp_birthdays_lock_' . md5( $day . ':' . $user_id );
+		if ( ! $this->lock_acquire( $lock, 3 * MINUTE_IN_SECONDS ) ) {
+			// The run that holds the lock queues the next chunk itself: leave its schedule alone, and
+			// only add an attempt when nothing at all is pending.
+			if ( ! $this->has_pending_notification_chunk( $day, $user_id ) ) {
+				$this->queue_notification_chunk( $day, $user_id, max( 30, 3 * MINUTE_IN_SECONDS - $this->lock_age( $lock ) + 30 ), false );
+			}
+			return 'pending';
+		}
+
+		try {
+			$friends_active = function_exists( 'friends_get_friend_user_ids' ) && bp_is_active( 'friends' );
+			$friends_only   = $this->get_setting( 'notification_friends_only' ) || 'friends' === $visibility;
+
+			// Friends only, by setting or by field privacy. Without the Friends component nobody
+			// qualifies: never fall through to every member.
+			if ( $friends_only && ! $friends_active ) {
+				return true;
+			}
+
 			/**
-			 * Filter the maximum number of recipients for the non-friends
-			 * birthday notification fan-out.
+			 * Filters how many members one chunk of the birthday notification fan-out reads.
 			 *
-			 * BB-4: previously hard-capped at 500 with no notice. The cap still
-			 * exists to protect against unbounded notification writes on very
-			 * large communities, but it is now adjustable and the truncation is
-			 * logged below instead of being silent.
+			 * Every eligible member is notified whatever the value; it only sets the size of the
+			 * scheduled chunks. Below 1 uses 500.
 			 *
-			 * @param int $limit   Default 500. Use 0 / -1 for no cap (unbounded).
-			 * @param int $user_id The birthday user whose birthday is being announced.
+			 * @param int $size    Default 500.
+			 * @param int $user_id The birthday member.
 			 */
-			$recipient_limit = (int) apply_filters( 'bb_birthdays_notification_recipient_limit', 500, $user_id );
-			$query_number    = ( $recipient_limit > 0 ) ? $recipient_limit : -1;
+			$size = (int) apply_filters( 'bb_birthdays_notification_recipient_limit', 500, $user_id );
+			$size = $size < 1 ? 500 : $size;
 
-			$recipients = get_users(
-				array(
-					'fields'  => 'ID',
-					'number'  => $query_number,
-					'exclude' => array( $user_id ),
+			$key    = $day . ':' . $user_id;
+			$entry  = $this->get_state_entry( $key );
+			$cursor = isset( $entry['cursor'] ) ? (int) $entry['cursor'] : 0;
+
+			if ( $friends_only ) {
+				$ids = array_map( 'absint', (array) friends_get_friend_user_ids( $user_id ) );
+				sort( $ids );
+				$chunk = array_slice( array_values( array_filter( $ids, static function ( $id ) use ( $cursor ) {
+					return $id > $cursor;
+				} ) ), 0, $size );
+			} else {
+				// Primary key, ascending, after the cursor: one cheap indexed read per chunk.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cursor read of the core users table, no WP API pages by ID.
+				$chunk = array_map( 'absint', (array) $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->users} WHERE ID > %d AND ID <> %d ORDER BY ID ASC LIMIT %d", $cursor, $user_id, $size ) ) );
+			}
+
+			$last_id = $chunk ? max( $chunk ) : $cursor;
+			$more    = count( $chunk ) >= $size;
+
+			// A full chunk means more may follow. Record the fan-out and queue a safety attempt
+			// BEFORE the rows are written, so a fatal or a killed request part way leaves a pending
+			// action that takes over the stale lock and carries on from the saved cursor.
+			if ( $more ) {
+				if ( ! $this->set_state_entry( $key, $cursor ) ) {
+					return false; // No record, no safety net: write nothing now; the retry starts again.
+				}
+				$this->queue_notification_chunk( $day, $user_id, 4 * MINUTE_IN_SECONDS );
+			}
+
+			// The users of this chunk in one query: BuddyPress and other plugins read them per row.
+			cache_users( $chunk );
+
+			// One meta query for the chunk: the visibility rules, add-ons hooked into them, and the
+			// opt-out below all read user meta.
+			update_meta_cache( 'user', $chunk );
+
+			$recipients = $chunk;
+			if ( $recipients && $friends_active && method_exists( 'BP_Friends_Friendship', 'update_bp_friends_cache' ) ) {
+				BP_Friends_Friendship::update_bp_friends_cache( $user_id, $recipients );
+			}
+			$recipients = array_values(
+				array_filter(
+					$recipients,
+					static function ( $recipient_id ) use ( $visibility, $user_id ) {
+						return BP_Birthdays_Helpers::visibility_allows( $visibility, $user_id, $recipient_id );
+					}
 				)
 			);
 
-			// Surface the truncation rather than silently dropping recipients.
-			// Gated on WP_DEBUG up front so the count_users() call below (which
-			// is itself expensive on large sites) only runs on debug builds.
-			if ( $recipient_limit > 0 && count( $recipients ) >= $recipient_limit
-				&& defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				$total_members = (int) count_users()['total_users'];
+			// GDPR: a member who opted out gets no birthday notifications either.
+			$recipients = array_values(
+				array_filter(
+					$recipients,
+					static function ( $recipient_id ) {
+						return ! BP_Birthdays_Helpers::is_user_opted_out( $recipient_id );
+					}
+				)
+			);
 
-				if ( $total_members - 1 > $recipient_limit ) {
-					$this->log(
-						sprintf(
-							/* translators: 1: cap, 2: total candidate members, 3: birthday user id */
-							'BP Birthdays: non-friends notification fan-out truncated to %1$d of %2$d eligible members for birthday user %3$d. Raise via the "bb_birthdays_notification_recipient_limit" filter.',
-							$recipient_limit,
-							max( 0, $total_members - 1 ),
-							$user_id
+			// BuddyPress refuses (returns false) to add a notification when the member still has an
+			// unread one for the same item and action, which is what a birthday is every year, so
+			// duplicates are allowed and today's rows are skipped here, one query for the chunk.
+			// That also makes a re-run, an overlap or a resumed chunk write nothing twice.
+			$failed = false;
+			if ( $recipients ) {
+				$start_utc = BP_Birthdays_Helpers::today()->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
+				$existing  = BP_Notifications_Notification::get(
+					array(
+						'user_id'          => $recipients,
+						'item_id'          => $user_id,
+						'component_name'   => 'birthdays',
+						'component_action' => 'birthday_today',
+						'is_new'           => 'both',
+						'per_page'         => false,
+						'date_query'       => array( array( 'after' => $start_utc, 'inclusive' => true ) ),
+					)
+				);
+				$have      = array_map( 'intval', wp_list_pluck( (array) $existing, 'user_id' ) );
+
+				foreach ( array_diff( $recipients, $have ) as $recipient_id ) {
+					$id = bp_notifications_add_notification(
+						array(
+							'user_id'           => $recipient_id,
+							'item_id'           => $user_id,
+							'secondary_item_id' => 0,
+							'component_name'    => 'birthdays',
+							'component_action'  => 'birthday_today',
+							'date_notified'     => bp_core_current_time(),
+							'is_new'            => 1,
+							'allow_duplicate'   => true,
 						)
 					);
+
+					if ( ! $id ) {
+						$failed = true;
+					}
 				}
+			}
+
+			if ( $failed ) {
+				// The cursor stays and the safety attempt is already queued: it rewrites this chunk
+				// and skips what is saved.
+				$this->log( sprintf( 'BP Birthdays: a birthday notification for member %d could not be saved; it will be retried.', $user_id ) );
+				return false;
+			}
+
+			if ( ! $more ) {
+				$cleared = $this->clear_state_entry( $key );
+				$this->clear_notification_chunk( $day, $user_id );
+				// A record that could not be removed is harmless (a later chunk finds nothing left to
+				// write), but report it so the channel is retried and marked.
+				return $cleared;
+			}
+
+			if ( ! $this->set_state_entry( $key, $last_id ) ) {
+				return false; // The cursor did not advance: the safety attempt repeats this chunk, writing nothing twice.
+			}
+			$this->queue_notification_chunk( $day, $user_id );
+
+			return 'pending';
+		} finally {
+			$this->lock_release( $lock );
+		}
+	}
+
+	/**
+	 * All recorded fan-outs, read fresh from the database.
+	 *
+	 * @return array Key (Y-m-d:user_id) => [ cursor, updated ].
+	 */
+	private function get_states() {
+		wp_cache_delete( self::NOTIFY_STATE_OPTION, 'options' );
+		wp_cache_delete( 'notoptions', 'options' );
+		$states = get_option( self::NOTIFY_STATE_OPTION, array() );
+
+		return is_array( $states ) ? $states : array();
+	}
+
+	/**
+	 * One fan-out's recorded progress, or null when none is recorded.
+	 *
+	 * @param string $key Y-m-d:user_id.
+	 * @return array|null
+	 */
+	private function get_state_entry( $key ) {
+		$states = $this->get_states();
+
+		return isset( $states[ $key ] ) && is_array( $states[ $key ] ) ? $states[ $key ] : null;
+	}
+
+	/**
+	 * Record a fan-out's progress. Only this key changes, under the option's lock.
+	 *
+	 * @param string $key    Y-m-d:user_id.
+	 * @param int    $cursor Last member ID written.
+	 * @return bool Whether the record was stored.
+	 */
+	private function set_state_entry( $key, $cursor ) {
+		return $this->mutate_option(
+			self::NOTIFY_STATE_OPTION,
+			static function ( $states ) use ( $key, $cursor ) {
+				$states[ $key ] = array(
+					'cursor'  => (int) $cursor,
+					'updated' => time(),
+				);
+				return $states;
+			}
+		);
+	}
+
+	/**
+	 * Remove a finished fan-out's record. Only this key changes, under the option's lock.
+	 *
+	 * @param string $key Y-m-d:user_id.
+	 * @return bool Whether the change was stored.
+	 */
+	private function clear_state_entry( $key ) {
+		return $this->mutate_option(
+			self::NOTIFY_STATE_OPTION,
+			static function ( $states ) use ( $key ) {
+				unset( $states[ $key ] );
+				return $states;
+			}
+		);
+	}
+
+	/**
+	 * Queue a chunk: Action Scheduler when present, WP-Cron otherwise.
+	 *
+	 * By default replaces any pending attempt for the same birthday, so there is at most one. Only
+	 * PENDING actions count: the action that is running right now must not hide its successor.
+	 *
+	 * @param string $day     Day (Y-m-d).
+	 * @param int    $user_id Birthday member.
+	 * @param int    $delay   Seconds to wait; 0 runs it at the next opportunity.
+	 * @param bool   $replace Drop any pending attempt first (the run that owns the fan-out does; a run that lost the lock must not).
+	 */
+	private function queue_notification_chunk( $day, $user_id, $delay = 0, $replace = true ) {
+		$args = array( $day, (int) $user_id );
+
+		if ( $replace ) {
+			$this->clear_notification_chunk( $day, $user_id );
+		}
+
+		if ( function_exists( 'as_schedule_single_action' ) ) {
+			if ( $delay > 0 ) {
+				as_schedule_single_action( time() + $delay, self::NOTIFY_CHUNK_HOOK, $args, self::AS_GROUP );
+			} else {
+				as_enqueue_async_action( self::NOTIFY_CHUNK_HOOK, $args, self::AS_GROUP );
+			}
+			return;
+		}
+
+		wp_schedule_single_event( time() + max( 10, $delay ), self::NOTIFY_CHUNK_HOOK, $args );
+	}
+
+	/**
+	 * Drop the pending attempts of a birthday's fan-out (not the one that is running).
+	 *
+	 * @param string $day     Day (Y-m-d).
+	 * @param int    $user_id Birthday member.
+	 */
+	private function clear_notification_chunk( $day, $user_id ) {
+		$args = array( $day, (int) $user_id );
+
+		if ( function_exists( 'as_unschedule_all_actions' ) ) {
+			as_unschedule_all_actions( self::NOTIFY_CHUNK_HOOK, $args, self::AS_GROUP );
+		}
+
+		wp_clear_scheduled_hook( self::NOTIFY_CHUNK_HOOK, $args );
+	}
+
+	/**
+	 * Whether a chunk of this birthday is waiting to run.
+	 *
+	 * @param string $day     Day (Y-m-d).
+	 * @param int    $user_id Birthday member.
+	 * @return bool
+	 */
+	private function has_pending_notification_chunk( $day, $user_id ) {
+		$args = array( $day, (int) $user_id );
+
+		if ( wp_next_scheduled( self::NOTIFY_CHUNK_HOOK, $args ) ) {
+			return true;
+		}
+
+		if ( function_exists( 'as_get_scheduled_actions' ) ) {
+			$ids = as_get_scheduled_actions(
+				array(
+					'hook'     => self::NOTIFY_CHUNK_HOOK,
+					'args'     => $args,
+					'group'    => self::AS_GROUP,
+					'status'   => 'pending',
+					'per_page' => 1,
+				),
+				'ids'
+			);
+
+			return ! empty( $ids );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Self-heal: restart any fan-out that has stopped without a queued chunk.
+	 *
+	 * Runs with the daily check and its hourly retry. A fan-out whose last chunk started more
+	 * than ten minutes ago and has nothing pending (a lost action, a crash after the safety
+	 * attempt ran) gets a new attempt from its saved cursor.
+	 */
+	private function resume_unfinished_fanouts() {
+		$states = $this->get_states();
+
+		foreach ( $states as $key => $state ) {
+			$parts = explode( ':', (string) $key );
+			if ( 2 !== count( $parts ) || ! isset( $state['updated'] ) || time() - (int) $state['updated'] < 10 * MINUTE_IN_SECONDS ) {
+				continue;
+			}
+
+			if ( ! $this->has_pending_notification_chunk( $parts[0], (int) $parts[1] ) ) {
+				$this->queue_notification_chunk( $parts[0], (int) $parts[1] );
+			}
+		}
+	}
+
+	/**
+	 * Scheduled action: write the next chunk of a member's birthday notifications.
+	 *
+	 * @param string $day     Day (Y-m-d).
+	 * @param int    $user_id Birthday member.
+	 */
+	public function run_notification_chunk( $day, $user_id ) {
+		$day     = (string) $day;
+		$user_id = absint( $user_id );
+		$field   = BP_Birthdays_Helpers::get_birthday_field_id();
+
+		if ( ! $user_id || ! $field || ! function_exists( 'xprofile_get_field_visibility_level' ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $day ) ) {
+			return;
+		}
+
+		// A recorded fan-out resumes from its cursor. With no record, the member's tracking says
+		// whether the notifications are finished: if they are not, start over from the beginning,
+		// which is safe because every chunk skips what is already written. Never return silently
+		// while work is unfinished.
+		if ( ! $this->get_state_entry( $day . ':' . $user_id ) ) {
+			$row = $this->tracking_row( $day, $user_id );
+			if ( ! is_array( $row ) || ! $this->get_setting( 'notification_enabled' ) || $this->slot_is_done( $day, array( $user_id, 'notification' ) ) ) {
+				return;
 			}
 		}
 
-		if ( empty( $recipients ) ) {
-			return;
+		$result = $this->notify_chunk( $day, $user_id, xprofile_get_field_visibility_level( $field, $user_id ) );
+
+		if ( true === $result && ! $this->finish_slot( $day, array( $user_id, 'notification' ), true ) ) {
+			// Written but not marked: look again in a minute; with no record and the slot unfinished
+			// the handler restarts, finds every row in place and marks it.
+			$this->queue_notification_chunk( $day, $user_id, MINUTE_IN_SECONDS );
+		}
+	}
+
+	/**
+	 * How many birthdays' notification fan-outs have stopped part way for over 6 hours.
+	 *
+	 * The settings page shows a warning when this is above zero.
+	 *
+	 * @return int
+	 */
+	public function count_stuck_fanouts() {
+		$stuck = 0;
+
+		foreach ( $this->get_states() as $state ) {
+			if ( isset( $state['updated'] ) && time() - (int) $state['updated'] > 6 * HOUR_IN_SECONDS ) {
+				++$stuck;
+			}
 		}
 
-		foreach ( $recipients as $recipient_id ) {
-			bp_notifications_add_notification(
-				array(
-					'user_id'           => $recipient_id,
-					'item_id'           => $user_id,
-					'secondary_item_id' => 0,
-					'component_name'    => 'birthdays',
-					'component_action'  => 'birthday_today',
-					'date_notified'     => bp_core_current_time(),
-					'is_new'            => 1,
-				)
-			);
-		}
+		return $stuck;
 	}
 
 	/**
@@ -829,7 +1723,7 @@ class BP_Birthdays_Notifications {
 
 		$user      = get_userdata( $item_id );
 		$user_name = $user ? $user->display_name : __( 'Someone', 'buddypress-birthdays' );
-		$user_link = bp_core_get_user_domain( $item_id );
+		$user_link = BP_Birthdays_Helpers::get_user_url( $item_id );
 
 		// Cron/CLI fallback default — see the note in post_birthday_activity().
 		$text = $this->get_setting(
@@ -851,9 +1745,39 @@ class BP_Birthdays_Notifications {
 	/**
 	 * Send admin summary email using BuddyPress email system.
 	 *
+	 * Site admins can see a BuddyPress "Only Me" (adminsonly) field on the
+	 * profile, so it stays in their summary. BuddyBoss' stricter onlyme
+	 * level is left out.
+	 *
 	 * @param array $birthdays Today's birthdays.
+	 * @return bool Whether the summary was handed to a mailer (true when there is nothing to send).
 	 */
 	private function send_admin_summary( $birthdays ) {
+		// The summary goes to one address. A member's birthday is listed when its level is known,
+		// is not the strict Only Me, and, for a level an add-on registers (not one of the four
+		// BuddyPress ships), when BuddyPress lets the account that owns this address see it.
+		$summary_to   = (string) $this->get_setting( 'admin_email', get_option( 'admin_email' ) );
+		$summary_user = get_user_by( 'email', $summary_to );
+		$built_in     = array( 'public', 'loggedin', 'friends', 'adminsonly' );
+
+		$birthdays = array_filter(
+			$birthdays,
+			static function ( $birthday ) use ( $summary_user, $built_in ) {
+				$level = $birthday['visibility'];
+
+				if ( 'onlyme' === $level || ! BP_Birthdays_Helpers::is_known_visibility( $level ) ) {
+					return false;
+				}
+
+				return in_array( $level, $built_in, true )
+					|| ( $summary_user && BP_Birthdays_Helpers::visibility_allows( $level, $birthday['user_id'], $summary_user->ID ) );
+			}
+		);
+
+		if ( empty( $birthdays ) ) {
+			return true;
+		}
+
 		$admin_email = $this->get_setting( 'admin_email' );
 
 		if ( empty( $admin_email ) ) {
@@ -865,7 +1789,7 @@ class BP_Birthdays_Notifications {
 		$list_plain = '';
 
 		foreach ( $birthdays as $birthday ) {
-			$profile_url = bp_core_get_user_domain( $birthday['user_id'] );
+			$profile_url = BP_Birthdays_Helpers::get_user_url( $birthday['user_id'] );
 
 			$avatar = function_exists( 'bp_core_fetch_avatar' )
 				? bp_core_fetch_avatar(
@@ -921,23 +1845,34 @@ class BP_Birthdays_Notifications {
 				),
 			);
 
-			bp_send_email( self::EMAIL_TYPE_ADMIN_SUMMARY, $admin_email, $args );
-		} else {
-			// Fallback to wp_mail.
-			$subject = sprintf(
-				/* translators: %1$d: birthday count, %2$s: site name */
-				__( '[%2$s] %1$d Birthday(s) Today', 'buddypress-birthdays' ),
-				count( $birthdays ),
-				get_bloginfo( 'name' )
-			);
+			$result = bp_send_email( self::EMAIL_TYPE_ADMIN_SUMMARY, $admin_email, $args );
+			if ( ! is_wp_error( $result ) ) {
+				return true;
+			}
 
-			$message  = '<h2>' . __( "Today's Birthdays", 'buddypress-birthdays' ) . '</h2>';
-			$message .= $list_html;
-
-			add_filter( 'wp_mail_content_type', array( $this, 'set_html_content_type' ) );
-			wp_mail( $admin_email, $subject, $message );
-			remove_filter( 'wp_mail_content_type', array( $this, 'set_html_content_type' ) );
+			$this->log_failure( 'admin birthday summary via BuddyPress', $result );
 		}
+
+		// Fallback to wp_mail.
+		$subject = sprintf(
+			/* translators: %1$d: birthday count, %2$s: site name */
+			__( '[%2$s] %1$d Birthday(s) Today', 'buddypress-birthdays' ),
+			count( $birthdays ),
+			get_bloginfo( 'name' )
+		);
+
+		$message  = '<h2>' . __( "Today's Birthdays", 'buddypress-birthdays' ) . '</h2>';
+		$message .= $list_html;
+
+		add_filter( 'wp_mail_content_type', array( $this, 'set_html_content_type' ) );
+		$sent = wp_mail( $admin_email, $subject, $message );
+		remove_filter( 'wp_mail_content_type', array( $this, 'set_html_content_type' ) );
+
+		if ( ! $sent ) {
+			$this->log_failure( 'admin birthday summary via wp_mail' );
+		}
+
+		return $sent;
 	}
 
 	/**
@@ -948,19 +1883,69 @@ class BP_Birthdays_Notifications {
 	 * @return mixed
 	 */
 	private function get_setting( $key, $default = null ) {
-		// Try Admin class first (available in admin context).
-		if ( class_exists( 'BP_Birthdays_Admin' ) ) {
-			$value = BP_Birthdays_Admin::get_settings( $key );
-			return null !== $value ? $value : $default;
-		}
-
-		// Fallback: read directly from option (for cron/CLI context).
+		// Read the option directly: BP_Birthdays_Admin is only loaded in
+		// is_admin(), and cron must behave the same in both contexts.
 		$settings = get_option( 'bp_birthdays_settings', array() );
-		if ( isset( $settings[ $key ] ) ) {
-			return $settings[ $key ];
+		$value    = is_array( $settings ) && isset( $settings[ $key ] ) ? $settings[ $key ] : null;
+
+		// A cleared text box (Notification Text, Activity Message, ...) means
+		// "use the default", never an empty notification or post.
+		if ( null === $value || ( is_string( $value ) && '' === trim( $value ) ) ) {
+			return $default;
 		}
 
-		return $default;
+		return $value;
+	}
+
+	/**
+	 * Run a send in the recipient's language.
+	 *
+	 * BuddyPress renders its emails in the site language, and the two birthday templates are
+	 * stored once, at install, in the site language. So the send runs under the recipient's
+	 * locale, and a template that is still the untouched default is swapped for the default in
+	 * that locale. A template the site owner edited is sent exactly as edited.
+	 *
+	 * @param int      $user_id    Recipient, 0 when the address belongs to no member.
+	 * @param string   $email_type BuddyPress email type being sent.
+	 * @param callable $send       The send method.
+	 * @param array    $args       Its arguments.
+	 * @return bool What the send returned.
+	 */
+	private function in_recipient_locale( $user_id, $email_type, $send, array $args ) {
+		$switched = $user_id ? switch_to_user_locale( $user_id ) : false;
+		$fields   = array(
+			'bp_email_set_subject'           => 'post_title',
+			'bp_email_set_content_html'      => 'post_content',
+			'bp_email_set_content_plaintext' => 'post_excerpt',
+		);
+		$filters  = array();
+
+		if ( $switched ) {
+			foreach ( $fields as $hook => $field ) {
+				$filters[ $hook ] = function ( $value ) use ( $email_type, $field ) {
+					$here = $this->register_email_schema( array() );
+
+					// The default as it was installed: the site's language.
+					switch_to_locale( (string) ( get_option( 'WPLANG' ) ? get_option( 'WPLANG' ) : 'en_US' ) );
+					$installed = $this->register_email_schema( array() );
+					restore_previous_locale();
+
+					return ( isset( $installed[ $email_type ][ $field ] ) && $value === $installed[ $email_type ][ $field ] ) ? $here[ $email_type ][ $field ] : $value;
+				};
+				add_filter( $hook, $filters[ $hook ] );
+			}
+		}
+
+		try {
+			return (bool) call_user_func_array( $send, $args );
+		} finally {
+			foreach ( $filters as $hook => $callback ) {
+				remove_filter( $hook, $callback );
+			}
+			if ( $switched ) {
+				restore_previous_locale();
+			}
+		}
 	}
 
 	/**
@@ -982,4 +1967,11 @@ class BP_Birthdays_Notifications {
 }
 
 // Initialize.
-add_action( 'bp_loaded', array( 'BP_Birthdays_Notifications', 'get_instance' ) );
+add_action(
+	'bp_loaded',
+	function () {
+		if ( bb_birthdays_xprofile_active() ) {
+			BP_Birthdays_Notifications::get_instance();
+		}
+	}
+);

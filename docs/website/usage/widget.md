@@ -14,7 +14,7 @@ If no date profile field exists yet, the widget form shows a setup notice with a
 | Date Format | PHP date format for the displayed date, for example `F d` or `M j`. | F d |
 | Birthday range limit | No Limit, Next 7 Days, or Next 30 Days. | No Limit |
 | Show Birthdays of | All Members, Friends, or Followings. Friends and Followings only appear when their component or plugin is active. | All Members |
-| Display Name Type | User name, Nick name, or First Name. | User name |
+| Display Name Type | User name, Nick name, or First Name. A member with no first name or nickname set shows their display name. | User name |
 | Birthday Field | Which xProfile date field to read. Lists only Date Selector and Birthdate fields. | First available date field |
 | Number of birthdays to show | How many birthdays to display in total. | 5 |
 | Birthdays per page | How many birthdays per page in the paginated list. | 10 |
@@ -28,6 +28,8 @@ If no date profile field exists yet, the widget form shows a setup notice with a
 
 For the Friends and Followings modes, a logged-out visitor sees nothing because the plugin cannot determine whose connections to show.
 
+When no birthday matches (or no birthday field is set up yet), the widget still shows its title with the line "No upcoming birthdays." inside the card. Leave the Title empty to show the list without a heading.
+
 ## Ranges
 
 - No Limit: upcoming birthdays within the next 365 days.
@@ -36,8 +38,8 @@ For the Friends and Followings modes, a logged-out visitor sees nothing because 
 
 ## Pagination
 
-When more birthdays match than fit on one page, previous and next controls appear below the list. Set "Birthdays per page" to control the page size. Pages are numbered and the current page is marked. The list is bounded by the candidate cap described in the developer guide, so very deep pages are limited by that cap rather than by total member count.
+When more birthdays match than fit on one page, previous and next controls appear below the list. Set "Birthdays per page" to control the page size. Pages are numbered and the current page is marked. Each list keeps its own page number in the URL, so two lists on one page never change page together. The list is bounded by the candidate cap described in the developer guide, so very deep pages are limited by that cap rather than by total member count.
 
 ## Caching
 
-The rendered list is cached in the WordPress object cache (group `bp_birthdays`) for the configured cache duration (default 30 minutes). Friends and Followings lists are cached per viewer. Saving the widget, saving a member's profile date field, and friendship or follow changes all clear the cache automatically, as does a daily cron flush.
+The rendered list is cached in the WordPress object cache (group `bp_birthdays`) for the configured cache duration (default 30 minutes). Every list is cached per viewer (one shared copy for logged-out visitors), because profile field visibility decides who sees each birthday. Saving the widget, saving a member's profile date field, and friendship or follow changes all clear the cache automatically, as does a daily cron flush.

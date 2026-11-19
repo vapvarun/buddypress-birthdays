@@ -2,7 +2,7 @@
 /**
  * Discover partial: ecosystem cross-promotion (read-only display view).
  *
- * Rendered inside shell.php. This is a pure presentation view - product
+ * Rendered inside layout.php. This is a pure presentation view - product
  * cards with outbound links to other free Wbcom Designs tools. No forms,
  * no settings, no options, no AJAX.
  *
@@ -90,7 +90,7 @@ $bbd_ecosystem = array(
 
 <div class="bbd-card">
 	<div class="bbd-card__head">
-		<p class="bbd-card__title"><?php esc_html_e( 'More Free Tools from Wbcom Designs', 'buddypress-birthdays' ); ?></p>
+		<p class="bbd-card__title"><?php /* translators: %s: Wbcom Designs, the company name. */ echo esc_html( sprintf( __( 'More Free Tools from %s', 'buddypress-birthdays' ), 'Wbcom Designs' ) ); ?></p>
 		<p class="bbd-card__desc"><?php esc_html_e( 'Birthday reminders keep members coming back. These free Wbcom Designs plugins give your community more reasons to stay: the theme and network itself, forums, media, events, gamification, directories, jobs, courses, and services.', 'buddypress-birthdays' ); ?></p>
 	</div>
 	<div class="bbd-card__body">

@@ -4,46 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8fbdff482cced726e1c4503b385118f2",
-    "packages": [
-        {
-            "name": "hard-g/buddypress-12.0-url-polyfills",
-            "version": "1.0.2",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/hard-g/buddypress-12.0-url-polyfills.git",
-                "reference": "b09dc593f40c5b7163c1126377d991be62f0a9cf"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/hard-g/buddypress-12.0-url-polyfills/zipball/b09dc593f40c5b7163c1126377d991be62f0a9cf",
-                "reference": "b09dc593f40c5b7163c1126377d991be62f0a9cf",
-                "shasum": ""
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "HardG\\BuddyPress120URLPolyfills\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "GPL-3.0-or-later"
-            ],
-            "authors": [
-                {
-                    "name": "Boone B Gorges",
-                    "email": "boonebgorges@gmail.com"
-                }
-            ],
-            "description": "Polyfills for URL-related functions introduced in BuddyPress 12.0.",
-            "support": {
-                "issues": "https://github.com/hard-g/buddypress-12.0-url-polyfills/issues",
-                "source": "https://github.com/hard-g/buddypress-12.0-url-polyfills/tree/1.0.2"
-            },
-            "time": "2024-02-29T22:09:11+00:00"
-        }
-    ],
+    "content-hash": "391d0f403e752de197a7b0fc924fd303",
+    "packages": [],
     "packages-dev": [
         {
             "name": "php-parallel-lint/php-parallel-lint",

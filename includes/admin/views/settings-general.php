@@ -16,7 +16,7 @@ defined( 'ABSPATH' ) || exit;
 
 $bbd_date_fields = BP_Birthdays_Admin_Panel::get_date_fields();
 $bbd_field_id    = isset( $settings['default_field_id'] ) ? $settings['default_field_id'] : '';
-$bbd_cache       = isset( $settings['cache_duration'] ) ? (int) $settings['cache_duration'] : 30;
+$bbd_cache       = BP_Birthdays_Admin::clamp_cache_duration( isset( $settings['cache_duration'] ) ? $settings['cache_duration'] : 30 );
 ?>
 
 <div class="bbd-card">

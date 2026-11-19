@@ -1,6 +1,6 @@
 # Admin Settings
 
-Settings live at WB Plugins > Birthdays. The page uses a card-panel layout with an overview dashboard and grouped settings tabs. All settings are stored in a single option, `bp_birthdays_settings`. The capability required to see the page is `manage_options`, filterable with `bp_birthdays_admin_capability`.
+Settings live at WB Plugins > Birthdays. The page uses a card-panel layout with an overview dashboard and grouped settings tabs. All settings are stored in a single option, `bp_birthdays_settings`. The capability required to open the page and save its settings is `manage_options`, filterable with `bp_birthdays_admin_capability`.
 
 ## Tabs
 
@@ -8,7 +8,7 @@ The admin page has seven tabs: Overview, General, Email, Activity, Notifications
 
 ### Overview
 
-A read-only dashboard confirming the plugin found a birthday profile field and showing the current configuration. Start here after activation.
+A read-only dashboard confirming the plugin found a birthday profile field and showing the current configuration. Activity posts and notifications show as Off while their BuddyPress component is inactive, because nothing is sent then. Start here after activation.
 
 ### General
 
@@ -23,8 +23,8 @@ A read-only dashboard confirming the plugin found a birthday profile field and s
 |---|---|---|
 | Enable Birthday Emails | Send a greeting email to each member on their birthday. | Off |
 | Send Time | Time of day the daily birthday check runs, in 24-hour HH:MM. | 09:00 |
-| Enable Admin Summary Email | Send the site owner a daily summary of the day's birthdays. | Off |
-| Admin Email | Recipient for the summary. Falls back to the site admin email when empty. | Empty |
+| Daily Summary Email | Send the site owner one summary of the day's birthdays each day. | Off |
+| Summary Recipient | Recipient for the summary. Falls back to the site admin email when empty. | Empty |
 
 ### Activity
 

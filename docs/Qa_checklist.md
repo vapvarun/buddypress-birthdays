@@ -1,5 +1,7 @@
 # QA Checklist - BuddyPress Birthdays
 
+> **Historical document.** The current reference is `docs/website/` (shortcode attributes: `docs/website/shortcodes/bp-birthdays.md`). Where this file disagrees with it, `docs/website/` and the code are right.
+
 **Version:** 2.4.1
 **Date:** April 2026
 
@@ -24,7 +26,7 @@
 - [ ] Show birthdays of (all/friends/followers) filters work
 - [ ] Emoji options (cake/balloon/party/none) display correctly
 - [ ] Send wishes button works (when BP messaging enabled)
-- [ ] Display name types (user_name/nickname/first_name) work
+- [ ] Display name types (user_name/nick_name/first_name) work
 - [ ] Pagination works when birthdays_per_page is set
 - [ ] Today's birthdays highlighted correctly
 
@@ -41,8 +43,6 @@
 - [ ] `birthdays_per_page` parameter works
 - [ ] `title` parameter works
 - [ ] `show_message_button` parameter works
-- [ ] `confetti` parameter works (overrides global setting)
-- [ ] `zodiac` parameter works (overrides global setting)
 
 ### 4. Admin Settings (Settings > BuddyPress Birthdays)
 - [ ] Settings page accessible under BuddyPress menu (or Settings menu)
@@ -124,17 +124,15 @@
 ### New Features: Confetti Animation
 - [ ] Confetti animation displays for today's birthdays
 - [ ] Confetti only shows when enabled in settings
-- [ ] Confetti works with shortcode `confetti="yes"`
 - [ ] Confetti animation triggers correctly in browser
 - [ ] No JavaScript errors when confetti loads
-- [ ] Confetti respects global setting when not overridden
+- [ ] Shortcode lists follow the global Confetti setting (there is no shortcode attribute)
 
 ### New Features: Zodiac Signs
 - [ ] Zodiac signs display next to birthdays
 - [ ] All 12 zodiac symbols show correctly (♈ ♉ ♊ ♋ ♌ ♍ ♎ ♏ ♐ ♑ ♒ ♓)
 - [ ] Zodiac calculation works for leap years
-- [ ] Zodiac works with shortcode `zodiac="yes"`
-- [ ] Zodiac signs respect global setting when not overridden
+- [ ] Shortcode lists follow the global Zodiac setting (there is no shortcode attribute)
 - [ ] Zodiac tooltips show correct sign names
 
 ### Email System Integration

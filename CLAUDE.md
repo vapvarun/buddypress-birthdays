@@ -1,14 +1,14 @@
 # Plugin: Wbcom Designs - Birthday Widget for BuddyPress
 
-> **READ FIRST:** [`audit/manifest.json`](audit/manifest.json) is the canonical inventory — 0 REST endpoints, 0 blocks, 1 widget (`widget_buddypress_birthdays`), 1 AJAX action (priv+nopriv), 1 admin page, 1 shortcode (11 attrs), 2 cron hooks, 12 fired filters / 0 fired actions, 0 tables (reads BuddyPress xProfile tables read-only). Use this before grepping. See also [`audit/FEATURE_AUDIT.md`](audit/FEATURE_AUDIT.md), [`audit/CODE_FLOWS.md`](audit/CODE_FLOWS.md), and the QA baseline [`audit/wppqa-baseline-2026-06-05/SUMMARY.md`](audit/wppqa-baseline-2026-06-05/SUMMARY.md). Interactive graph: `cd audit && python3 -m http.server 8765` → http://localhost:8765/graph.html. Refresh via `/wp-plugin-onboard --refresh` after non-trivial changes.
+> **READ FIRST:** [`audit/manifest.json`](audit/manifest.json) is the canonical inventory — 0 REST endpoints, 0 blocks, 1 widget (`widget_buddypress_birthdays`), 0 AJAX actions, 1 admin page, 1 shortcode (11 attrs), 1 cron hook, 11 fired filters / 0 fired actions, 0 tables (reads BuddyPress xProfile tables read-only). Use this before grepping. See also [`audit/FEATURE_AUDIT.md`](audit/FEATURE_AUDIT.md), [`audit/CODE_FLOWS.md`](audit/CODE_FLOWS.md), and the QA baseline [`audit/wppqa-baseline-2026-06-05/SUMMARY.md`](audit/wppqa-baseline-2026-06-05/SUMMARY.md). Interactive graph: `cd audit && python3 -m http.server 8765` → http://localhost:8765/graph.html. Refresh via `/wp-plugin-onboard --refresh` after non-trivial changes.
 
 ## Development skill
 All plugin work follows the **`/wp-plugin-development`** skill (backend architecture, REST, hooks, DB, security, escaping, admin UI, release). QA before release: `/wp-plugin-smoke`. Onboarding refresh: `/wp-plugin-onboard`.
 
 ## Quick reference
 - **Main file**: `buddypress-birthdays.php`
-- **Version**: `2.5.0` (`BIRTHDAY_WIDGET_VERSION`, `buddypress-birthdays.php:27`) — branch `2.5.0`
-- **Requires**: WP 5.3+ (`wp_date()`/`wp_timezone()` are called unguarded on the render path), PHP 7.4+, BuddyPress (`Requires Plugins: buddypress`); tested to WP 7.0. License: bare `GPLv3`.
+- **Version**: see `BIRTHDAY_WIDGET_VERSION` in `buddypress-birthdays.php`. `master` = last release; one dev branch named by version.
+- **Requires**: WP 6.5+, PHP 8.1+ (portfolio range 8.1-8.5), BuddyPress (`Requires Plugins: buddypress`). License: bare `GPLv3`.
 - **Namespace**: none — global `bb_*` functions + `BP_Birthdays_*` / `Widget_Buddypress_Birthdays` classes
 - **Text domain**: `buddypress-birthdays`
 - **Extends**: null (standalone; requires BuddyPress)
@@ -17,9 +17,10 @@ All plugin work follows the **`/wp-plugin-development`** skill (backend architec
 ## Admin UI wrapper: NEW (card-panel under wbcomplugins) — as of 2.5.0
 The admin migrated to the **Wbcom card-panel pattern** under the shared `wbcomplugins` hub (mirrors `buddypress-contact-me`):
 - Controller: `BP_Birthdays_Admin_Panel` (`includes/admin/class-bp-birthdays-admin-panel.php`) — menu, enqueue, render router, hub takeover (pri 999).
-- Views: `includes/admin/views/{shell,hub,overview,settings-general,settings-email,settings-activity,settings-notifications,settings-display,discover}.php`.
+- Views: `includes/admin/views/{layout,hub,overview,settings-general,settings-email,settings-activity,settings-notifications,settings-display,discover}.php`.
 - Tabs (7): overview, general, email, activity, notifications, display, discover. `discover` is appended **after** the `bp_birthdays_admin_tabs` filter so it can't be filtered away.
 - Assets: `assets/css/admin.css` (`--bbd-admin-*` tokens), `assets/js/admin.js` (`bbdToast`/`bbdConfirm` + dependent-field toggles).
+- Never name a file `shell.php`: host WAFs block zips that contain one.
 
 Menu: `add_menu_page('wbcomplugins', …)` (if not present) + `add_submenu_page('wbcomplugins', …, 'bp-birthday-settings', …)`. Slug `bp-birthday-settings` **preserved** for URL continuity. Cap `manage_options` (filter `bp_birthdays_admin_capability`). Page hook suffix: `wbcomplugins_page_bp-birthday-settings`. The old `bp-settings`/`options-general.php` registration was dropped.
 
@@ -29,40 +30,34 @@ Single stored option `bp_birthdays_settings` (group `bp_birthdays_settings_group
 
 ## Key entry points
 - Bootstrap: `buddypress-birthdays.php` (constants, BP dependency check, requires)
-- Core: `core-init.php` (assets, shortcode, AJAX, cache invalidation, wished-users cron, GDPR opt-out UI/save)
+- Core: `core-init.php` (assets, shortcode, cache invalidation, GDPR opt-out UI/save, retirement of the 2.5.0 wish-tracking leftovers)
 - Admin: `includes/admin/class-bp-birthdays-admin-panel.php` (menu, enqueue, render router) + `admin/class-bp-birthdays-admin.php` (legacy service class — sanitizer/defaults/getter ONLY, no UI)
 - Notifications: `includes/class-bp-birthdays-notifications.php` (cron, BP emails, activity, BP notifications)
-- Helpers: `includes/class-bp-birthdays-helpers.php` (zodiac, age, date format)
+- Helpers: `includes/class-bp-birthdays-helpers.php` (zodiac, age, opt-out, `get_user_url()`, `get_birthday_field_id()`, `visibility_allows()`)
 - Widget: `assets/inc/buddypress-birthdays-widget.php` (`Widget_Buddypress_Birthdays`)
 
 ## Important patterns
-- Caching: WordPress **object cache** group `bp_birthdays` (NOT transients). 30-min TTL. Invalidated on xprofile save / friendship / follow / user register-delete / daily cron and on widget settings save.
-- Prefix conventions: functions `bb_*`, classes `BP_Birthdays_*`, option root `bp_birthdays_*`, cron `bb_cleanup_old_wishes` + `bp_birthdays_daily_check`, AJAX `bb_birthdays_action`, nonce `bb_birthdays_nonce`.
-- BuddyPress version-aware: branches on `buddypress()->version >= 12.0` for member-URL/slug APIs.
+- Caching: WordPress **object cache** group `bp_birthdays` (NOT transients), TTL from the Cache Duration setting. Keys carry the viewer, the site date and `wp_cache_get_last_changed()`; `bb_clear_birthday_caches()` moves the token (xprofile save / friendship / follow / user register-delete / widget save).
+- Time: birthdays are calendar dates in `BP_Birthdays_Helpers::display_timezone()` (filter `bp_birthdays_display_timezone`). Show them only through `date_label()`; `today()` is the site's day. No raw `wp_date()`/`date_i18n()` (gate: `bin/time-standard-check.php`).
+- xProfile gate: `bb_birthdays_xprofile_active()` guards the widget, shortcode, notifications and admin panel; with Extended Profiles off nothing registers and one admin notice shows.
+- Release: `bin/local-ci.sh` (gates) and `bin/build-release.sh` (zip from `git archive`, `.distignore` root-anchored).
+- Prefix conventions: functions `bb_*`, classes `BP_Birthdays_*`, option root `bp_birthdays_*`, cron `bp_birthdays_daily_check`. The plugin has no AJAX actions.
+- Member URLs: always `BP_Birthdays_Helpers::get_user_url()` (BP 12+ `bp_members_get_user_url()`, older fallback). Never call `bp_core_get_user_domain()` directly.
+- Birthday field: always `BP_Birthdays_Helpers::get_birthday_field_id()` (General tab setting if it is a real date field, else first date field). Cron, shortcode and widget fallback all use it.
+- Privacy: every per-viewer decision (widget, activity, notification recipients, admin summary) goes through `BP_Birthdays_Helpers::visibility_allows( $level, $owner, $viewer )`: allowlist of known levels first, then BuddyPress's hidden-level list. Unknown level = hidden. `BP_Birthdays_Helpers::is_user_opted_out()` gates every surface; BuddyPress field visibility gates per channel via `visibility_allows()` (activity = public only, notification recipients filtered, admin summary skips Only Me, greeting email goes to the member regardless).
+- Cron tracking (`bp_birthdays_sent_today`, keyed by day `Y-m-d`, pruned to yesterday and later): per member `{email,activity,notification => time}` plus `admin_summary`. The daily event has no args; `resolve_target_date()` processes yesterday when it runs before today's Send Time (late run). A failed channel stays unrecorded and a `bp_birthdays_daily_check` single event with args `[Y-m-d]` retries that same day +1h, until the end of the next day. Feb 29 birthdays match on Feb 28 in non-leap years via `BP_Birthdays_Helpers::birthday_month_days()` (also used by the widget's Today check). `schedule_cron()` re-times the daily event when Send Time changes. Deactivate/uninstall use `wp_unschedule_hook()`.
+- BP emails: the two birthday types are installed by `ensure_email_posts()` on `bp_core_install_emails` and the `admin_init` self-heal, never via `bp_email_get_schema` (BuddyPress would insert duplicates and warn on the unfilterable type schema). The admin summary's BuddyPress salutation is removed with `bp_email_get_salutation`.
+- Admin capability: `BP_Birthdays_Admin_Panel::get_capability()` gates the menu and the options.php save (`option_page_capability_bp_birthdays_settings_group`).
+- Settings tabs: a switch that can be disabled (dependent row, inactive component) must not be listed in `bp_birthdays_tab_rendered_keys` while disabled, or saving resets it.
+- Stored datebox values are always `Y-m-d H:i:s`; the field's `date_format` meta is display only. SQL masks are fixed `%Y-%m-%d`.
+- Dark mode (frontend): `bb-core.css` tokens chain `--bx-color-*` -> `--reign-*` -> literal, with a `:root[data-bx-mode="dark"]` block.
 - Owns no DB tables — reads `bp_xprofile_*` read-only; never write BP tables outside BP APIs.
 
 ## Known scale risks (see manifest static_analysis.notes)
 - BB-2: cron `get_todays_birthdays` uses non-sargable `DATE_FORMAT(value,'%m-%d')` full scan of `bp_xprofile_data`.
+- BB-3b: RESOLVED 2.5.1 - candidates are read soonest-first in doubling batches (display x4, doubling, capped at `bb_birthdays_widget_candidate_cap`, max `MAX_BATCHES` = 10) until the visible list is full, so hidden members at the front cannot starve it. Worst case (everyone hidden) is 10 bounded batches.
 - BB-3: RESOLVED 2026-07-03 — all widget paths (all members, friends, followers) now trim to a bounded SQL candidate pool (`bb_birthdays_widget_candidate_multiplier`/`_cap` filters, default cap 200) ordered by upcoming-birthday proximity, with batch-primed values (no per-user N+1). The `DATE_FORMAT` predicate is still non-sargable but bounded by `field_id` + `LIMIT`.
-- BB-4: BP-notification non-friends fan-out silently capped at `number=500`.
+- BB-4: RESOLVED 2.5.1 - the notification fan-out has no cap. It reads members by ascending ID after a cursor in chunks (filter `bb_birthdays_notification_recipient_limit` = chunk size, default 500), filters each chunk for visibility and opt-out, and queues the next chunk as its own action (Action Scheduler, WP-Cron fallback, group `buddypress-birthdays`). The cursor lives in the temporary option `bp_birthdays_notify_state` (autoload off, deleted when the last chunk is written); the channel is marked done only then. Idempotent: today's rows are skipped per chunk, and a per-birthday lock (stale after 3 minutes) stops two runs doing the same chunk. Locks are rows in the options table taken with one `INSERT IGNORE` (`lock_acquire()`; `add_option()` is NOT atomic, it upserts) and taken over with a compare-and-swap. Every change to the two shared arrays (`bp_birthdays_notify_state`, `bp_birthdays_sent_today`) goes through `mutate_option()`: short lock, re-read inside it, change only your own key. Emails and activity posts are claimed per member, channel and day BEFORE sending (`claim_slot()`: a negative time is a claim in progress, stale after 15 minutes; a positive time is done), so overlapping runs never both send. A chunk handler with no state record restarts from cursor 0 when the member's tracking says the notifications are unfinished; it never returns silently. Crash safety: a full chunk records its state and queues a 4-minute safety attempt BEFORE writing rows; a normal finish replaces it with the next chunk (only PENDING actions count; the running one must not hide its successor, `as_has_scheduled_action()` would); the daily check and its hourly retry restart any recorded fan-out with nothing pending (`resume_unfinished_fanouts()`). A fan-out stuck over 6 hours shows a notice inside the plugin page (layout.php; admin_notices is cleared on that screen).
 
 ## CSS selectors (for testing)
 `.bp-birthday-users-list`, `.bp-birthday-item`, `.today-birthday`, `.bp-birthday-name`, `.bp-birthday-age`, `.bp-birthday-date`, `.bp-send-wishes`, `.bp-birthday-pagination`, `.bp-birthday-page-btn`.
-
-## Recent changes
-| Date | Type | Description | Files |
-|---|---|---|---|
-| 2026-07-10 | feature | GDPR per-member birthday opt-out (Basecamp card 9749778137). New `BP_Birthdays_Helpers::is_user_opted_out()` (meta `bb_birthday_hidden`, filter `bb_birthday_user_opted_out`) gates BOTH central data paths: widget/shortcode `bbirthdays_get_array()` and cron `get_todays_birthdays()` (covers activity, BP notifications, emails, admin summary). Member self-service checkbox on BuddyPress Settings > General (`bp_core_general_settings_before_submit`/`_after_save`). Verified: opt-out hides member from widget; save/delete round-trip persists. | `includes/class-bp-birthdays-helpers.php`, `assets/inc/buddypress-birthdays-widget.php`, `includes/class-bp-birthdays-notifications.php`, `core-init.php` |
-| 2026-07-10 | bug-fix | Card 9749776914 (blank AJAX on invalid wish) was ALREADY-OK (fall-through already sent `wp_send_json_error`); refined `mark_wished` to return explicit `Authentication required` vs `Invalid request: missing user_id` instead of one misleading message. | `core-init.php` |
-| 2026-07-10 | release-prep | readme + main header: `Tested up to: 7.0`, added `Requires Plugins: buddypress`; 2.5.0 changelog gains GDPR opt-out (New) + WP 7.0 (Compat). RTL: 4 physical props in `bb-core.css` → logical (`inset-inline-end`, `margin-inline-start`); `.min` synced. | `readme.txt`, `buddypress-birthdays.php`, `assets/css/bb-core.css`, `assets/css/bb-core.min.css` |
-| 2026-07-03 | feature | Wired dead `mark_wished` subsystem: `.bp-send-wishes` now emits `data-user-id` and `recordWish()` fires the AJAX (sendBeacon fire-and-forget) before compose navigation; handler reads `user_id` from `$_POST` and always responds. | `assets/js/bb-core.js`, `assets/inc/buddypress-birthdays-widget.php`, `core-init.php` |
-| 2026-07-03 | feature | Lifecycle: activation schedules both daily crons, deactivation clears both, new `uninstall.php` removes 4 options + `bb_birthday_wished_users` meta. `load_plugin_textdomain()` on init (self-hosted EDD, bundled languages/). | `buddypress-birthdays.php`, `uninstall.php` |
-| 2026-07-03 | refactor | Friends/followers widget path bounded like all-members: `bound_members_by_upcoming_birthday()` trims connection ids in SQL to the filterable candidate pool; extracted shared `get_candidate_limit()` + `get_field_date_format()`. | `assets/inc/buddypress-birthdays-widget.php` |
-| 2026-07-03 | release-prep | CI now triggers on semver branches (`N.N.N`) not just master; readme stable tag bumped to 2.5.0 + full 2.5.0 changelog; explicit `:focus-visible` outline on admin form controls. | `.github/workflows/ci.yml`, `readme.txt`, `assets/css/admin.css` |
-| 2026-07-03 | bug-fix | Widget "all members" SQL: convert PHP date_format meta to MySQL specifiers for STR_TO_DATE (was NULL for every row), prepare-safe `%%m-%%d` masks + bound args (was wpdb::prepare placeholder-count notice + rejected query). New `BP_Birthdays_Helpers::php_to_mysql_date_format()`. | `assets/inc/buddypress-birthdays-widget.php`, `includes/class-bp-birthdays-helpers.php` |
-| 2026-07-03 | bug-fix | Cache duration honoured on frontend: read `bp_birthdays_settings` option directly (admin class only loads in `is_admin()`, so TTL always fell back to 30 min). | `assets/inc/buddypress-birthdays-widget.php` |
-| 2026-07-03 | bug-fix | Birthday email templates now install: replaced dead `bp_get_email_post()` guard (function never existed in BP) with real post-type/taxonomy checks + idempotent per-type existence lookup. | `includes/class-bp-birthdays-notifications.php` |
-| 2026-07-03 | bug-fix | Docs link corrected to singular `/docs/buddypress-birthday/` slug. | `includes/admin/views/shell.php` |
-| 2026-06-05 | refactor | Migrated admin to card-panel under `wbcomplugins` hub (v2.5.0). New `BP_Birthdays_Admin_Panel` + views + token CSS/JS; legacy class trimmed to sanitizer/getter only; dropped `bp-settings`/options-general registration. Option key + 13 subkeys preserved. | `includes/admin/*`, `assets/css/admin.css`, `assets/js/admin.js`, `admin/class-bp-birthdays-admin.php`, `buddypress-birthdays.php` |
-| 2026-06-05 | bug-fix | Cache TTL now honours saved `cache_duration` (was hardcoded 30 min ghost control). | `assets/inc/buddypress-birthdays-widget.php` |
-| 2026-06-05 | onboard | Generated audit/ inventory + reports + graph + wppqa baseline; READ-FIRST CLAUDE.md | audit/*, CLAUDE.md |

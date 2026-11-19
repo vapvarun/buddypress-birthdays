@@ -4,7 +4,7 @@
  *
  * Removes plugin CONFIGURATION and DERIVED data when the plugin is deleted via
  * the WordPress admin: the settings option, the notification tracking options,
- * the per-user wish-tracking meta, and any scheduled cron events.
+ * the leftover 2.5.0 wish-tracking meta, and any scheduled cron events.
  *
  * DELIBERATELY RETAINED - the `bb_birthday_hidden` user meta:
  *
@@ -36,6 +36,12 @@ delete_option( 'bp_birthdays_settings' );
 delete_option( 'bp_birthdays_emails_installed' );
 delete_option( 'bp_birthdays_last_check_date' );
 delete_option( 'bp_birthdays_sent_today' );
+delete_option( 'bp_birthdays_notify_state' );
+
+// Leftover run locks (a lock is removed when its run ends; this only matters after a crash).
+global $wpdb;
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Uninstall cleanup of lock rows.
+$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'bp\\_birthdays\\_lock\\_%'" );
 
 // Multisite: remove per-site options on every site.
 if ( is_multisite() ) {
@@ -45,9 +51,14 @@ if ( is_multisite() ) {
 	delete_site_option( 'bp_birthdays_sent_today' );
 }
 
-// Wish-tracking user meta (all users).
+// Wish-tracking user meta written by 2.5.0 and earlier (all users).
 delete_metadata( 'user', 0, 'bb_birthday_wished_users', '', true );
 
 // Scheduled events (already cleared on deactivation; belt and braces).
 wp_clear_scheduled_hook( 'bb_cleanup_old_wishes' );
-wp_clear_scheduled_hook( 'bp_birthdays_daily_check' );
+wp_unschedule_hook( 'bp_birthdays_daily_check' );
+wp_unschedule_hook( 'bp_birthdays_notify_chunk' );
+if ( function_exists( 'as_unschedule_all_actions' ) ) {
+	as_unschedule_all_actions( 'bp_birthdays_notify_chunk' );
+	as_unschedule_all_actions( '', array(), 'buddypress-birthdays' );
+}
