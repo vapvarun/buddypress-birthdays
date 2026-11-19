@@ -12,7 +12,6 @@
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 6.5
  * Requires PHP: 8.1
- * Tested up to: 7.1
  *
  * @link              https://wbcomdesigns.com/contact/
  * @since             1.0.0

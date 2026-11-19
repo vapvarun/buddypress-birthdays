@@ -294,6 +294,7 @@ Birthday notifications now respect profile privacy and opt-outs, failed emails a
 * Dev      - Removed the send-wishes recorder (an AJAX action, a daily event and a user meta key that nothing read) and the tooltip, notice, scroll and resize code in the widget script that never rendered anything; the leftover meta is deleted on the first request after updating.
 * Dev      - Removed the three bb_birthdays_animation_speed, bb_birthdays_tooltip_delay and bb_birthdays_cache_duration filters, which no longer had any effect.
 * Dev      - Added the bp_birthdays_display_timezone filter to show birthdays in another timezone, and bin/build-release.sh, bin/local-ci.sh and a .distignore for repeatable release zips.
+* Dev      - "Tested up to" is declared only in readme.txt (7.1); the plugin file header no longer carries it, which Plugin Check rejects.
 * Compat   - Requires PHP 8.1 or higher.
 
 = 2.5.0 - July 2026 =
