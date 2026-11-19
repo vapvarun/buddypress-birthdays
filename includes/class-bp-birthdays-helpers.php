@@ -206,6 +206,77 @@ class BP_Birthdays_Helpers {
 	}
 
 	/**
+	 * The one timezone every birthday date is read and shown in.
+	 *
+	 * A birthday is a calendar date, so "today", "upcoming" and age all follow
+	 * the site's day, never the server's or the browser's. Filterable so a
+	 * site can show each member their own day.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param int $user_id Member the date is shown to, 0 for the site.
+	 * @return DateTimeZone
+	 */
+	public static function display_timezone( $user_id = 0 ) {
+		/**
+		 * Filters the timezone birthdays are calculated and shown in.
+		 *
+		 * @since 2.5.1
+		 *
+		 * @param DateTimeZone $timezone The site's timezone.
+		 * @param int          $user_id  Member the date is shown to, 0 for the site.
+		 */
+		$timezone = apply_filters( 'bp_birthdays_display_timezone', wp_timezone(), absint( $user_id ) );
+
+		return $timezone instanceof DateTimeZone ? $timezone : wp_timezone();
+	}
+
+	/**
+	 * Today, at the start of the display timezone's day.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param int $user_id Member the date is shown to, 0 for the site.
+	 * @return DateTimeImmutable
+	 */
+	public static function today( $user_id = 0 ) {
+		return ( new DateTimeImmutable( 'now', self::display_timezone( $user_id ) ) )->setTime( 0, 0, 0 );
+	}
+
+	/**
+	 * The one formatter for a birthday date shown to a person.
+	 *
+	 * Takes a calendar date (Y-m-d, optionally with a time that is ignored) and
+	 * prints it with the site's language in the display timezone, so the day
+	 * never shifts. Month and day names are translated by WordPress.
+	 *
+	 * @since 2.5.1
+	 *
+	 * @param string|DateTimeInterface $date     Calendar date.
+	 * @param string                   $format   PHP date format.
+	 * @param string                   $fallback Returned when the date cannot be read.
+	 * @param int                      $user_id  Member the date is shown to, 0 for the site.
+	 * @return string
+	 */
+	public static function date_label( $date, $format = 'F j', $fallback = '', $user_id = 0 ) {
+		$timezone = self::display_timezone( $user_id );
+
+		if ( $date instanceof DateTimeInterface ) {
+			$ymd = $date->format( 'Y-m-d' );
+		} else {
+			$ymd = substr( trim( (string) $date ), 0, 10 );
+		}
+
+		$day = DateTimeImmutable::createFromFormat( '!Y-m-d', $ymd, $timezone );
+		if ( ! $day || $day->format( 'Y-m-d' ) !== $ymd ) {
+			return $fallback;
+		}
+
+		// time-ok: the one formatter; midnight in the display timezone, printed in that timezone.
+		return wp_date( $format, $day->getTimestamp(), $timezone );
+	}
+
+	/**
 	 * Calculate age from birth date.
 	 *
 	 * @param string $birth_date Birth date string.
@@ -213,10 +284,10 @@ class BP_Birthdays_Helpers {
 	 */
 	public static function calculate_age( $birth_date ) {
 		try {
-			$birth = new DateTime( $birth_date, wp_timezone() );
-			$today = new DateTime( 'now', wp_timezone() );
-			$age   = $today->diff( $birth )->y;
-			return $age;
+			$timezone = self::display_timezone();
+			$birth    = new DateTimeImmutable( substr( trim( (string) $birth_date ), 0, 10 ), $timezone );
+
+			return $birth->diff( self::today() )->y;
 		} catch ( Exception $e ) {
 			return false;
 		}
@@ -230,12 +301,7 @@ class BP_Birthdays_Helpers {
 	 * @return string Formatted date.
 	 */
 	public static function format_birthday( $date, $format = 'F j' ) {
-		try {
-			$datetime = new DateTime( $date );
-			return wp_date( $format, $datetime->getTimestamp() );
-		} catch ( Exception $e ) {
-			return '';
-		}
+		return self::date_label( $date, $format );
 	}
 
 	/**
@@ -246,9 +312,9 @@ class BP_Birthdays_Helpers {
 	 */
 	public static function is_birthday_today( $date ) {
 		try {
-			$birth = new DateTime( $date );
-			$today = new DateTime( 'now', wp_timezone() );
-			return $birth->format( 'm-d' ) === $today->format( 'm-d' );
+			$birth = new DateTimeImmutable( substr( trim( (string) $date ), 0, 10 ), self::display_timezone() );
+
+			return in_array( $birth->format( 'm-d' ), self::birthday_month_days( self::today() ), true );
 		} catch ( Exception $e ) {
 			return false;
 		}
@@ -279,25 +345,21 @@ class BP_Birthdays_Helpers {
 	 */
 	public static function days_until_birthday( $date ) {
 		try {
-			$birth = new DateTime( $date );
-			$today = new DateTime( 'now', wp_timezone() );
-			$today->setTime( 0, 0, 0 );
+			$today     = self::today();
+			$month_day = ( new DateTimeImmutable( substr( trim( (string) $date ), 0, 10 ), self::display_timezone() ) )->format( 'm-d' );
 
-			// Set birthday to this year.
-			$next_birthday = new DateTime( 'now', wp_timezone() );
-			$next_birthday->setDate(
-				(int) $today->format( 'Y' ),
-				(int) $birth->format( 'm' ),
-				(int) $birth->format( 'd' )
-			);
-			$next_birthday->setTime( 0, 0, 0 );
-
-			// If birthday has passed this year, use next year.
-			if ( $next_birthday < $today ) {
-				$next_birthday->modify( '+1 year' );
+			// Next day it is celebrated: this year, else next. Feb 29 falls on Feb 28 in a year without one.
+			foreach ( array( 0, 1 ) as $add_years ) {
+				$year    = (int) $today->format( 'Y' ) + $add_years;
+				$leap    = '1' === $today->setDate( $year, 1, 1 )->format( 'L' );
+				$day     = ( '02-29' === $month_day && ! $leap ) ? '02-28' : $month_day;
+				$next    = $today->setDate( $year, (int) substr( $day, 0, 2 ), (int) substr( $day, 3, 2 ) );
+				if ( $next >= $today ) {
+					return (int) $today->diff( $next )->days;
+				}
 			}
 
-			return (int) $today->diff( $next_birthday )->days;
+			return 0;
 		} catch ( Exception $e ) {
 			return 0;
 		}
@@ -373,7 +435,15 @@ class BP_Birthdays_Helpers {
 		$owner_id  = absint( $owner_id );
 		$viewer_id = absint( $viewer_id );
 
+		// BuddyPress and BuddyBoss know every level, including ones an add-on registers, and hide
+		// the field for the viewer by their own rules. Ask them first.
+		if ( function_exists( 'bp_xprofile_get_hidden_field_types_for_user' ) ) {
+			return ! in_array( (string) $level, (array) bp_xprofile_get_hidden_field_types_for_user( $owner_id, $viewer_id ), true );
+		}
+
 		switch ( $level ) {
+			case 'public':
+				return true;
 			case 'onlyme':
 				return $viewer_id && $viewer_id === $owner_id;
 			case 'adminsonly':
@@ -383,7 +453,8 @@ class BP_Birthdays_Helpers {
 			case 'loggedin':
 				return (bool) $viewer_id;
 			default:
-				return true;
+				// A level this plugin does not know stays hidden.
+				return false;
 		}
 	}
 
