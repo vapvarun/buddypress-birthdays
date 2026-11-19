@@ -528,7 +528,7 @@ class BP_Birthdays_Notifications {
 		$this->processing_day = $day;
 
 		// Drop days older than yesterday and move a pre-2.5.1 shape, under the option's lock.
-		$this->mutate_option(
+		$housekeeping = $this->mutate_option(
 			self::SENT_TRACKING_OPTION,
 			function ( $tracking ) use ( $target ) {
 				return $this->normalise_tracking( $tracking, $target );
@@ -540,7 +540,7 @@ class BP_Birthdays_Notifications {
 			'activity'     => 'post_birthday_activity',
 			'notification' => 'send_bp_notifications',
 		);
-		$failed   = false;
+		$failed   = ! $housekeeping;
 
 		// A request that dies part way (a fatal, a killed worker) must not lose the rest of the
 		// day: arm the hourly retry first. A clean finish disarms it below.
@@ -555,8 +555,14 @@ class BP_Birthdays_Notifications {
 			// notifications later (or after a crash) always has a row to mark. A pre-2.5.1 row
 			// that is not an array means the member was fully processed.
 			$row = $this->tracking_row( $day, $user_id, true );
-			if ( ! is_array( $row ) ) {
+			if ( false === $row || null === $row ) {
+				// The lock or the write failed: the member is not served and not skipped as done, so the
+				// hourly retry stays armed and tries again.
+				$failed = true;
 				continue;
+			}
+			if ( ! is_array( $row ) ) {
+				continue; // Pre-2.5.1 row: fully processed.
 			}
 
 			foreach ( $channels as $channel => $method ) {
@@ -567,7 +573,12 @@ class BP_Birthdays_Notifications {
 				// The notification fan-out is idempotent and holds its own lock; the email and the
 				// activity post are claimed first, so two overlapping runs can never both send.
 				if ( 'notification' !== $channel ) {
-					if ( ! $this->claim_slot( $day, array( $user_id, $channel ) ) ) {
+					$claimed = $this->claim_slot( $day, array( $user_id, $channel ) );
+					if ( null === $claimed ) {
+						$failed = true; // The claim could not be recorded: retry, never send unclaimed.
+						continue;
+					}
+					if ( ! $claimed ) {
 						continue; // Done already, or another run is sending it right now.
 					}
 				} elseif ( $this->slot_is_done( $day, array( $user_id, $channel ) ) ) {
@@ -584,13 +595,17 @@ class BP_Birthdays_Notifications {
 
 				if ( 'notification' === $channel ) {
 					if ( $sent ) {
-						$this->finish_slot( $day, array( $user_id, $channel ), true );
+						if ( ! $this->finish_slot( $day, array( $user_id, $channel ), true ) ) {
+							$failed = true; // Idempotent: the retry finds nothing left to write and marks it.
+						}
 					} else {
 						$failed = true;
 					}
 					continue;
 				}
 
+				// A send that succeeded but could not be recorded is not repeated by the retry: its
+				// claim stays in place and is logged by mutate_option().
 				$this->finish_slot( $day, array( $user_id, $channel ), (bool) $sent );
 				if ( ! $sent ) {
 					$failed = true;
@@ -599,7 +614,11 @@ class BP_Birthdays_Notifications {
 		}
 
 		// One admin summary per day, however many times (or how many runs at once) the cron runs.
-		if ( $this->get_setting( 'admin_email_enabled' ) && $this->claim_slot( $day, array( 'admin_summary' ) ) ) {
+		$summary_claim = $this->get_setting( 'admin_email_enabled' ) ? $this->claim_slot( $day, array( 'admin_summary' ) ) : false;
+		if ( null === $summary_claim ) {
+			$failed = true;
+		}
+		if ( $summary_claim ) {
 			$summary_to   = (string) $this->get_setting( 'admin_email', get_option( 'admin_email' ) );
 			$summary_user = get_user_by( 'email', $summary_to );
 
@@ -636,25 +655,44 @@ class BP_Birthdays_Notifications {
 			return false;
 		}
 
-		try {
-			wp_cache_delete( $option, 'options' );
-			wp_cache_delete( 'notoptions', 'options' );
-			$current = get_option( $option, array() );
-			$current = is_array( $current ) ? $current : array();
-			$new     = $change( $current );
+		$stored = false;
 
-			if ( $new !== $current ) {
-				if ( array() === $new ) {
-					delete_option( $option );
+		try {
+			// Two tries: a database deadlock rolls the write back without telling update_option()
+			// anything useful (it also returns false for an unchanged value), so each write is
+			// checked by reading the option again.
+			for ( $attempt = 0; $attempt < 2 && ! $stored; $attempt++ ) {
+				wp_cache_delete( $option, 'options' );
+				wp_cache_delete( 'notoptions', 'options' );
+				$current = get_option( $option, array() );
+				$current = is_array( $current ) ? $current : array();
+				$new     = $change( $current );
+
+				if ( $new !== $current ) {
+					if ( array() === $new ) {
+						delete_option( $option );
+					} else {
+						update_option( $option, $new, false );
+					}
+
+					wp_cache_delete( $option, 'options' );
+					wp_cache_delete( 'notoptions', 'options' );
+					$check = get_option( $option, array() );
+					$check = is_array( $check ) ? $check : array();
+					$stored = ( $check === $new );
 				} else {
-					update_option( $option, $new, false );
+					$stored = true;
 				}
 			}
 		} finally {
 			$this->lock_release( $lock );
 		}
 
-		return true;
+		if ( ! $stored ) {
+			$this->log( 'BP Birthdays: could not store ' . $option . ' after retrying; change not made.' );
+		}
+
+		return $stored;
 	}
 
 	/**
@@ -728,11 +766,12 @@ class BP_Birthdays_Notifications {
 	 * @param string $day     Day (Y-m-d).
 	 * @param int    $user_id Member.
 	 * @param bool   $create  Create an empty row when there is none.
-	 * @return mixed The row (an array), a non-array for a pre-2.5.1 row, or null.
+	 * @return mixed The row (an array), a non-array for a pre-2.5.1 row, null when there is none,
+	 *               or false when the row could not be created (lock or write failed).
 	 */
 	private function tracking_row( $day, $user_id, $create = false ) {
 		if ( $create ) {
-			$this->mutate_option(
+			$made = $this->mutate_option(
 				self::SENT_TRACKING_OPTION,
 				static function ( $tracking ) use ( $day, $user_id ) {
 					if ( ! isset( $tracking[ $day ][ $user_id ] ) ) {
@@ -741,6 +780,10 @@ class BP_Birthdays_Notifications {
 					return $tracking;
 				}
 			);
+
+			if ( ! $made ) {
+				return false;
+			}
 		}
 
 		wp_cache_delete( self::SENT_TRACKING_OPTION, 'options' );
@@ -825,14 +868,16 @@ class BP_Birthdays_Notifications {
 	 *
 	 * @param string $day  Day (Y-m-d).
 	 * @param array  $path Slot path.
-	 * @return bool True when this run now owns the send; false when it is done or in progress.
+	 * @return bool|null True when this run now owns the send; false when it is done or in progress;
+	 *                    null when the claim could not be recorded (lock or write failed).
 	 */
 	private function claim_slot( $day, array $path ) {
 		$won = false;
 
-		$this->mutate_option(
+		$stored = $this->mutate_option(
 			self::SENT_TRACKING_OPTION,
 			static function ( $tracking ) use ( $day, $path, &$won ) {
+				$won      = false;
 				$day_rows = isset( $tracking[ $day ] ) && is_array( $tracking[ $day ] ) ? $tracking[ $day ] : array();
 				$value    = (int) self::path_get( $day_rows, $path );
 
@@ -847,6 +892,10 @@ class BP_Birthdays_Notifications {
 			}
 		);
 
+		if ( ! $stored ) {
+			return null;
+		}
+
 		return $won;
 	}
 
@@ -856,9 +905,10 @@ class BP_Birthdays_Notifications {
 	 * @param string $day  Day (Y-m-d).
 	 * @param array  $path Slot path.
 	 * @param bool   $done Whether the send succeeded.
+	 * @return bool Whether the change was stored.
 	 */
 	private function finish_slot( $day, array $path, $done ) {
-		$this->mutate_option(
+		return $this->mutate_option(
 			self::SENT_TRACKING_OPTION,
 			static function ( $tracking ) use ( $day, $path, $done ) {
 				$day_rows = isset( $tracking[ $day ] ) && is_array( $tracking[ $day ] ) ? $tracking[ $day ] : array();
@@ -1259,7 +1309,11 @@ class BP_Birthdays_Notifications {
 		// a fresh one means another run is on this birthday, so come back once it would have expired.
 		$lock = 'bp_birthdays_lock_' . md5( $day . ':' . $user_id );
 		if ( ! $this->lock_acquire( $lock, 3 * MINUTE_IN_SECONDS ) ) {
-			$this->queue_notification_chunk( $day, $user_id, max( 30, 3 * MINUTE_IN_SECONDS - $this->lock_age( $lock ) + 30 ) );
+			// The run that holds the lock queues the next chunk itself: leave its schedule alone, and
+			// only add an attempt when nothing at all is pending.
+			if ( ! $this->has_pending_notification_chunk( $day, $user_id ) ) {
+				$this->queue_notification_chunk( $day, $user_id, max( 30, 3 * MINUTE_IN_SECONDS - $this->lock_age( $lock ) + 30 ), false );
+			}
 			return 'pending';
 		}
 
@@ -1308,7 +1362,9 @@ class BP_Birthdays_Notifications {
 			// BEFORE the rows are written, so a fatal or a killed request part way leaves a pending
 			// action that takes over the stale lock and carries on from the saved cursor.
 			if ( $more ) {
-				$this->set_state_entry( $key, $cursor );
+				if ( ! $this->set_state_entry( $key, $cursor ) ) {
+					return false; // No record, no safety net: write nothing now; the retry starts again.
+				}
 				$this->queue_notification_chunk( $day, $user_id, 4 * MINUTE_IN_SECONDS );
 			}
 
@@ -1390,12 +1446,16 @@ class BP_Birthdays_Notifications {
 			}
 
 			if ( ! $more ) {
-				$this->clear_state_entry( $key );
+				$cleared = $this->clear_state_entry( $key );
 				$this->clear_notification_chunk( $day, $user_id );
-				return true;
+				// A record that could not be removed is harmless (a later chunk finds nothing left to
+				// write), but report it so the channel is retried and marked.
+				return $cleared;
 			}
 
-			$this->set_state_entry( $key, $last_id );
+			if ( ! $this->set_state_entry( $key, $last_id ) ) {
+				return false; // The cursor did not advance: the safety attempt repeats this chunk, writing nothing twice.
+			}
 			$this->queue_notification_chunk( $day, $user_id );
 
 			return 'pending';
@@ -1434,9 +1494,10 @@ class BP_Birthdays_Notifications {
 	 *
 	 * @param string $key    Y-m-d:user_id.
 	 * @param int    $cursor Last member ID written.
+	 * @return bool Whether the record was stored.
 	 */
 	private function set_state_entry( $key, $cursor ) {
-		$this->mutate_option(
+		return $this->mutate_option(
 			self::NOTIFY_STATE_OPTION,
 			static function ( $states ) use ( $key, $cursor ) {
 				$states[ $key ] = array(
@@ -1452,9 +1513,10 @@ class BP_Birthdays_Notifications {
 	 * Remove a finished fan-out's record. Only this key changes, under the option's lock.
 	 *
 	 * @param string $key Y-m-d:user_id.
+	 * @return bool Whether the change was stored.
 	 */
 	private function clear_state_entry( $key ) {
-		$this->mutate_option(
+		return $this->mutate_option(
 			self::NOTIFY_STATE_OPTION,
 			static function ( $states ) use ( $key ) {
 				unset( $states[ $key ] );
@@ -1466,17 +1528,20 @@ class BP_Birthdays_Notifications {
 	/**
 	 * Queue a chunk: Action Scheduler when present, WP-Cron otherwise.
 	 *
-	 * Replaces any pending attempt for the same birthday, so there is at most one. Only
+	 * By default replaces any pending attempt for the same birthday, so there is at most one. Only
 	 * PENDING actions count: the action that is running right now must not hide its successor.
 	 *
 	 * @param string $day     Day (Y-m-d).
 	 * @param int    $user_id Birthday member.
 	 * @param int    $delay   Seconds to wait; 0 runs it at the next opportunity.
+	 * @param bool   $replace Drop any pending attempt first (the run that owns the fan-out does; a run that lost the lock must not).
 	 */
-	private function queue_notification_chunk( $day, $user_id, $delay = 0 ) {
+	private function queue_notification_chunk( $day, $user_id, $delay = 0, $replace = true ) {
 		$args = array( $day, (int) $user_id );
 
-		$this->clear_notification_chunk( $day, $user_id );
+		if ( $replace ) {
+			$this->clear_notification_chunk( $day, $user_id );
+		}
 
 		if ( function_exists( 'as_schedule_single_action' ) ) {
 			if ( $delay > 0 ) {
@@ -1588,8 +1653,10 @@ class BP_Birthdays_Notifications {
 
 		$result = $this->notify_chunk( $day, $user_id, xprofile_get_field_visibility_level( $field, $user_id ) );
 
-		if ( true === $result ) {
-			$this->finish_slot( $day, array( $user_id, 'notification' ), true );
+		if ( true === $result && ! $this->finish_slot( $day, array( $user_id, 'notification' ), true ) ) {
+			// Written but not marked: look again in a minute; with no record and the slot unfinished
+			// the handler restarts, finds every row in place and marks it.
+			$this->queue_notification_chunk( $day, $user_id, MINUTE_IN_SECONDS );
 		}
 	}
 
