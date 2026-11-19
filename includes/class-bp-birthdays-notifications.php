@@ -968,6 +968,21 @@ class BP_Birthdays_Notifications {
 
 		$recipients = array_values( array_filter( array_map( 'absint', (array) $recipients ) ) );
 
+		// Each recipient must be someone BuddyPress lets see this birthday: the same rule the widget
+		// uses, so a level an add-on registers is honoured too. The friendships of the whole batch
+		// are read in one query first, so the per-recipient check runs from cache.
+		if ( $recipients && $friends_active && method_exists( 'BP_Friends_Friendship', 'update_bp_friends_cache' ) ) {
+			BP_Friends_Friendship::update_bp_friends_cache( $user_id, $recipients );
+		}
+		$recipients = array_values(
+			array_filter(
+				$recipients,
+				static function ( $recipient_id ) use ( $visibility, $user_id ) {
+					return BP_Birthdays_Helpers::visibility_allows( $visibility, $user_id, $recipient_id );
+				}
+			)
+		);
+
 		if ( empty( $recipients ) ) {
 			return true;
 		}
@@ -1103,10 +1118,24 @@ class BP_Birthdays_Notifications {
 	 * @return bool Whether the summary was handed to a mailer (true when there is nothing to send).
 	 */
 	private function send_admin_summary( $birthdays ) {
+		// The summary goes to one address. A member's birthday is listed when its level is known,
+		// is not the strict Only Me, and, for a level an add-on registers (not one of the four
+		// BuddyPress ships), when BuddyPress lets the account that owns this address see it.
+		$summary_to   = (string) $this->get_setting( 'admin_email', get_option( 'admin_email' ) );
+		$summary_user = get_user_by( 'email', $summary_to );
+		$built_in     = array( 'public', 'loggedin', 'friends', 'adminsonly' );
+
 		$birthdays = array_filter(
 			$birthdays,
-			static function ( $birthday ) {
-				return 'onlyme' !== $birthday['visibility'] && BP_Birthdays_Helpers::is_known_visibility( $birthday['visibility'] );
+			static function ( $birthday ) use ( $summary_user, $built_in ) {
+				$level = $birthday['visibility'];
+
+				if ( 'onlyme' === $level || ! BP_Birthdays_Helpers::is_known_visibility( $level ) ) {
+					return false;
+				}
+
+				return in_array( $level, $built_in, true )
+					|| ( $summary_user && BP_Birthdays_Helpers::visibility_allows( $level, $birthday['user_id'], $summary_user->ID ) );
 			}
 		);
 

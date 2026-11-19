@@ -288,6 +288,7 @@ Birthday notifications now respect profile privacy and opt-outs, failed emails a
 * Fix      - A run of private or opted-out birthdays at the front of the list no longer leaves the widget short: candidates are read in growing batches, at most 10, until the list is full.
 * Fix      - Clearing the birthday cache works on object cache backends that cannot flush a single group.
 * Fix      - A birthday notification is no longer silently dropped when a member still has last year's unread one, and a notification BuddyPress cannot save is retried an hour later instead of being marked sent.
+* Fix      - Birthday notifications and the admin summary now go only to members BuddyPress lets see that birthday, including levels added by other plugins.
 * Fix      - Dark mode and the settings screens no longer use fixed colours for the plugin's admin badge text.
 * Dev      - Removed the send-wishes recorder (an AJAX action, a daily event and a user meta key that nothing read) and the tooltip, notice, scroll and resize code in the widget script that never rendered anything; the leftover meta is deleted on the first request after updating.
 * Dev      - Removed the three bb_birthdays_animation_speed, bb_birthdays_tooltip_delay and bb_birthdays_cache_duration filters, which no longer had any effect.
