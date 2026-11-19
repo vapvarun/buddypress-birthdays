@@ -40,6 +40,37 @@ function bb_birthdays_load_textdomain() {
 }
 add_action( 'init', 'bb_birthdays_load_textdomain' );
 
+/**
+ * Whether the BuddyPress Extended Profiles component is on.
+ *
+ * Birthdays live in an xProfile date field, so every feature of the plugin
+ * (widget, shortcode, notifications, settings) needs it. Read from the stored
+ * component list so it answers correctly at any point after BuddyPress loads.
+ *
+ * @return bool
+ */
+function bb_birthdays_xprofile_active() {
+	$components = function_exists( 'bp_get_option' ) ? bp_get_option( 'bp-active-components', array() ) : array();
+
+	return is_array( $components ) && isset( $components['xprofile'] );
+}
+
+/**
+ * Tell admins why nothing is registered while Extended Profiles is off.
+ */
+function bb_birthdays_xprofile_notice() {
+	if ( ! current_user_can( 'manage_options' ) || bb_birthdays_xprofile_active() ) {
+		return;
+	}
+
+	$url = admin_url( 'options-general.php?page=bp-components' );
+	echo '<div class="notice notice-warning"><p>'
+	/* translators: %s: BuddyPress component settings link. */
+	. sprintf( wp_kses_post( __( 'The Birthday Widget needs the BuddyPress Extended Profiles component, which is off. Turn it on under %s to use the birthday widget, shortcode and notifications.', 'buddypress-birthdays' ) ), '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Settings > BuddyPress', 'buddypress-birthdays' ) . '</a>' )
+	. '</p></div>';
+}
+add_action( 'admin_notices', 'bb_birthdays_xprofile_notice' );
+
 // Let's Initialize Everything.
 if ( file_exists( plugin_dir_path( __FILE__ ) . 'core-init.php' ) ) {
 	require_once plugin_dir_path( __FILE__ ) . 'core-init.php';
@@ -57,7 +88,9 @@ if ( is_admin() ) {
 		add_action(
 			'plugins_loaded',
 			function () {
-				( new BP_Birthdays_Admin_Panel() )->register();
+				if ( bb_birthdays_xprofile_active() ) {
+					( new BP_Birthdays_Admin_Panel() )->register();
+				}
 			}
 		);
 	}
@@ -74,29 +107,24 @@ if ( file_exists( plugin_dir_path( __FILE__ ) . 'includes/class-bp-birthdays-not
 }
 
 /**
- * Activation: schedule the plugin's daily cron events.
+ * Activation: schedule the daily birthday check.
  *
- * Both events also self-heal while the plugin is active (core-init.php and
- * BP_Birthdays_Notifications::schedule_cron() re-schedule on init if
+ * The event also self-heals while the plugin is active
+ * (BP_Birthdays_Notifications::schedule_cron() re-schedules on init if
  * missing), but activation is the canonical point so the pair with the
  * deactivation cleanup below is complete.
  */
 function bb_birthdays_activate() {
-	if ( ! wp_next_scheduled( 'bb_cleanup_old_wishes' ) ) {
-		wp_schedule_event( time(), 'daily', 'bb_cleanup_old_wishes' );
-	}
-
-	if ( class_exists( 'BP_Birthdays_Notifications' ) ) {
+	if ( bb_birthdays_xprofile_active() && class_exists( 'BP_Birthdays_Notifications' ) ) {
 		BP_Birthdays_Notifications::get_instance()->schedule_cron();
 	}
 }
 register_activation_hook( __FILE__, 'bb_birthdays_activate' );
 
 /**
- * Deactivation: clear BOTH daily cron events so no orphaned cron persists.
+ * Deactivation: clear the daily check so no orphaned cron persists.
  */
 function bb_birthdays_deactivate() {
-	wp_clear_scheduled_hook( 'bb_cleanup_old_wishes' );
 	// Unschedule every event on the hook, including a queued retry run.
 	wp_unschedule_hook( 'bp_birthdays_daily_check' );
 }

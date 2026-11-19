@@ -1210,4 +1210,11 @@ class BP_Birthdays_Notifications {
 }
 
 // Initialize.
-add_action( 'bp_loaded', array( 'BP_Birthdays_Notifications', 'get_instance' ) );
+add_action(
+	'bp_loaded',
+	function () {
+		if ( bb_birthdays_xprofile_active() ) {
+			BP_Birthdays_Notifications::get_instance();
+		}
+	}
+);
