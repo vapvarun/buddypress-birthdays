@@ -156,6 +156,7 @@
     { "hook": "plugins_loaded", "callback": "closure -> (new BP_Birthdays_Admin_Panel())->register()", "where": "buddypress-birthdays.php:57-62", "purpose": "Bootstrap the card-panel admin (admin-only, inside is_admin() guard :51)" },
     { "hook": "plugins_loaded", "callback": "BP_Birthdays_Admin::get_instance", "where": "admin/class-bp-birthdays-admin.php:225", "purpose": "Instantiate the legacy service singleton (constructor is a no-op; only the sanitizer/getter are used)" },
     { "hook": "wp_enqueue_scripts (10)", "callback": "bb_register_core_css / bb_register_core_js", "where": "core-init.php:55, 117", "purpose": "Frontend bb-core CSS/JS, gated on bb_should_load_assets(); versioned with BIRTHDAY_WIDGET_VERSION" },
+    { "hook": "wp_footer (999)", "callback": "bb_debug_widget_loading", "where": "core-init.php", "purpose": "Admin-only debug panel behind WP_DEBUG + manage_options + ?debug_birthdays" },
     { "hook": "wp_footer (5)", "callback": "bb_footer_asset_check", "where": "core-init.php:153", "purpose": "Late force-load of assets for widgets/shortcodes rendered after wp_enqueue_scripts" },
     { "hook": "xprofile_data_after_save", "callback": "bb_clear_cache_on_xprofile_update", "where": "core-init.php:550" },
     { "hook": "friends_friendship_accepted / _deleted (10,3) / _withdrawn", "callback": "bb_clear_cache_on_friendship_accepted / _deleted / _withdrawn", "where": "core-init.php:562, 574, 584" },

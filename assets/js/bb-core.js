@@ -1,6 +1,6 @@
 /*-----------------------------
-* BuddyPress Birthdays: today's-birthday celebration.
-* Everything else on the list is server-rendered.
+* BuddyPress Birthdays: today's-birthday celebration, the send-wishes
+* click state and its analytics events. The list itself is server-rendered.
 -----------------------------*/
 
 (function($) {
@@ -30,6 +30,59 @@
                     }, index * 500);
                 });
             }
+        },
+
+        // Send wishes opens the private-message compose screen. The button shows a short
+        // loading state so a second click does not start a second navigation.
+        handleWishesClick: function(e) {
+            var $button = $(e.currentTarget);
+
+            if ($button.hasClass('loading')) {
+                e.preventDefault();
+                return;
+            }
+
+            $button.addClass('loading').attr('aria-disabled', 'true');
+            BPBirthdays.trackWishEvent($button);
+
+            setTimeout(function() {
+                $button.removeClass('loading').removeAttr('aria-disabled');
+            }, 1000);
+        },
+
+        // Reports a click to Google Analytics 4 / Universal Analytics when the site has them,
+        // and to window.customBirthdayTracking( 'wish_sent', { user, timestamp } ) when defined.
+        trackWishEvent: function($button) {
+            var userName = $button.closest('.bp-birthday-item').find('.bp-birthday-name a').text() || 'Unknown';
+
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'birthday_wish_sent', {
+                    event_category: 'engagement',
+                    event_label: 'buddypress_birthdays',
+                    custom_parameters: { user_name: userName }
+                });
+            }
+
+            if (typeof ga !== 'undefined') {
+                ga('send', 'event', 'Birthday Wishes', 'Send', userName);
+            }
+
+            if (typeof window.customBirthdayTracking === 'function') {
+                window.customBirthdayTracking('wish_sent', { user: userName, timestamp: new Date().toISOString() });
+            }
+        },
+
+        // Public helpers kept from 2.5.0.
+        refresh: function() {
+            this.init();
+        },
+
+        getTodaysBirthdays: function() {
+            return $('.widget_bp_birthdays .today-birthday').length;
+        },
+
+        getUpcomingBirthdays: function() {
+            return $('.widget_bp_birthdays .bp-birthday-item').length;
         },
 
         createConfetti: function( $target, options = {} ) {
@@ -187,5 +240,18 @@
     $(function() {
         BPBirthdays.init();
     });
+
+    $(document).on('click.bpBirthdays', '.bp-send-wishes', BPBirthdays.handleWishesClick);
+
+    // Re-run the effects after a widget is saved in the Customizer or the Widgets screen.
+    $(document).on('widget-updated.bpBirthdays', function(e, widget) {
+        if ($(widget).hasClass('widget_bp_birthdays')) {
+            setTimeout(function() {
+                BPBirthdays.init();
+            }, 100);
+        }
+    });
+
+    window.BPBirthdays = BPBirthdays;
 
 })(jQuery);

@@ -890,7 +890,7 @@ class BP_Birthdays_Notifications {
 	 *
 	 * @param int   $user_id User ID.
 	 * @param array $birthday_data Birthday data.
-	 * @return bool Always true: a notification row cannot fail to send.
+	 * @return bool False when BuddyPress could not save a row, so the retry writes it.
 	 */
 	private function send_bp_notifications( $user_id, $birthday_data ) {
 		if ( ! function_exists( 'bp_notifications_add_notification' ) || ! bp_is_active( 'notifications' ) ) {
@@ -974,8 +974,26 @@ class BP_Birthdays_Notifications {
 			}
 		);
 
-		foreach ( $recipients as $recipient_id ) {
-			bp_notifications_add_notification(
+		// BuddyPress refuses (returns false) to add a notification when the same member still has an
+		// unread one for the same item and action, which is what a birthday is every year, so a
+		// member who never opened last year's would silently miss this year's. Duplicates are
+		// allowed and today's are skipped here instead, one query for the whole batch.
+		$start_utc = BP_Birthdays_Helpers::today()->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
+		$existing  = BP_Notifications_Notification::get(
+			array(
+				'item_id'           => $user_id,
+				'component_name'    => 'birthdays',
+				'component_action'  => 'birthday_today',
+				'is_new'            => 'both',
+				'per_page'          => false,
+				'date_query'        => array( array( 'after' => $start_utc, 'inclusive' => true ) ),
+			)
+		);
+		$have      = array_map( 'intval', wp_list_pluck( (array) $existing, 'user_id' ) );
+		$failed    = false;
+
+		foreach ( array_diff( $recipients, $have ) as $recipient_id ) {
+			$id = bp_notifications_add_notification(
 				array(
 					'user_id'           => $recipient_id,
 					'item_id'           => $user_id,
@@ -984,8 +1002,20 @@ class BP_Birthdays_Notifications {
 					'component_action'  => 'birthday_today',
 					'date_notified'     => bp_core_current_time(),
 					'is_new'            => 1,
+					'allow_duplicate'   => true,
 				)
 			);
+
+			// A row BuddyPress could not save leaves the channel unrecorded, so the hourly retry
+			// writes it, and the skip above keeps recipients that did get theirs from getting two.
+			if ( ! $id ) {
+				$failed = true;
+			}
+		}
+
+		if ( $failed ) {
+			$this->log( sprintf( 'BP Birthdays: a birthday notification for member %d could not be saved; it will be retried.', $user_id ) );
+			return false;
 		}
 
 		return true;

@@ -203,6 +203,14 @@ echo esc_attr( $item_class );
 echo wp_kses_post( $args['after_widget'] );
 ```
 
+### Debug panel
+
+With `WP_DEBUG` on, an administrator can add `?debug_birthdays=1` to any page to see whether the widget is placed, the assets are loaded and the shortcode is used.
+
+### Analytics events
+
+Clicking Send wishes reports `birthday_wish_sent` to Google Analytics 4 (`gtag`) or Universal Analytics (`ga`) when the site has them, and calls `window.customBirthdayTracking( 'wish_sent', { user, timestamp } )` when you define it.
+
 ### AJAX Security
 
 The plugin registers no AJAX actions.

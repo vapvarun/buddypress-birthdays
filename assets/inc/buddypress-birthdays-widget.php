@@ -166,7 +166,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		}
 		$offset = ( $current_page - 1 ) * $items_per_page;
 
-		echo '<ul class="bp-birthday-users-list">';
+		// role="list": Safari and VoiceOver drop list semantics once list-style is none.
+		echo '<ul class="bp-birthday-users-list" role="list">';
 
 		$birthdays_array = array_values( $birthdays );
 		$user_ids_array = array_keys( $birthdays );

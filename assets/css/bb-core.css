@@ -212,6 +212,36 @@
     flex-shrink: 0;
 }
 
+/* Loading state - no layout shift */
+.bp-send-wishes.loading {
+    opacity: 0.5;
+    pointer-events: none;
+    position: relative;
+}
+
+.bp-send-wishes.loading .dashicons {
+    opacity: 0;
+}
+
+.bp-send-wishes.loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    inset-inline-start: 50%;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+    border: 2px solid currentColor;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: bb-spin 1s linear infinite;
+}
+
+@keyframes bb-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* ====================================
    EMPTY STATE STYLING
 ==================================== */
@@ -280,7 +310,8 @@
         transition: none;
     }
 
-    .bp-birthday-item.birthday-celebrate {
+    .bp-birthday-item.birthday-celebrate,
+    .bp-send-wishes.loading::after {
         animation: none;
     }
 }

@@ -286,8 +286,9 @@ Birthday notifications now respect profile privacy and opt-outs, failed emails a
 * Fix      - Today, upcoming dates and ages follow the site's timezone, so a birthday no longer shows a day early or late, and cached lists roll over at the site's midnight even with a long Cache Duration.
 * Fix      - Members whose account is not yet activated are skipped before the list is paged, so pages are no longer short.
 * Fix      - Clearing the birthday cache works on object cache backends that cannot flush a single group.
+* Fix      - A birthday notification is no longer silently dropped when a member still has last year's unread one, and a notification BuddyPress cannot save is retried an hour later instead of being marked sent.
 * Fix      - Dark mode and the settings screens no longer use fixed colours for the plugin's admin badge text.
-* Dev      - Removed the send-wishes recorder (an AJAX action, a daily event and a user meta key that nothing read) and the unused tooltip, analytics and notice code in the widget script; the leftover meta is deleted on the first request after updating.
+* Dev      - Removed the send-wishes recorder (an AJAX action, a daily event and a user meta key that nothing read) and the tooltip, notice, scroll and resize code in the widget script that never rendered anything; the leftover meta is deleted on the first request after updating.
 * Dev      - Removed the three bb_birthdays_animation_speed, bb_birthdays_tooltip_delay and bb_birthdays_cache_duration filters, which no longer had any effect.
 * Dev      - Added the bp_birthdays_display_timezone filter to show birthdays in another timezone, and bin/build-release.sh, bin/local-ci.sh and a .distignore for repeatable release zips.
 * Compat   - Requires PHP 8.1 or higher.

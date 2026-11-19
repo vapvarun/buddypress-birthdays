@@ -165,6 +165,46 @@ add_action(
 );
 
 /**
+ * Admin-only debug panel: add ?debug_birthdays=1 to a page while WP_DEBUG is on.
+ *
+ * Lists whether the widget is placed, whether the assets are loaded and where
+ * the shortcode is used. Styled with BuddyPress's own feedback notice.
+ */
+function bb_debug_widget_loading() {
+	$show = defined( 'WP_DEBUG' ) && WP_DEBUG && current_user_can( 'manage_options' ) && filter_input( INPUT_GET, 'debug_birthdays', FILTER_SANITIZE_NUMBER_INT );
+	if ( ! $show ) {
+		return;
+	}
+
+	$post     = get_post();
+	$sidebars = function_exists( 'wp_get_sidebars_widgets' ) ? wp_get_sidebars_widgets() : array();
+	$placed   = array();
+	foreach ( $sidebars as $sidebar_id => $widgets ) {
+		foreach ( (array) $widgets as $widget ) {
+			if ( 0 === strpos( (string) $widget, 'buddypress_birthdays-' ) ) {
+				$placed[] = $sidebar_id;
+			}
+		}
+	}
+
+	$rows = array(
+		'Widget class'    => class_exists( 'Widget_Buddypress_Birthdays' ) ? 'loaded' : 'missing',
+		'Widget placed in' => $placed ? implode( ', ', array_unique( $placed ) ) : 'no sidebar',
+		'Shortcode here'  => ( $post && has_shortcode( $post->post_content, 'bp_birthdays' ) ) ? 'yes' : 'no',
+		'CSS'             => wp_style_is( 'bb-core', 'done' ) ? 'loaded' : ( wp_style_is( 'bb-core', 'enqueued' ) ? 'queued' : 'not loaded' ),
+		'JS'              => wp_script_is( 'bb-core', 'done' ) ? 'loaded' : ( wp_script_is( 'bb-core', 'enqueued' ) ? 'queued' : 'not loaded' ),
+		'BuddyPress'      => defined( 'BP_VERSION' ) ? BP_VERSION : 'not active',
+	);
+
+	echo '<div class="bp-feedback info"><p><strong>' . esc_html__( 'Birthday Widget debug', 'buddypress-birthdays' ) . '</strong><br>';
+	foreach ( $rows as $label => $value ) {
+		echo esc_html( $label . ': ' . $value ) . '<br>';
+	}
+	echo '</p></div>';
+}
+add_action( 'wp_footer', 'bb_debug_widget_loading', 999 );
+
+/**
  * Retire the 2.5.0 wish-tracking leftovers.
  *
  * Up to 2.5.0 the send-wishes button recorded each wish in user meta and a daily
