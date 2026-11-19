@@ -37,6 +37,7 @@
 	--bbd-admin-success-light: #dcfce7;
 	--bbd-admin-warn: #f59e0b;
 	--bbd-admin-warn-light: #fef9c3;
+	--bbd-admin-warn-text: #92400e;
 	--bbd-admin-danger: #dc2626;
 	--bbd-admin-danger-dark: #b91c1c;
 	--bbd-admin-danger-light: #fee2e2;
@@ -690,7 +691,7 @@
 .bbd-notice--warn {
 	background: var(--bbd-admin-warn-light);
 	border-color: rgba(245, 158, 11, 0.3);
-	color: #92400e;
+	color: var(--bbd-admin-warn-text);
 }
 
 .bbd-notice--success {
