@@ -39,17 +39,7 @@
     { "name": "BB_CORE_VERSION", "removed_in": "2.5.0 (2026-07-16)", "was_defined_at": "core-init.php:23 (deleted)", "was_value": "'2.0.0' (stale — pinned at 2.0.0 while the plugin shipped 2.4.x/2.5.0)", "reason": "Dead cache-buster: it was the version string passed to the frontend bb-core style/script enqueues and the bbBirthdays.version localize, so frontend assets were cache-busted against 2.0.0 and never re-fetched across releases. All three uses now reference BIRTHDAY_WIDGET_VERSION (core-init.php:48, :74, :93). Verified: `grep -rn BB_CORE_VERSION` returns no hits anywhere in the tree." }
   ],
   "rest": { "namespace": null, "endpoints": [] },
-  "ajax": [
-    {
-      "action": "bb_birthdays_action",
-      "handler": "core-init.php::bb_birthdays_ajax_handler (defined core-init.php:418)",
-      "nonce": "bb_birthdays_nonce (verified core-init.php:421 before dispatch; wp_die on failure)",
-      "capability": "read (for refresh_widget sub-action only, core-init.php:430); mark_wished requires get_current_user_id() (core-init.php:447)",
-      "purpose": "Dispatcher: 'refresh_widget' clears birthday object cache (logged-in + read cap), 'mark_wished' records that current user wished a birthday user (user meta bb_birthday_wished_users); default branch wp_send_json_error('Invalid action')",
-      "registered_at": "core-init.php:484-485",
-      "nopriv": true
-    }
-  ],
+  "ajax": [],
   "admin_pages": [
     {
       "title": "Birthday Widget for BuddyPress (menu label: 'Birthdays')",
@@ -129,11 +119,9 @@
     { "name": "{prefix}bp_xprofile_data", "purpose": "Read member birthday values (BuddyPress-owned, read-only)", "read_at": ["assets/inc/buddypress-birthdays-widget.php:520,759,907,971", "includes/class-bp-birthdays-notifications.php:519-527"] },
     { "name": "{prefix}bp_xprofile_fields", "purpose": "Discover datebox/birthdate field ids (BuddyPress-owned, read-only)", "read_at": ["core-init.php:294-296", "includes/class-bp-birthdays-notifications.php:486-488", "includes/admin/class-bp-birthdays-admin-panel.php:364-367"] },
     { "name": "{prefix}bp_xprofile_meta", "purpose": "Read field date_format meta (BuddyPress-owned, read-only)", "read_at": ["assets/inc/buddypress-birthdays-widget.php:799-801,951-953"] },
-    { "name": "{users}", "purpose": "Join for display_name/user_email in cron birthday query (WP core, read-only)", "read_at": ["includes/class-bp-birthdays-notifications.php:519-527"] },
-    { "name": "{usermeta}", "purpose": "Read bb_birthday_wished_users in daily cleanup (WP core)", "read_at": ["core-init.php:497"] }
+    { "name": "{users}", "purpose": "Join for display_name/user_email in cron birthday query (WP core, read-only)", "read_at": ["includes/class-bp-birthdays-notifications.php:519-527"] }
   ],
   "user_meta": [
-    { "key": "bb_birthday_wished_users", "purpose": "Per-user record of which birthday users were wished, keyed by Y-m-d; pruned after 7 days by the daily cron", "read_at": "core-init.php:459", "written_at": "core-init.php:471", "cleaned_at": "core-init.php:497-515 (bb_cleanup_old_wishes)", "removed_on_uninstall": "uninstall.php:32 (delete_metadata user, all users)" },
     { "key": "bb_birthday_hidden", "purpose": "GDPR per-member opt-out flag ('yes' = hide this member's birthday from every plugin surface). Constant BP_Birthdays_Helpers::OPTOUT_META_KEY.", "read_at": "includes/class-bp-birthdays-helpers.php:360 (is_user_opted_out); core-init.php:647 (settings checkbox state)", "written_at": "core-init.php:684 (update, opt-out) / core-init.php:686 (delete, opt-in)", "enforced_at": ["assets/inc/buddypress-birthdays-widget.php:641 (widget + shortcode data path — bbirthdays_get_array)", "includes/class-bp-birthdays-notifications.php:661 (cron data path — get_todays_birthdays; covers activity, BP notifications, greeting emails and admin summary)"], "notes": "Two enforcement points cover ALL surfaces because both are the single central data path for their side. NOT removed on uninstall (uninstall.php only deletes bb_birthday_wished_users) — a deliberate-looking gap worth a decision: a member's privacy choice survives plugin deletion + reinstall." },
     { "key": "activation_key", "purpose": "Skip unactivated members in widget render (BuddyPress-owned, read-only)", "read_at": "assets/inc/buddypress-birthdays-widget.php:164" },
     { "key": "nickname / first_name", "purpose": "Display-name resolution in widget when display_name_type is nick_name/first_name (WP core, read-only)", "read_at": "assets/inc/buddypress-birthdays-widget.php:211-214", "notes": "An empty value falls back to bp_core_get_user_displayname() (:220-223) so the profile link always has text." }
@@ -150,9 +138,7 @@
     { "key": "Widget_Buddypress_Birthdays", "class": "Widget_Buddypress_Birthdays (WP_Widget)", "file": "assets/inc/buddypress-birthdays-widget.php", "added": "1.0.0", "role": "The ONLY render surface — used by both the widget and the shortcode" }
   ],
   "hooks_fired": [
-    { "name": "bb_birthdays_animation_speed", "type": "filter", "args_count": 1, "args_signature": ["int $speed=300"], "where": "core-init.php:107", "consumed_by": [], "purpose": "Frontend animation speed (ms), localized to bbBirthdays.settings.animation_speed" },
-    { "name": "bb_birthdays_tooltip_delay", "type": "filter", "args_count": 1, "args_signature": ["int $delay=300"], "where": "core-init.php:108", "consumed_by": [], "purpose": "Frontend tooltip delay (ms), localized to bbBirthdays.settings.tooltip_delay" },
-    { "name": "bb_birthdays_cache_duration", "type": "filter", "args_count": 1, "args_signature": ["int $seconds=1800"], "where": "core-init.php:109", "consumed_by": [], "purpose": "Localized to bbBirthdays.settings.cache_duration. NOTE: JS-facing only — the server-side widget TTL comes from the cache_duration setting (widget:105-111), NOT this filter." },
+    { "name": "bp_birthdays_display_timezone", "type": "filter", "args_count": 2, "args_signature": ["DateTimeZone $timezone", "int $user_id=0"], "where": "includes/class-bp-birthdays-helpers.php::display_timezone", "consumed_by": [], "purpose": "Timezone birthdays are calculated and shown in; default wp_timezone()." },
     { "name": "bb_core_load_assets", "type": "filter", "args_count": 1, "args_signature": ["bool $load=false"], "where": "core-init.php:215", "consumed_by": [], "purpose": "Last-resort override to force bb-core CSS/JS to load when none of the built-in context checks matched" },
     { "name": "bp_birthdays_admin_tabs", "type": "filter", "args_count": 1, "args_signature": ["array $tabs (slug => [label, icon, group])"], "where": "includes/admin/class-bp-birthdays-admin-panel.php:83", "consumed_by": [], "purpose": "Add/alter admin sidebar tabs. The 'discover' tab is appended AFTER this filter (:90-94) so it cannot be removed through it.", "added": "2.5.0" },
     { "name": "bp_birthdays_admin_capability", "type": "filter", "args_count": 1, "args_signature": ["string $cap='manage_options'"], "where": "includes/admin/class-bp-birthdays-admin-panel.php:129", "consumed_by": [], "purpose": "Capability required for the admin menu, submenu page and saving the settings (options.php)", "added": "2.5.0" },
@@ -163,7 +149,7 @@
     { "name": "bb_birthdays_widget_candidate_cap", "type": "filter", "args_count": 2, "args_signature": ["int $cap=200", "array $data (widget instance)"], "where": "assets/inc/buddypress-birthdays-widget.php:854", "consumed_by": [], "purpose": "Absolute hard cap (SQL LIMIT) on the widget candidate pool — the BB-3 big-site bound. Clamped to >=1." },
     { "name": "bbirthdays_get_name_to_display", "type": "filter", "args_count": 2, "args_signature": ["string $display", "WP_User $user_info"], "where": "assets/inc/buddypress-birthdays-widget.php:1224", "consumed_by": [], "purpose": "Final display name for a birthday member. Result is esc_html()'d AFTER the filter, so filters cannot inject markup." }
   ],
-  "hooks_fired_count": { "filters": 12, "actions": 0, "note": "Verified 2026-07-16 by grep for apply_filters (12 distinct names, 12 call sites) and do_action (ZERO — the plugin fires no custom actions). Previous manifest listed only 5 filters and mis-located bbirthdays_get_name_to_display in helpers.php; the 7 additions are bp_birthdays_admin_tabs, bp_birthdays_admin_capability, wbcom_hub_wrapper_helper_slugs, bb_birthdays_notification_recipient_limit, bb_birthdays_widget_candidate_multiplier, bb_birthdays_widget_candidate_cap, and the (already-listed but relocated) name filter." },
+  "hooks_fired_count": { "filters": 11, "actions": 0, "note": "Verified 2026-07-16 by grep for apply_filters (12 distinct names, 12 call sites) and do_action (ZERO — the plugin fires no custom actions). Previous manifest listed only 5 filters and mis-located bbirthdays_get_name_to_display in helpers.php; the 7 additions are bp_birthdays_admin_tabs, bp_birthdays_admin_capability, wbcom_hub_wrapper_helper_slugs, bb_birthdays_notification_recipient_limit, bb_birthdays_widget_candidate_multiplier, bb_birthdays_widget_candidate_cap, and the (already-listed but relocated) name filter." },
   "hooks_listened": [
     { "hook": "init", "callback": "bb_birthdays_load_textdomain", "where": "buddypress-birthdays.php:41", "purpose": "Load bundled languages/ .mo (required for self-hosted EDD distribution)" },
     { "hook": "admin_init", "callback": "bb_check_bp_active", "where": "buddypress-birthdays.php:113", "purpose": "Self-deactivation guard: if class_exists('BuddyPress') is false, show a notice and deactivate_plugins(self). NOTE: it checks ONLY for BuddyPress — there is NO xProfile datebox-field check here (the field requirement is enforced later per-render at assets/inc/buddypress-birthdays-widget.php:60 and per-query at core-init.php:291-297 / notifications.php:483-493)." },
@@ -171,9 +157,6 @@
     { "hook": "plugins_loaded", "callback": "BP_Birthdays_Admin::get_instance", "where": "admin/class-bp-birthdays-admin.php:225", "purpose": "Instantiate the legacy service singleton (constructor is a no-op; only the sanitizer/getter are used)" },
     { "hook": "wp_enqueue_scripts (10)", "callback": "bb_register_core_css / bb_register_core_js", "where": "core-init.php:55, 117", "purpose": "Frontend bb-core CSS/JS, gated on bb_should_load_assets(); versioned with BIRTHDAY_WIDGET_VERSION" },
     { "hook": "wp_footer (5)", "callback": "bb_footer_asset_check", "where": "core-init.php:153", "purpose": "Late force-load of assets for widgets/shortcodes rendered after wp_enqueue_scripts" },
-    { "hook": "wp_footer (999)", "callback": "bb_debug_widget_loading", "where": "core-init.php:413", "purpose": "Admin-only debug panel behind WP_DEBUG + manage_options + ?debug_birthdays" },
-    { "hook": "wp_ajax_bb_birthdays_action / wp_ajax_nopriv_bb_birthdays_action", "callback": "bb_birthdays_ajax_handler", "where": "core-init.php:484-485" },
-    { "hook": "bb_cleanup_old_wishes (cron)", "callback": "bb_cleanup_old_wishes + bb_daily_cache_clear", "where": "core-init.php:522, 624", "purpose": "Daily cron: prune wished-users meta >7d + flush the birthday object cache" },
     { "hook": "xprofile_data_after_save", "callback": "bb_clear_cache_on_xprofile_update", "where": "core-init.php:550" },
     { "hook": "friends_friendship_accepted / _deleted (10,3) / _withdrawn", "callback": "bb_clear_cache_on_friendship_accepted / _deleted / _withdrawn", "where": "core-init.php:562, 574, 584" },
     { "hook": "delete_user / wpmu_delete_user / user_register", "callback": "bb_clear_cache_on_user_deleted / _on_user_registered", "where": "core-init.php:594-595, 605" },
@@ -228,7 +211,7 @@
       "BB-3 (RESOLVED 2026-07-03 — manifest previously still described this as an open gap): every widget fetch path is now bounded. The 'all members' path (assets/inc/buddypress-birthdays-widget.php:482-521) and the friends/followers path via bound_members_by_upcoming_birthday() (:875-908) both trim candidates in SQL, ordered by upcoming-birthday proximity, to a pool sized by get_candidate_limit() (:823-859 — filters bb_birthdays_widget_candidate_multiplier default 4, bb_birthdays_widget_candidate_cap default 200). Per-user N+1 is eliminated by prime_birthday_values() batch priming (:723-786). The privacy reads are batched too (2.5.1): update_meta_cache('user') for the pool, BP_Friends_Friendship::update_bp_friends_cache() for a logged-in viewer, and on BuddyBoss prime_visibility_levels() reads the visibility table in one query and resolves row > bp_xprofile_visibility_levels meta > field default exactly as BuddyBoss's xprofile_get_field_visibility_level() does (skipped, so per-member platform call, when the class/table helpers are missing, the probe or read fails, or custom visibility is disabled). Residual: the candidate query sorts on DATE_FORMAT(STR_TO_DATE(value)) over the field's unindexed longtext rows, a scan per cold render; the plugin owns no table to index. Render loop: the page slice is primed with bp_core_get_user_displaynames() (cache_users() + BuddyBoss's bb_core_prime_user_displayname_caches()), falling back to cache_users() when missing, so get_avatar()'s alt text (bp_core_fetch_avatar -> bp_core_get_user_displayname) reads warm caches. Not primed by the plugin: BuddyBoss moderation get_avatar_url filters (blocked/suspended checks per member, only with Moderation on). Render is now O(cap), not O(members). Order is total: both SQL trims end ORDER BY with user_id ASC (no DISTINCT) and bbirthdays_get_array() ksort()s by user id before the stable uasort(), so same-day birthdays page identically on every load. Index use: field_id (KEY) narrows to one row per member; the month-day ORDER BY is a computed expression, so it is a filesort over that partition bounded by LIMIT.",
       "BB-4 (low, MITIGATED): send_bp_notifications (includes/class-bp-birthdays-notifications.php:706-780) still caps non-friends recipients, but the cap is now filterable via bb_birthdays_notification_recipient_limit (:728, default 500, 0/-1 = unbounded) and truncation is logged rather than silent.",
       "BB-5 (info, NEW 2026-07-16): the pagination at assets/inc/buddypress-birthdays-widget.php:126-160 slices an already-fetched in-memory list rather than paging in SQL. This is correct given the upstream candidate cap (max 200 rows), but it means page N does not exist beyond min(total_fetched, birthdays_to_display) — deep pages are bounded by the cap, not by real member count. Intentional; documented so it is not re-filed as a pagination bug.",
-      "BB-6 (info, NEW 2026-07-16): user meta bb_birthday_hidden (the GDPR opt-out) is NOT removed by uninstall.php (which deletes only bb_birthday_wished_users, :32). A member's privacy choice therefore survives plugin delete + reinstall. Arguably correct (fail-closed on privacy), but it is an undocumented divergence from the 'uninstall removes all plugin data' claim in the uninstall.php docblock (:5-7). Needs an owner decision, not a silent fix.",
+      "BB-6 (info, NEW 2026-07-16): user meta bb_birthday_hidden (the GDPR opt-out) is NOT removed by uninstall.php (which deletes only the retired bb_birthday_wished_users). A member's privacy choice therefore survives plugin delete + reinstall. Arguably correct (fail-closed on privacy), but it is an undocumented divergence from the 'uninstall removes all plugin data' claim in the uninstall.php docblock (:5-7). Needs an owner decision, not a silent fix.",
       "BB-7 (info, NEW 2026-07-16): dist/ contains only buddypress-birthdays-2.4.1.zip while the shipped version is 2.5.0 — the 2.5.0 release artifact has not been built."
     ]
   },
@@ -258,7 +241,7 @@
     },
     {
       "name": "BuddyPress Messages component",
-      "required_for": "The 'Send birthday wishes' button (and therefore the mark_wished AJAX path)",
+      "required_for": "The 'Send birthday wishes' button ",
       "ui_gate": "assets/inc/buddypress-birthdays-widget.php:308 — requires 'yes' === birthday_send_message AND bp_is_active('messages') AND is_user_logged_in()",
       "behaviour_if_absent": "The wish button is not rendered at all; logged-out visitors never see it even when Messages is active."
     },
@@ -277,7 +260,7 @@
   ],
   "frontend_assets": {
     "js": [
-      { "handle": "bb-core", "src": "assets/js/bb-core.js", "deps": ["jquery"], "in_footer": true, "version": "BIRTHDAY_WIDGET_VERSION (was the stale BB_CORE_VERSION '2.0.0' before 2.5.0)", "localized": "bbBirthdays (ajaxurl, nonce, plugin_url, version, debug, strings, settings)", "where": "core-init.php:70-76 (localize :86-114)" },
+      { "handle": "bb-core", "src": "assets/js/bb-core.js", "deps": ["jquery"], "in_footer": true, "version": "BIRTHDAY_WIDGET_VERSION (was the stale BB_CORE_VERSION '2.0.0' before 2.5.0)", "localized": "bbBirthdays (confetti)", "where": "core-init.php:70-76 (localize :86-114)" },
       { "handle": "bp-birthdays-admin", "src": "assets/js/admin.js", "deps": ["jquery"], "in_footer": true, "version": "BIRTHDAY_WIDGET_VERSION (fallback literal '2.5.0')", "localized": "bbdAdmin (ajaxUrl, i18n)", "where": "includes/admin/class-bp-birthdays-admin-panel.php:235-256", "loaded_on": "Only the plugin's own screens + the shared hub landing (is_our_screen, :279-285)" }
     ],
     "css": [
@@ -289,7 +272,6 @@
     "load_gate": "bb_should_load_assets() (core-init.php:160-216): active widget -> admin/customizer -> shortcode in $post -> BP directory/user/group/activity -> BuddyBoss/Youzify -> home/front/page/single/archive -> any sidebar containing the widget (bb_check_widget_areas, :223-247) -> bb_core_load_assets filter."
   },
   "cron": [
-    { "hook": "bb_cleanup_old_wishes", "interval": "daily", "handler": "core-init.php::bb_cleanup_old_wishes (:490) + bb_daily_cache_clear (:621)", "scheduled_at": "core-init.php:519-521 (self-healing on load) + buddypress-birthdays.php:85-87 (activation)", "cleared_at": "buddypress-birthdays.php:99 (deactivation) + uninstall.php:35", "purpose": "Prune bb_birthday_wished_users meta older than 7 days; daily object-cache flush" },
     { "hook": "bp_birthdays_daily_check", "interval": "daily", "handler": "BP_Birthdays_Notifications::process_daily_birthdays( $date = '' ) (includes/class-bp-birthdays-notifications.php:481)", "scheduled_at": "includes/class-bp-birthdays-notifications.php:409-433 (schedule_cron on init, self-healing) + buddypress-birthdays.php:89-91 (activation); retry single events with args [Y-m-d] at :536", "cleared_at": "buddypress-birthdays.php:100 (deactivation, wp_unschedule_hook incl. retries) + uninstall.php:36", "send_time": "Configurable via the email_send_time setting (HH:MM, get_send_time :400); the next occurrence is computed and passed to wp_schedule_event", "purpose": "Resolve the day (resolve_target_date :551: retry date, else today, else yesterday before today's Send Time) then find its birthdays (get_todays_birthdays :605, month-days via BP_Birthdays_Helpers::birthday_month_days so Feb 29 matches on Feb 28 in non-leap years; age = day year - birth year) and, per settings: greeting emails, activity auto-post, BP notifications, admin summary. Opt-out members are filtered in get_todays_birthdays. Dedupe via date-keyed bp_birthdays_sent_today; a failed channel queues an hourly retry for that day until the end of the next day." }
   ],
   "lifecycle": {
@@ -305,10 +287,10 @@
     "signing_entry_points": [],
     "always_sign_filter": null,
     "rate_limit_middleware": "none",
-    "ajax_nonce": "bb_birthdays_nonce (created core-init.php:91, verified core-init.php:421 before dispatch)",
+    "ajax_nonce": "n/a (the plugin registers no AJAX actions since 2.5.1)",
     "settings_nonce": "WP Settings API (settings_fields on the OPTION_GROUP, rendered via includes/admin/views/layout.php)",
     "member_settings_nonce": "bp_settings_general — re-verified in bb_save_member_privacy_field (core-init.php:671-674) even though BuddyPress already checked it before firing bp_core_general_settings_after_save",
-    "notes": "Public nopriv AJAX action bb_birthdays_action is registered; refresh_widget gates on is_user_logged_in() + current_user_can('read') (core-init.php:430), mark_wished requires get_current_user_id() (:447) and a non-zero target user_id (:453), default branch returns wp_send_json_error (:481). wppqa's nonce-no-cap heuristic does not understand nopriv endpoints and may false-positive here — pre-triaged as FALSE POSITIVE. The bbirthdays_get_name_to_display filter result is esc_html()'d after the filter (widget:1224), so third-party filters cannot inject markup."
+    "notes": "No AJAX actions or REST routes. The bbirthdays_get_name_to_display filter result is esc_html()'d after the filter (widget:1224), so third-party filters cannot inject markup."
   },
   "ci_guards": { "script": ".github/workflows/ci.yml", "url_emission_regex": null, "storage_internal_marker": null, "phpstan_level": "see phpstan.neon", "triggers": "master + semver branches (N.N.N)" },
   "coding_rules": [],

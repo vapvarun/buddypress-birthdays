@@ -1,0 +1,28 @@
+# Dev artifacts excluded from the distributable zip. Plain names are root-anchored paths;
+# patterns with * ? [ match a file name at any depth.
+.git
+.github
+.gitignore
+.gitattributes
+.wbcom-i18n.json
+.distignore
+.DS_Store
+node_modules
+docs
+audit
+dist
+bin
+*.md
+*.map
+package.json
+package-lock.json
+composer.json
+composer.lock
+phpstan.neon
+gruntfile.js
+*.log
+.time-standard-allow
+.core-first-allow
+.gate-check-allow
+assets/css/admin.min.css
+assets/js/admin.min.js

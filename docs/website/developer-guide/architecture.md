@@ -10,7 +10,7 @@ The plugin owns no database tables. It reads BuddyPress xProfile data only, and 
 - `bp_xprofile_fields` to discover the date field,
 - `bp_xprofile_meta` for the field's stored date format.
 
-The one small piece of plugin-owned data is per-member user meta: `bb_birthday_hidden` (the GDPR opt-out) and `bb_birthday_wished_users` (a short-lived record of who wished whom, pruned after seven days).
+The one small piece of plugin-owned data is per-member user meta: `bb_birthday_hidden` (the GDPR opt-out) .
 
 ## Render surfaces
 
@@ -34,12 +34,9 @@ Every widget mode (all members, friends, followers) trims candidates in SQL, ord
 
 ## Cron
 
-Two daily WordPress cron events are used:
+One daily WordPress cron event is used: `bp_birthdays_daily_check` runs the birthday processing (emails, activity, notifications, admin summary) at the configured send time. It is scheduled on activation, self-heals if lost, and is cleared on deactivation and uninstall.
 
-- `bp_birthdays_daily_check` runs the birthday processing (emails, activity, notifications, admin summary) at the configured send time.
-- `bb_cleanup_old_wishes` prunes the wished-users meta older than seven days and flushes the birthday cache.
-
-Both are scheduled on activation, self-heal if lost, and are cleared on deactivation and uninstall.
+The cached birthday lists live in the `bp_birthdays` object cache group. Every key carries the site's date and the group's last-changed token, so the lists roll over at the site's midnight and are retired together when a profile, friendship or follow changes.
 
 ## BuddyPress version awareness
 
@@ -47,4 +44,4 @@ The widget branches on `buddypress()->version >= 12.0` to choose between the new
 
 ## AJAX
 
-A single AJAX action, `bb_birthdays_action`, is registered for both logged-in and logged-out requests and is nonce-verified. It dispatches two sub-actions: `refresh_widget` (clears the birthday cache; requires a logged-in user with the `read` capability) and `mark_wished` (records that the current member wished a birthday member; requires a logged-in actor and a target user ID).
+The plugin registers no AJAX actions. The send-wishes button is a plain link to the BuddyPress private-message compose screen.

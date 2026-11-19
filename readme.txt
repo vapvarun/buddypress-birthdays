@@ -281,6 +281,15 @@ Birthday notifications now respect profile privacy and opt-outs, failed emails a
 * Fix      - A role given the settings page with the bp_birthdays_admin_capability filter can now save the settings.
 * Fix      - Members who share a birthday now appear in the same order on every page load, so paging through the list no longer repeats or skips anyone.
 * Fix      - On phones the settings pages fit the screen: setting rows stack inside their card and the page no longer scrolls sideways.
+* Fix      - The plugin no longer causes a fatal error when the BuddyPress Extended Profiles component is off; the widget, shortcode, notifications and settings page stay unregistered and one admin notice explains why.
+* Fix      - A birthday field's BuddyPress visibility now follows BuddyPress itself for every level, including levels added by other plugins; a level the plugin does not know stays hidden.
+* Fix      - Today, upcoming dates and ages follow the site's timezone, so a birthday no longer shows a day early or late, and cached lists roll over at the site's midnight even with a long Cache Duration.
+* Fix      - Members whose account is not yet activated are skipped before the list is paged, so pages are no longer short.
+* Fix      - Clearing the birthday cache works on object cache backends that cannot flush a single group.
+* Fix      - Dark mode and the settings screens no longer use fixed colours for the plugin's admin badge text.
+* Dev      - Removed the send-wishes recorder (an AJAX action, a daily event and a user meta key that nothing read) and the unused tooltip, analytics and notice code in the widget script; the leftover meta is deleted on the first request after updating.
+* Dev      - Removed the three bb_birthdays_animation_speed, bb_birthdays_tooltip_delay and bb_birthdays_cache_duration filters, which no longer had any effect.
+* Dev      - Added the bp_birthdays_display_timezone filter to show birthdays in another timezone, and bin/build-release.sh, bin/local-ci.sh and a .distignore for repeatable release zips.
 * Compat   - Requires PHP 8.1 or higher.
 
 = 2.5.0 - July 2026 =

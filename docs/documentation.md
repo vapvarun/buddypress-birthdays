@@ -288,20 +288,6 @@ Confetti and zodiac signs are not shortcode attributes. They follow the global D
 
 #### Filters
 
-**Modify Animation Speed**
-```php
-add_filter( 'bb_birthdays_animation_speed', function( $speed ) {
-    return 500; // milliseconds
-});
-```
-
-**Override Cache Duration**
-```php
-add_filter( 'bb_birthdays_cache_duration', function( $duration ) {
-    return 3600; // 1 hour in seconds
-});
-```
-
 **Force Asset Loading**
 ```php
 add_filter( 'bb_core_load_assets', '__return_true' );

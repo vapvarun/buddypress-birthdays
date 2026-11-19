@@ -1,6 +1,6 @@
 # Plugin: Wbcom Designs - Birthday Widget for BuddyPress
 
-> **READ FIRST:** [`audit/manifest.json`](audit/manifest.json) is the canonical inventory — 0 REST endpoints, 0 blocks, 1 widget (`widget_buddypress_birthdays`), 1 AJAX action (priv+nopriv), 1 admin page, 1 shortcode (11 attrs), 2 cron hooks, 12 fired filters / 0 fired actions, 0 tables (reads BuddyPress xProfile tables read-only). Use this before grepping. See also [`audit/FEATURE_AUDIT.md`](audit/FEATURE_AUDIT.md), [`audit/CODE_FLOWS.md`](audit/CODE_FLOWS.md), and the QA baseline [`audit/wppqa-baseline-2026-06-05/SUMMARY.md`](audit/wppqa-baseline-2026-06-05/SUMMARY.md). Interactive graph: `cd audit && python3 -m http.server 8765` → http://localhost:8765/graph.html. Refresh via `/wp-plugin-onboard --refresh` after non-trivial changes.
+> **READ FIRST:** [`audit/manifest.json`](audit/manifest.json) is the canonical inventory — 0 REST endpoints, 0 blocks, 1 widget (`widget_buddypress_birthdays`), 0 AJAX actions, 1 admin page, 1 shortcode (11 attrs), 1 cron hook, 11 fired filters / 0 fired actions, 0 tables (reads BuddyPress xProfile tables read-only). Use this before grepping. See also [`audit/FEATURE_AUDIT.md`](audit/FEATURE_AUDIT.md), [`audit/CODE_FLOWS.md`](audit/CODE_FLOWS.md), and the QA baseline [`audit/wppqa-baseline-2026-06-05/SUMMARY.md`](audit/wppqa-baseline-2026-06-05/SUMMARY.md). Interactive graph: `cd audit && python3 -m http.server 8765` → http://localhost:8765/graph.html. Refresh via `/wp-plugin-onboard --refresh` after non-trivial changes.
 
 ## Development skill
 All plugin work follows the **`/wp-plugin-development`** skill (backend architecture, REST, hooks, DB, security, escaping, admin UI, release). QA before release: `/wp-plugin-smoke`. Onboarding refresh: `/wp-plugin-onboard`.
@@ -30,15 +30,18 @@ Single stored option `bp_birthdays_settings` (group `bp_birthdays_settings_group
 
 ## Key entry points
 - Bootstrap: `buddypress-birthdays.php` (constants, BP dependency check, requires)
-- Core: `core-init.php` (assets, shortcode, AJAX, cache invalidation, wished-users cron, GDPR opt-out UI/save)
+- Core: `core-init.php` (assets, shortcode, cache invalidation, GDPR opt-out UI/save, retirement of the 2.5.0 wish-tracking leftovers)
 - Admin: `includes/admin/class-bp-birthdays-admin-panel.php` (menu, enqueue, render router) + `admin/class-bp-birthdays-admin.php` (legacy service class — sanitizer/defaults/getter ONLY, no UI)
 - Notifications: `includes/class-bp-birthdays-notifications.php` (cron, BP emails, activity, BP notifications)
 - Helpers: `includes/class-bp-birthdays-helpers.php` (zodiac, age, opt-out, `get_user_url()`, `get_birthday_field_id()`, `visibility_allows()`)
 - Widget: `assets/inc/buddypress-birthdays-widget.php` (`Widget_Buddypress_Birthdays`)
 
 ## Important patterns
-- Caching: WordPress **object cache** group `bp_birthdays` (NOT transients). 30-min TTL. Invalidated on xprofile save / friendship / follow / user register-delete / daily cron and on widget settings save.
-- Prefix conventions: functions `bb_*`, classes `BP_Birthdays_*`, option root `bp_birthdays_*`, cron `bb_cleanup_old_wishes` + `bp_birthdays_daily_check`, AJAX `bb_birthdays_action`, nonce `bb_birthdays_nonce`.
+- Caching: WordPress **object cache** group `bp_birthdays` (NOT transients), TTL from the Cache Duration setting. Keys carry the viewer, the site date and `wp_cache_get_last_changed()`; `bb_clear_birthday_caches()` moves the token (xprofile save / friendship / follow / user register-delete / widget save).
+- Time: birthdays are calendar dates in `BP_Birthdays_Helpers::display_timezone()` (filter `bp_birthdays_display_timezone`). Show them only through `date_label()`; `today()` is the site's day. No raw `wp_date()`/`date_i18n()` (gate: `bin/time-standard-check.php`).
+- xProfile gate: `bb_birthdays_xprofile_active()` guards the widget, shortcode, notifications and admin panel; with Extended Profiles off nothing registers and one admin notice shows.
+- Release: `bin/local-ci.sh` (gates) and `bin/build-release.sh` (zip from `git archive`, `.distignore` root-anchored).
+- Prefix conventions: functions `bb_*`, classes `BP_Birthdays_*`, option root `bp_birthdays_*`, cron `bp_birthdays_daily_check`. The plugin has no AJAX actions.
 - Member URLs: always `BP_Birthdays_Helpers::get_user_url()` (BP 12+ `bp_members_get_user_url()`, older fallback). Never call `bp_core_get_user_domain()` directly.
 - Birthday field: always `BP_Birthdays_Helpers::get_birthday_field_id()` (General tab setting if it is a real date field, else first date field). Cron, shortcode and widget fallback all use it.
 - Privacy: `BP_Birthdays_Helpers::is_user_opted_out()` gates every surface; BuddyPress field visibility gates per channel via `visibility_allows()` (activity = public only, notification recipients filtered, admin summary skips Only Me, greeting email goes to the member regardless).

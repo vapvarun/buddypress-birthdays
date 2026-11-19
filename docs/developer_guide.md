@@ -205,16 +205,7 @@ echo wp_kses_post( $args['after_widget'] );
 
 ### AJAX Security
 
-```php
-// Nonce verification
-if ( ! wp_verify_nonce( $_POST['nonce'], 'bb_birthdays_nonce' ) ) {
-    wp_die( 'Security check failed' );
-}
-
-// Input sanitization
-$action = sanitize_text_field( $_POST['birthday_action'] ?? '' );
-$user_id = (int) ( $_POST['user_id'] ?? 0 );
-```
+The plugin registers no AJAX actions.
 
 ### Privacy Compliance
 
@@ -290,21 +281,6 @@ function destroy() {
 ### Available Filters
 
 ```php
-// Customize animation speed (default: 300ms)
-add_filter( 'bb_birthdays_animation_speed', function( $speed ) {
-    return 500;
-} );
-
-// Customize tooltip delay (default: 300ms)
-add_filter( 'bb_birthdays_tooltip_delay', function( $delay ) {
-    return 500;
-} );
-
-// Customize cache duration (default: 3600 seconds = 60 minutes)
-add_filter( 'bb_birthdays_cache_duration', function( $duration ) {
-    return 7200; // 2 hours
-} );
-
 // Force asset loading
 add_filter( 'bb_core_load_assets', '__return_true' );
 
@@ -449,17 +425,6 @@ $user_id = (int) $user_id;
 - Capability checks for admin functions
 
 ### Debugging Tools
-
-**Debug Mode**:
-```php
-// Enable debug mode
-define( 'WP_DEBUG', true );
-define( 'WP_DEBUG_LOG', true );
-
-// View debug info (admin only)
-add_query_var( 'debug_birthdays', '1' );
-// Shows widget status, asset loading, member data
-```
 
 **Performance Monitoring**:
 ```javascript

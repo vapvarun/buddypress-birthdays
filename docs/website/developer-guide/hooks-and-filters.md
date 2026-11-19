@@ -12,17 +12,15 @@ The widget and the `[bp_birthdays]` shortcode load their CSS and JS when they re
 add_filter( 'bb_core_load_assets', '__return_true' );
 ```
 
-### bb_birthdays_animation_speed
+### bp_birthdays_display_timezone
 
-Front-end animation speed in milliseconds. Default 300. Passed to the browser only.
+The timezone birthdays are calculated and shown in. Defaults to the site's timezone. Today, upcoming dates and ages all use it.
 
-### bb_birthdays_tooltip_delay
-
-Front-end tooltip delay in milliseconds. Default 300. Passed to the browser only.
-
-### bb_birthdays_cache_duration
-
-Value localized to the front-end script as `bbBirthdays.settings.cache_duration`. Default 1800 (seconds). This is JS-facing only; it does not set the server-side widget cache lifetime. The server TTL comes from the Cache Duration setting.
+```php
+add_filter( 'bp_birthdays_display_timezone', function ( $timezone, $user_id ) {
+    return $timezone;
+}, 10, 2 );
+```
 
 ### bbirthdays_get_name_to_display
 
