@@ -171,6 +171,7 @@ add_action(
  * the shortcode is used. Styled with BuddyPress's own feedback notice.
  */
 function bb_debug_widget_loading() {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only flag for a debug panel shown to administrators.
 	$show = defined( 'WP_DEBUG' ) && WP_DEBUG && current_user_can( 'manage_options' ) && filter_input( INPUT_GET, 'debug_birthdays', FILTER_SANITIZE_NUMBER_INT );
 	if ( ! $show ) {
 		return;

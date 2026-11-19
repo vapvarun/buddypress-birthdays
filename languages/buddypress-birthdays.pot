@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-19T07:06:11+00:00\n"
+"POT-Creation-Date: 2026-11-19T07:07:45+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: buddypress-birthdays\n"
@@ -857,7 +857,9 @@ msgid "A member receives a birthday greeting from the site."
 msgstr ""
 
 #: includes/class-bp-birthdays-notifications.php:217
-msgid "<strong>Happy Birthday!</strong>"
+#: includes/class-bp-birthdays-notifications.php:239
+#: includes/class-bp-birthdays-notifications.php:770
+msgid "Happy Birthday!"
 msgstr ""
 
 #: includes/class-bp-birthdays-notifications.php:219
@@ -886,11 +888,6 @@ msgstr ""
 #: includes/class-bp-birthdays-notifications.php:228
 #: includes/class-bp-birthdays-notifications.php:248
 msgid "The {{{site.name}}} Team"
-msgstr ""
-
-#: includes/class-bp-birthdays-notifications.php:239
-#: includes/class-bp-birthdays-notifications.php:770
-msgid "Happy Birthday!"
 msgstr ""
 
 #: includes/class-bp-birthdays-notifications.php:243

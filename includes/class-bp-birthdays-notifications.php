@@ -214,7 +214,7 @@ class BP_Birthdays_Notifications {
 	 * @return string
 	 */
 	private function get_birthday_email_content() {
-		$content = '<p>' . __( '<strong>Happy Birthday!</strong>', 'buddypress-birthdays' ) . '</p>' . "\n\n";
+		$content = '<p>' . '<strong>' . __( 'Happy Birthday!', 'buddypress-birthdays' ) . '</strong>' . '</p>' . "\n\n";
 
 		$content .= '<p>' . __( 'Wishing you a fantastic birthday filled with joy, laughter, and wonderful moments! The entire {{{site.name}}} community sends you warm birthday wishes on your special day.', 'buddypress-birthdays' ) . '</p>' . "\n\n";
 

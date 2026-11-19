@@ -5,7 +5,7 @@ msgstr ""
 "Project-Id-Version: Wbcom Designs - Birthday Widget for BuddyPress 2.5.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/birthday-widget-"
 "for-buddypress\n"
-"POT-Creation-Date: 2026-11-19T07:06:11+00:00\n"
+"POT-Creation-Date: 2026-11-19T07:07:45+00:00\n"
 "PO-Revision-Date: 2026-11-15T11:04:22+00:00\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1009,8 +1009,10 @@ msgid "A member receives a birthday greeting from the site."
 msgstr "Un membre reçoit une salutation d'anniversaire du site."
 
 #: includes/class-bp-birthdays-notifications.php:217
-msgid "<strong>Happy Birthday!</strong>"
-msgstr "<strong>Joyeux anniversaire !</strong>"
+#: includes/class-bp-birthdays-notifications.php:239
+#: includes/class-bp-birthdays-notifications.php:770
+msgid "Happy Birthday!"
+msgstr "Joyeux anniversaire !"
 
 #: includes/class-bp-birthdays-notifications.php:219
 #: includes/class-bp-birthdays-notifications.php:241
@@ -1049,11 +1051,6 @@ msgstr "Meilleurs vœux,"
 #: includes/class-bp-birthdays-notifications.php:248
 msgid "The {{{site.name}}} Team"
 msgstr "L'équipe {{{site.name}}}"
-
-#: includes/class-bp-birthdays-notifications.php:239
-#: includes/class-bp-birthdays-notifications.php:770
-msgid "Happy Birthday!"
-msgstr "Joyeux anniversaire !"
 
 #: includes/class-bp-birthdays-notifications.php:243
 msgid ""
@@ -1154,6 +1151,9 @@ msgstr "[%2$s] %1$d Anniversaire(s) aujourd'hui"
 #: includes/class-bp-birthdays-notifications.php:1200
 msgid "Today's Birthdays"
 msgstr "Anniversaires d'aujourd'hui"
+
+#~ msgid "<strong>Happy Birthday!</strong>"
+#~ msgstr "<strong>Joyeux anniversaire !</strong>"
 
 #~ msgid "(BuddyPress) Birthdays"
 #~ msgstr "(BuddyPress) Anniversaires"
