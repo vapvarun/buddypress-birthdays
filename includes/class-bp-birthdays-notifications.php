@@ -526,8 +526,14 @@ class BP_Birthdays_Notifications {
 		}
 
 		$this->processing_day = $day;
-		$tracking             = $this->get_sent_tracking( $target );
-		$sent_tracking        = isset( $tracking[ $day ] ) ? $tracking[ $day ] : array();
+
+		// Drop days older than yesterday and move a pre-2.5.1 shape, under the option's lock.
+		$this->mutate_option(
+			self::SENT_TRACKING_OPTION,
+			function ( $tracking ) use ( $target ) {
+				return $this->normalise_tracking( $tracking, $target );
+			}
+		);
 
 		$channels = array(
 			'email'        => 'send_birthday_email',
@@ -537,8 +543,7 @@ class BP_Birthdays_Notifications {
 		$failed   = false;
 
 		// A request that dies part way (a fatal, a killed worker) must not lose the rest of the
-		// day: arm the hourly retry first, and keep each member's progress as it is made. A clean
-		// finish disarms the retry below.
+		// day: arm the hourly retry first. A clean finish disarms it below.
 		$yesterday = current_datetime()->modify( '-1 day' )->format( 'Y-m-d' );
 		$armed     = $day >= $yesterday && ! wp_next_scheduled( self::CRON_HOOK, array( $day ) );
 		if ( $armed ) {
@@ -546,21 +551,26 @@ class BP_Birthdays_Notifications {
 		}
 
 		foreach ( $birthdays as $user_id => $birthday_data ) {
-			$done = isset( $sent_tracking[ $user_id ] ) ? $sent_tracking[ $user_id ] : array();
-			if ( ! is_array( $done ) ) {
-				continue; // Pre-2.5.1 row: this member was fully processed.
-			}
-
 			// The member's row exists before any channel runs, so a chunk action that finishes the
-			// notifications later (or after a crash) always has a row to mark.
-			if ( ! isset( $sent_tracking[ $user_id ] ) ) {
-				$sent_tracking[ $user_id ] = $done;
-				$tracking[ $day ]          = $sent_tracking;
-				update_option( self::SENT_TRACKING_OPTION, $tracking, false );
+			// notifications later (or after a crash) always has a row to mark. A pre-2.5.1 row
+			// that is not an array means the member was fully processed.
+			$row = $this->tracking_row( $day, $user_id, true );
+			if ( ! is_array( $row ) ) {
+				continue;
 			}
 
 			foreach ( $channels as $channel => $method ) {
-				if ( ! empty( $done[ $channel ] ) || ! $this->get_setting( $channel . '_enabled' ) ) {
+				if ( ! $this->get_setting( $channel . '_enabled' ) ) {
+					continue;
+				}
+
+				// The notification fan-out is idempotent and holds its own lock; the email and the
+				// activity post are claimed first, so two overlapping runs can never both send.
+				if ( 'notification' !== $channel ) {
+					if ( ! $this->claim_slot( $day, array( $user_id, $channel ) ) ) {
+						continue; // Done already, or another run is sending it right now.
+					}
+				} elseif ( $this->slot_is_done( $day, array( $user_id, $channel ) ) ) {
 					continue;
 				}
 
@@ -572,51 +582,292 @@ class BP_Birthdays_Notifications {
 					continue; // A later chunk finishes it; the scheduled action marks the channel done.
 				}
 
-				if ( $sent ) {
-					$done[ $channel ] = time();
+				if ( 'notification' === $channel ) {
+					if ( $sent ) {
+						$this->finish_slot( $day, array( $user_id, $channel ), true );
+					} else {
+						$failed = true;
+					}
+					continue;
+				}
 
-					// Saved channel by channel: a request that dies after the email must not send it again.
-					$sent_tracking[ $user_id ] = $done;
-					$tracking[ $day ]          = $sent_tracking;
-					update_option( self::SENT_TRACKING_OPTION, $tracking, false );
-				} else {
+				$this->finish_slot( $day, array( $user_id, $channel ), (bool) $sent );
+				if ( ! $sent ) {
 					$failed = true;
 				}
 			}
-
-			$sent_tracking[ $user_id ] = $done;
 		}
 
-		// One admin summary per day, however many times the cron runs.
-		if ( $this->get_setting( 'admin_email_enabled' ) && empty( $sent_tracking['admin_summary'] ) ) {
+		// One admin summary per day, however many times (or how many runs at once) the cron runs.
+		if ( $this->get_setting( 'admin_email_enabled' ) && $this->claim_slot( $day, array( 'admin_summary' ) ) ) {
 			$summary_to   = (string) $this->get_setting( 'admin_email', get_option( 'admin_email' ) );
 			$summary_user = get_user_by( 'email', $summary_to );
 
-			if ( $this->in_recipient_locale( $summary_user ? $summary_user->ID : 0, self::EMAIL_TYPE_ADMIN_SUMMARY, array( $this, 'send_admin_summary' ), array( $birthdays ) ) ) {
-				$sent_tracking['admin_summary'] = time();
-			} else {
+			$sent = $this->in_recipient_locale( $summary_user ? $summary_user->ID : 0, self::EMAIL_TYPE_ADMIN_SUMMARY, array( $this, 'send_admin_summary' ), array( $birthdays ) );
+			$this->finish_slot( $day, array( 'admin_summary' ), (bool) $sent );
+			if ( ! $sent ) {
 				$failed = true;
 			}
 		}
 
-		// A chunk action may have finished a member's notifications while this run was busy.
-		$latest = get_option( self::SENT_TRACKING_OPTION, array() );
-		if ( isset( $latest[ $day ] ) && is_array( $latest[ $day ] ) ) {
-			foreach ( $latest[ $day ] as $member_id => $member_done ) {
-				if ( is_array( $member_done ) && ! empty( $member_done['notification'] ) && isset( $sent_tracking[ $member_id ] ) && is_array( $sent_tracking[ $member_id ] ) && empty( $sent_tracking[ $member_id ]['notification'] ) ) {
-					$sent_tracking[ $member_id ]['notification'] = $member_done['notification'];
-				}
-			}
-		}
-
-		$tracking[ $day ] = $sent_tracking;
-		update_option( self::SENT_TRACKING_OPTION, $tracking, false );
-
 		// Retries stop once the day is older than yesterday, the same window the tracking keeps
-		// (get_sent_tracking()). A clean finish removes the retry armed above.
+		// (normalise_tracking()). A clean finish removes the retry armed above.
 		if ( ! $failed && $armed ) {
 			wp_clear_scheduled_hook( self::CRON_HOOK, array( $day ) );
 		}
+	}
+
+	/**
+	 * Run a change to one of the plugin's option arrays so no other run's change is lost.
+	 *
+	 * Two runs can overlap (the daily check, its hourly retry, a safety action, Action Scheduler
+	 * and WP-Cron at once). The option is re-read INSIDE a short lock and only the caller's own
+	 * key is changed, so a run never overwrites another's work with a copy it read earlier.
+	 *
+	 * @param string   $option Option name.
+	 * @param callable $change Receives the fresh array, returns the array to store.
+	 * @return bool False when the lock could not be taken (the change was not made).
+	 */
+	private function mutate_option( $option, $change ) {
+		$lock = 'bp_birthdays_lock_opt_' . md5( $option );
+
+		if ( ! $this->lock_acquire( $lock, 30, 10 ) ) {
+			$this->log( 'BP Birthdays: could not lock ' . $option . '; change skipped.' );
+			return false;
+		}
+
+		try {
+			wp_cache_delete( $option, 'options' );
+			wp_cache_delete( 'notoptions', 'options' );
+			$current = get_option( $option, array() );
+			$current = is_array( $current ) ? $current : array();
+			$new     = $change( $current );
+
+			if ( $new !== $current ) {
+				if ( array() === $new ) {
+					delete_option( $option );
+				} else {
+					update_option( $option, $new, false );
+				}
+			}
+		} finally {
+			$this->lock_release( $lock );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Take a lock: one INSERT IGNORE on the options table's unique key, so only one run gets it.
+	 *
+	 * A lock older than $stale seconds belongs to a dead run and is taken over with a
+	 * compare-and-swap, so only one run takes it over.
+	 *
+	 * @param string $name  Lock option name.
+	 * @param int    $stale Seconds after which a lock is a dead run's.
+	 * @param int    $wait  Seconds to keep trying; 0 tries once.
+	 * @return bool Whether this run holds the lock.
+	 */
+	private function lock_acquire( $name, $stale, $wait = 0 ) {
+		global $wpdb;
+
+		$deadline = microtime( true ) + $wait;
+
+		do {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- A lock must be atomic; no WordPress API gives INSERT IGNORE.
+			if ( 1 === (int) $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $name, (string) time() ) ) ) {
+				return true;
+			}
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Same.
+			$held = (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) );
+			if ( '' !== $held && time() - (int) $held >= $stale ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Compare-and-swap takeover.
+				if ( 1 === (int) $wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->options} SET option_value = %s WHERE option_name = %s AND option_value = %s", (string) time(), $name, $held ) ) ) {
+					return true;
+				}
+			}
+
+			if ( microtime( true ) >= $deadline ) {
+				return false;
+			}
+			usleep( 20000 );
+		} while ( true );
+	}
+
+	/**
+	 * Release a lock taken with lock_acquire().
+	 *
+	 * @param string $name Lock option name.
+	 */
+	private function lock_release( $name ) {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Pairs with lock_acquire().
+		$wpdb->delete( $wpdb->options, array( 'option_name' => $name ) );
+	}
+
+	/**
+	 * Seconds since a held lock was taken, or -1 when nobody holds it.
+	 *
+	 * @param string $name Lock option name.
+	 * @return int
+	 */
+	private function lock_age( $name ) {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Reads a lock row.
+		$held = (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) );
+
+		return '' === $held ? -1 : max( 0, time() - (int) $held );
+	}
+
+	/**
+	 * The member's tracking row for a day, read fresh; optionally created first.
+	 *
+	 * @param string $day     Day (Y-m-d).
+	 * @param int    $user_id Member.
+	 * @param bool   $create  Create an empty row when there is none.
+	 * @return mixed The row (an array), a non-array for a pre-2.5.1 row, or null.
+	 */
+	private function tracking_row( $day, $user_id, $create = false ) {
+		if ( $create ) {
+			$this->mutate_option(
+				self::SENT_TRACKING_OPTION,
+				static function ( $tracking ) use ( $day, $user_id ) {
+					if ( ! isset( $tracking[ $day ][ $user_id ] ) ) {
+						$tracking[ $day ][ $user_id ] = array();
+					}
+					return $tracking;
+				}
+			);
+		}
+
+		wp_cache_delete( self::SENT_TRACKING_OPTION, 'options' );
+		$tracking = get_option( self::SENT_TRACKING_OPTION, array() );
+
+		return isset( $tracking[ $day ][ $user_id ] ) ? $tracking[ $day ][ $user_id ] : null;
+	}
+
+	/**
+	 * Read one tracking slot: a member's channel, or the day's admin summary.
+	 *
+	 * A positive time means done; a negative time is a claim (-time of the claim) that is in
+	 * progress, and stops being one after 15 minutes so a crashed send can be taken again.
+	 *
+	 * @param string $day  Day (Y-m-d).
+	 * @param array  $path [ user_id, channel ] or [ 'admin_summary' ].
+	 * @return int
+	 */
+	private function slot_value( $day, array $path ) {
+		wp_cache_delete( self::SENT_TRACKING_OPTION, 'options' );
+		$tracking = get_option( self::SENT_TRACKING_OPTION, array() );
+		$day_rows = isset( $tracking[ $day ] ) && is_array( $tracking[ $day ] ) ? $tracking[ $day ] : array();
+		$value    = self::path_get( $day_rows, $path );
+
+		return is_array( $value ) ? 0 : (int) $value;
+	}
+
+	/**
+	 * Read a nested value; null when any step is missing.
+	 *
+	 * @param array $data Array to read.
+	 * @param array $path Keys, outermost first.
+	 * @return mixed
+	 */
+	private static function path_get( array $data, array $path ) {
+		foreach ( $path as $step ) {
+			if ( ! is_array( $data ) || ! array_key_exists( $step, $data ) ) {
+				return null;
+			}
+			$data = $data[ $step ];
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Set (or, with null, remove) a nested value and return the new array.
+	 *
+	 * @param array $data  Array to change.
+	 * @param array $path  Keys, outermost first.
+	 * @param mixed $value New value; null removes the key.
+	 * @return array
+	 */
+	private static function path_set( array $data, array $path, $value ) {
+		$key = array_shift( $path );
+
+		if ( $path ) {
+			$child        = isset( $data[ $key ] ) && is_array( $data[ $key ] ) ? $data[ $key ] : array();
+			$data[ $key ] = self::path_set( $child, $path, $value );
+		} elseif ( null === $value ) {
+			unset( $data[ $key ] );
+		} else {
+			$data[ $key ] = $value;
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Whether a slot is finished.
+	 *
+	 * @param string $day  Day (Y-m-d).
+	 * @param array  $path Slot path.
+	 * @return bool
+	 */
+	private function slot_is_done( $day, array $path ) {
+		return $this->slot_value( $day, $path ) > 0;
+	}
+
+	/**
+	 * Claim a slot before sending, so two runs never both send it.
+	 *
+	 * @param string $day  Day (Y-m-d).
+	 * @param array  $path Slot path.
+	 * @return bool True when this run now owns the send; false when it is done or in progress.
+	 */
+	private function claim_slot( $day, array $path ) {
+		$won = false;
+
+		$this->mutate_option(
+			self::SENT_TRACKING_OPTION,
+			static function ( $tracking ) use ( $day, $path, &$won ) {
+				$day_rows = isset( $tracking[ $day ] ) && is_array( $tracking[ $day ] ) ? $tracking[ $day ] : array();
+				$value    = (int) self::path_get( $day_rows, $path );
+
+				if ( $value > 0 || ( $value < 0 && time() + $value < 15 * MINUTE_IN_SECONDS ) ) {
+					return $tracking; // Done, or someone is sending it.
+				}
+
+				$tracking[ $day ] = self::path_set( $day_rows, $path, -time() );
+				$won              = true;
+
+				return $tracking;
+			}
+		);
+
+		return $won;
+	}
+
+	/**
+	 * Settle a claimed slot: done, or released so a retry can claim it.
+	 *
+	 * @param string $day  Day (Y-m-d).
+	 * @param array  $path Slot path.
+	 * @param bool   $done Whether the send succeeded.
+	 */
+	private function finish_slot( $day, array $path, $done ) {
+		$this->mutate_option(
+			self::SENT_TRACKING_OPTION,
+			static function ( $tracking ) use ( $day, $path, $done ) {
+				$day_rows = isset( $tracking[ $day ] ) && is_array( $tracking[ $day ] ) ? $tracking[ $day ] : array();
+
+				$tracking[ $day ] = $done ? self::path_set( $day_rows, $path, time() ) : self::path_set( $day_rows, $path, null );
+
+				return $tracking;
+			}
+		);
 	}
 
 	/**
@@ -647,16 +898,13 @@ class BP_Birthdays_Notifications {
 	}
 
 	/**
-	 * Sent tracking keyed by day, pruned to yesterday and later.
+	 * Bring a tracking array to the current shape: day keys only, nothing older than yesterday.
 	 *
-	 * Rows written before 2.5.1 (one day, not keyed) move under the day
-	 * bp_birthdays_last_check_date recorded for them.
-	 *
-	 * @param DateTimeImmutable $target Day being processed.
+	 * @param mixed             $tracking Stored value.
+	 * @param DateTimeImmutable $target   Day being processed.
 	 * @return array Y-m-d => tracking rows.
 	 */
-	private function get_sent_tracking( DateTimeImmutable $target ) {
-		$tracking = get_option( self::SENT_TRACKING_OPTION, array() );
+	private function normalise_tracking( $tracking, DateTimeImmutable $target ) {
 		if ( ! is_array( $tracking ) ) {
 			$tracking = array();
 		}
@@ -1007,16 +1255,12 @@ class BP_Birthdays_Notifications {
 	private function notify_chunk( $day, $user_id, $visibility ) {
 		global $wpdb;
 
+		// A lock older than 3 minutes is a crashed run's (a chunk takes seconds) and is taken over;
+		// a fresh one means another run is on this birthday, so come back once it would have expired.
 		$lock = 'bp_birthdays_lock_' . md5( $day . ':' . $user_id );
-		if ( ! add_option( $lock, time(), '', false ) ) {
-			// Another run holds this member. A lock older than 3 minutes is a crashed run's (a chunk
-			// takes seconds): take it over. Otherwise come back once it would have expired.
-			$age = time() - (int) get_option( $lock );
-			if ( $age < 3 * MINUTE_IN_SECONDS ) {
-				$this->queue_notification_chunk( $day, $user_id, 3 * MINUTE_IN_SECONDS - $age + 30 );
-				return 'pending';
-			}
-			update_option( $lock, time(), false );
+		if ( ! $this->lock_acquire( $lock, 3 * MINUTE_IN_SECONDS ) ) {
+			$this->queue_notification_chunk( $day, $user_id, max( 30, 3 * MINUTE_IN_SECONDS - $this->lock_age( $lock ) + 30 ) );
+			return 'pending';
 		}
 
 		try {
@@ -1042,9 +1286,8 @@ class BP_Birthdays_Notifications {
 			$size = $size < 1 ? 500 : $size;
 
 			$key    = $day . ':' . $user_id;
-			$states = get_option( self::NOTIFY_STATE_OPTION, array() );
-			$states = is_array( $states ) ? $states : array();
-			$cursor = isset( $states[ $key ]['cursor'] ) ? (int) $states[ $key ]['cursor'] : 0;
+			$entry  = $this->get_state_entry( $key );
+			$cursor = isset( $entry['cursor'] ) ? (int) $entry['cursor'] : 0;
 
 			if ( $friends_only ) {
 				$ids = array_map( 'absint', (array) friends_get_friend_user_ids( $user_id ) );
@@ -1065,11 +1308,7 @@ class BP_Birthdays_Notifications {
 			// BEFORE the rows are written, so a fatal or a killed request part way leaves a pending
 			// action that takes over the stale lock and carries on from the saved cursor.
 			if ( $more ) {
-				$states[ $key ] = array(
-					'cursor'  => $cursor,
-					'updated' => time(),
-				);
-				update_option( self::NOTIFY_STATE_OPTION, $states, false );
+				$this->set_state_entry( $key, $cursor );
 				$this->queue_notification_chunk( $day, $user_id, 4 * MINUTE_IN_SECONDS );
 			}
 
@@ -1151,23 +1390,77 @@ class BP_Birthdays_Notifications {
 			}
 
 			if ( ! $more ) {
-				unset( $states[ $key ] );
-				$states ? update_option( self::NOTIFY_STATE_OPTION, $states, false ) : delete_option( self::NOTIFY_STATE_OPTION );
+				$this->clear_state_entry( $key );
 				$this->clear_notification_chunk( $day, $user_id );
 				return true;
 			}
 
-			$states[ $key ] = array(
-				'cursor'  => $last_id,
-				'updated' => time(),
-			);
-			update_option( self::NOTIFY_STATE_OPTION, $states, false );
+			$this->set_state_entry( $key, $last_id );
 			$this->queue_notification_chunk( $day, $user_id );
 
 			return 'pending';
 		} finally {
-			delete_option( $lock );
+			$this->lock_release( $lock );
 		}
+	}
+
+	/**
+	 * All recorded fan-outs, read fresh from the database.
+	 *
+	 * @return array Key (Y-m-d:user_id) => [ cursor, updated ].
+	 */
+	private function get_states() {
+		wp_cache_delete( self::NOTIFY_STATE_OPTION, 'options' );
+		wp_cache_delete( 'notoptions', 'options' );
+		$states = get_option( self::NOTIFY_STATE_OPTION, array() );
+
+		return is_array( $states ) ? $states : array();
+	}
+
+	/**
+	 * One fan-out's recorded progress, or null when none is recorded.
+	 *
+	 * @param string $key Y-m-d:user_id.
+	 * @return array|null
+	 */
+	private function get_state_entry( $key ) {
+		$states = $this->get_states();
+
+		return isset( $states[ $key ] ) && is_array( $states[ $key ] ) ? $states[ $key ] : null;
+	}
+
+	/**
+	 * Record a fan-out's progress. Only this key changes, under the option's lock.
+	 *
+	 * @param string $key    Y-m-d:user_id.
+	 * @param int    $cursor Last member ID written.
+	 */
+	private function set_state_entry( $key, $cursor ) {
+		$this->mutate_option(
+			self::NOTIFY_STATE_OPTION,
+			static function ( $states ) use ( $key, $cursor ) {
+				$states[ $key ] = array(
+					'cursor'  => (int) $cursor,
+					'updated' => time(),
+				);
+				return $states;
+			}
+		);
+	}
+
+	/**
+	 * Remove a finished fan-out's record. Only this key changes, under the option's lock.
+	 *
+	 * @param string $key Y-m-d:user_id.
+	 */
+	private function clear_state_entry( $key ) {
+		$this->mutate_option(
+			self::NOTIFY_STATE_OPTION,
+			static function ( $states ) use ( $key ) {
+				unset( $states[ $key ] );
+				return $states;
+			}
+		);
 	}
 
 	/**
@@ -1253,9 +1546,9 @@ class BP_Birthdays_Notifications {
 	 * attempt ran) gets a new attempt from its saved cursor.
 	 */
 	private function resume_unfinished_fanouts() {
-		$states = get_option( self::NOTIFY_STATE_OPTION, array() );
+		$states = $this->get_states();
 
-		foreach ( (array) $states as $key => $state ) {
+		foreach ( $states as $key => $state ) {
 			$parts = explode( ':', (string) $key );
 			if ( 2 !== count( $parts ) || ! isset( $state['updated'] ) || time() - (int) $state['updated'] < 10 * MINUTE_IN_SECONDS ) {
 				continue;
@@ -1282,20 +1575,21 @@ class BP_Birthdays_Notifications {
 			return;
 		}
 
-		// Only a fan-out that is still recorded needs a chunk; a finished one has nothing left.
-		$states = get_option( self::NOTIFY_STATE_OPTION, array() );
-		if ( ! isset( $states[ $day . ':' . $user_id ] ) ) {
-			return;
+		// A recorded fan-out resumes from its cursor. With no record, the member's tracking says
+		// whether the notifications are finished: if they are not, start over from the beginning,
+		// which is safe because every chunk skips what is already written. Never return silently
+		// while work is unfinished.
+		if ( ! $this->get_state_entry( $day . ':' . $user_id ) ) {
+			$row = $this->tracking_row( $day, $user_id );
+			if ( ! is_array( $row ) || ! $this->get_setting( 'notification_enabled' ) || $this->slot_is_done( $day, array( $user_id, 'notification' ) ) ) {
+				return;
+			}
 		}
 
 		$result = $this->notify_chunk( $day, $user_id, xprofile_get_field_visibility_level( $field, $user_id ) );
 
 		if ( true === $result ) {
-			$tracking = get_option( self::SENT_TRACKING_OPTION, array() );
-			if ( isset( $tracking[ $day ][ $user_id ] ) && is_array( $tracking[ $day ][ $user_id ] ) ) {
-				$tracking[ $day ][ $user_id ]['notification'] = time();
-				update_option( self::SENT_TRACKING_OPTION, $tracking, false );
-			}
+			$this->finish_slot( $day, array( $user_id, 'notification' ), true );
 		}
 	}
 
@@ -1309,7 +1603,7 @@ class BP_Birthdays_Notifications {
 	public function count_stuck_fanouts() {
 		$stuck = 0;
 
-		foreach ( (array) get_option( self::NOTIFY_STATE_OPTION, array() ) as $state ) {
+		foreach ( $this->get_states() as $state ) {
 			if ( isset( $state['updated'] ) && time() - (int) $state['updated'] > 6 * HOUR_IN_SECONDS ) {
 				++$stuck;
 			}

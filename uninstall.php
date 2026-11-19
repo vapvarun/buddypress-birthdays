@@ -38,6 +38,11 @@ delete_option( 'bp_birthdays_last_check_date' );
 delete_option( 'bp_birthdays_sent_today' );
 delete_option( 'bp_birthdays_notify_state' );
 
+// Leftover run locks (a lock is removed when its run ends; this only matters after a crash).
+global $wpdb;
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Uninstall cleanup of lock rows.
+$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'bp\\_birthdays\\_lock\\_%'" );
+
 // Multisite: remove per-site options on every site.
 if ( is_multisite() ) {
 	delete_site_option( 'bp_birthdays_settings' );
