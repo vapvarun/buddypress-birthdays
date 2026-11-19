@@ -36,6 +36,35 @@ class BP_Birthdays_Notifications {
 	const SENT_TRACKING_OPTION = 'bp_birthdays_sent_today';
 
 	/**
+	 * Temporary progress of a notification fan-out that spans several chunks: one entry per
+	 * birthday and day, removed when its last chunk is written. Autoload off.
+	 *
+	 * @var string
+	 */
+	const NOTIFY_STATE_OPTION = 'bp_birthdays_notify_state';
+
+	/**
+	 * Hook of the scheduled action that writes the next chunk of a notification fan-out.
+	 *
+	 * @var string
+	 */
+	const NOTIFY_CHUNK_HOOK = 'bp_birthdays_notify_chunk';
+
+	/**
+	 * Action Scheduler group of the plugin's queued work.
+	 *
+	 * @var string
+	 */
+	const AS_GROUP = 'buddypress-birthdays';
+
+	/**
+	 * Day (Y-m-d) the daily check is processing, so a fan-out knows which day it belongs to.
+	 *
+	 * @var string
+	 */
+	private $processing_day = '';
+
+	/**
 	 * Email type for birthday greeting.
 	 *
 	 * @var string
@@ -86,6 +115,10 @@ class BP_Birthdays_Notifications {
 
 		// Handle cron execution. A retry event carries the date it retries.
 		add_action( self::CRON_HOOK, array( $this, 'process_daily_birthdays' ) );
+
+		// Later chunks of a large notification fan-out, one scheduled action each.
+		add_action( self::NOTIFY_CHUNK_HOOK, array( $this, 'run_notification_chunk' ), 10, 2 );
+		add_action( 'admin_notices', array( $this, 'notice_unfinished_fanout' ) );
 
 		// Register BP notification component.
 		add_action( 'bp_setup_globals', array( $this, 'register_notification_component' ) );
@@ -491,8 +524,9 @@ class BP_Birthdays_Notifications {
 			return;
 		}
 
-		$tracking      = $this->get_sent_tracking( $target );
-		$sent_tracking = isset( $tracking[ $day ] ) ? $tracking[ $day ] : array();
+		$this->processing_day = $day;
+		$tracking             = $this->get_sent_tracking( $target );
+		$sent_tracking        = isset( $tracking[ $day ] ) ? $tracking[ $day ] : array();
 
 		$channels = array(
 			'email'        => 'send_birthday_email',
@@ -516,6 +550,10 @@ class BP_Birthdays_Notifications {
 					? $this->in_recipient_locale( $user_id, self::EMAIL_TYPE_BIRTHDAY, array( $this, $method ), array( $user_id, $birthday_data ) )
 					: $this->$method( $user_id, $birthday_data );
 
+				if ( 'pending' === $sent ) {
+					continue; // A later chunk finishes it; the scheduled action marks the channel done.
+				}
+
 				if ( $sent ) {
 					$done[ $channel ] = time();
 				} else {
@@ -535,6 +573,16 @@ class BP_Birthdays_Notifications {
 				$sent_tracking['admin_summary'] = time();
 			} else {
 				$failed = true;
+			}
+		}
+
+		// A chunk action may have finished a member's notifications while this run was busy.
+		$latest = get_option( self::SENT_TRACKING_OPTION, array() );
+		if ( isset( $latest[ $day ] ) && is_array( $latest[ $day ] ) ) {
+			foreach ( $latest[ $day ] as $member_id => $member_done ) {
+				if ( is_array( $member_done ) && ! empty( $member_done['notification'] ) && isset( $sent_tracking[ $member_id ] ) && is_array( $sent_tracking[ $member_id ] ) && empty( $sent_tracking[ $member_id ]['notification'] ) ) {
+					$sent_tracking[ $member_id ]['notification'] = $member_done['notification'];
+				}
 			}
 		}
 
@@ -897,7 +945,8 @@ class BP_Birthdays_Notifications {
 	 *
 	 * @param int   $user_id User ID.
 	 * @param array $birthday_data Birthday data.
-	 * @return bool False when BuddyPress could not save a row, so the retry writes it.
+	 * @return bool|string True when done, false when BuddyPress could not save a row (the retry
+	 *                     writes it), 'pending' while later chunks are queued.
 	 */
 	private function send_bp_notifications( $user_id, $birthday_data ) {
 		if ( ! function_exists( 'bp_notifications_add_notification' ) || ! bp_is_active( 'notifications' ) ) {
@@ -912,136 +961,256 @@ class BP_Birthdays_Notifications {
 			return true;
 		}
 
-		$friends_active = function_exists( 'friends_get_friend_user_ids' ) && bp_is_active( 'friends' );
+		$day = '' !== $this->processing_day ? $this->processing_day : BP_Birthdays_Helpers::today()->format( 'Y-m-d' );
 
-		if ( $this->get_setting( 'notification_friends_only' ) || 'friends' === $visibility ) {
-			// Friends only, by setting or by field privacy. Without the Friends
-			// component nobody qualifies: never fall through to every member.
-			if ( ! $friends_active ) {
+		return $this->notify_chunk( $day, $user_id, $visibility );
+	}
+
+	/**
+	 * Write one chunk of a member's birthday notifications and arrange the rest.
+	 *
+	 * The audience is every member BuddyPress lets see the birthday: all members, or the
+	 * member's friends for the Friends level and the Notify Friends Only setting. It is read in
+	 * chunks of bb_birthdays_notification_recipient_limit members by ascending ID after a
+	 * cursor, and each chunk is filtered for visibility and opt-out, so a restricted level never
+	 * loses its audience to a cut made before the filter. The cursor is kept in a temporary
+	 * option until the last chunk; each further chunk is its own scheduled action.
+	 *
+	 * @param string $day        Day (Y-m-d) the birthday belongs to.
+	 * @param int    $user_id    Birthday member.
+	 * @param string $visibility Visibility level of the birthday.
+	 * @return bool|string True when every chunk is written, false when BuddyPress could not
+	 *                     save a row (retried), 'pending' when more chunks are queued.
+	 */
+	private function notify_chunk( $day, $user_id, $visibility ) {
+		global $wpdb;
+
+		$lock = 'bp_birthdays_lock_' . md5( $day . ':' . $user_id );
+		if ( ! add_option( $lock, time(), '', false ) ) {
+			// Another run holds this member. A lock older than 10 minutes is a crashed run's.
+			if ( time() - (int) get_option( $lock ) < 10 * MINUTE_IN_SECONDS ) {
+				return 'pending';
+			}
+			update_option( $lock, time(), false );
+		}
+
+		try {
+			$friends_active = function_exists( 'friends_get_friend_user_ids' ) && bp_is_active( 'friends' );
+			$friends_only   = $this->get_setting( 'notification_friends_only' ) || 'friends' === $visibility;
+
+			// Friends only, by setting or by field privacy. Without the Friends component nobody
+			// qualifies: never fall through to every member.
+			if ( $friends_only && ! $friends_active ) {
 				return true;
 			}
-			$recipients = friends_get_friend_user_ids( $user_id );
-		} else {
-			/**
-			 * Filter the maximum number of recipients for the non-friends
-			 * birthday notification fan-out.
-			 *
-			 * BB-4: previously hard-capped at 500 with no notice. The cap still
-			 * exists to protect against unbounded notification writes on very
-			 * large communities, but it is now adjustable and the truncation is
-			 * logged below instead of being silent.
-			 *
-			 * @param int $limit   Default 500. Use 0 / -1 for no cap (unbounded).
-			 * @param int $user_id The birthday user whose birthday is being announced.
-			 */
-			$recipient_limit = (int) apply_filters( 'bb_birthdays_notification_recipient_limit', 500, $user_id );
-			$query_number    = ( $recipient_limit > 0 ) ? $recipient_limit : -1;
 
-			$recipients = get_users(
-				array(
-					'fields'  => 'ID',
-					'number'  => $query_number,
-					'exclude' => array( $user_id ),
+			/**
+			 * Filters how many members one chunk of the birthday notification fan-out reads.
+			 *
+			 * Every eligible member is notified whatever the value; it only sets the size of the
+			 * scheduled chunks. Below 1 uses 500.
+			 *
+			 * @param int $size    Default 500.
+			 * @param int $user_id The birthday member.
+			 */
+			$size = (int) apply_filters( 'bb_birthdays_notification_recipient_limit', 500, $user_id );
+			$size = $size < 1 ? 500 : $size;
+
+			$key    = $day . ':' . $user_id;
+			$states = get_option( self::NOTIFY_STATE_OPTION, array() );
+			$states = is_array( $states ) ? $states : array();
+			$cursor = isset( $states[ $key ]['cursor'] ) ? (int) $states[ $key ]['cursor'] : 0;
+
+			if ( $friends_only ) {
+				$ids = array_map( 'absint', (array) friends_get_friend_user_ids( $user_id ) );
+				sort( $ids );
+				$chunk = array_slice( array_values( array_filter( $ids, static function ( $id ) use ( $cursor ) {
+					return $id > $cursor;
+				} ) ), 0, $size );
+			} else {
+				// Primary key, ascending, after the cursor: one cheap indexed read per chunk.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cursor read of the core users table, no WP API pages by ID.
+				$chunk = array_map( 'absint', (array) $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->users} WHERE ID > %d AND ID <> %d ORDER BY ID ASC LIMIT %d", $cursor, $user_id, $size ) ) );
+			}
+
+			$last_id = $chunk ? max( $chunk ) : $cursor;
+
+			// Each recipient must be someone BuddyPress lets see this birthday: the same rule the
+			// widget uses, so a level an add-on registers is honoured too. The batch's friendships
+			// are read in one query first, so the per-recipient check runs from cache.
+			// One meta query for the chunk: the visibility rules, add-ons hooked into them, and the
+			// opt-out below all read user meta.
+			update_meta_cache( 'user', $chunk );
+
+			$recipients = $chunk;
+			if ( $recipients && $friends_active && method_exists( 'BP_Friends_Friendship', 'update_bp_friends_cache' ) ) {
+				BP_Friends_Friendship::update_bp_friends_cache( $user_id, $recipients );
+			}
+			$recipients = array_values(
+				array_filter(
+					$recipients,
+					static function ( $recipient_id ) use ( $visibility, $user_id ) {
+						return BP_Birthdays_Helpers::visibility_allows( $visibility, $user_id, $recipient_id );
+					}
 				)
 			);
 
-			// Surface the truncation rather than silently dropping recipients.
-			// Gated on WP_DEBUG up front so the count_users() call below (which
-			// is itself expensive on large sites) only runs on debug builds.
-			if ( $recipient_limit > 0 && count( $recipients ) >= $recipient_limit
-				&& defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				$total_members = (int) count_users()['total_users'];
+			// GDPR: a member who opted out gets no birthday notifications either.
+			$recipients = array_values(
+				array_filter(
+					$recipients,
+					static function ( $recipient_id ) {
+						return ! BP_Birthdays_Helpers::is_user_opted_out( $recipient_id );
+					}
+				)
+			);
 
-				if ( $total_members - 1 > $recipient_limit ) {
-					$this->log(
-						sprintf(
-							/* translators: 1: cap, 2: total candidate members, 3: birthday user id */
-							'BP Birthdays: non-friends notification fan-out truncated to %1$d of %2$d eligible members for birthday user %3$d. Raise via the "bb_birthdays_notification_recipient_limit" filter.',
-							$recipient_limit,
-							max( 0, $total_members - 1 ),
-							$user_id
+			// BuddyPress refuses (returns false) to add a notification when the member still has an
+			// unread one for the same item and action, which is what a birthday is every year, so
+			// duplicates are allowed and today's rows are skipped here, one query for the chunk.
+			// That also makes a re-run, an overlap or a resumed chunk write nothing twice.
+			$failed = false;
+			if ( $recipients ) {
+				$start_utc = BP_Birthdays_Helpers::today()->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
+				$existing  = BP_Notifications_Notification::get(
+					array(
+						'user_id'          => $recipients,
+						'item_id'          => $user_id,
+						'component_name'   => 'birthdays',
+						'component_action' => 'birthday_today',
+						'is_new'           => 'both',
+						'per_page'         => false,
+						'date_query'       => array( array( 'after' => $start_utc, 'inclusive' => true ) ),
+					)
+				);
+				$have      = array_map( 'intval', wp_list_pluck( (array) $existing, 'user_id' ) );
+
+				foreach ( array_diff( $recipients, $have ) as $recipient_id ) {
+					$id = bp_notifications_add_notification(
+						array(
+							'user_id'           => $recipient_id,
+							'item_id'           => $user_id,
+							'secondary_item_id' => 0,
+							'component_name'    => 'birthdays',
+							'component_action'  => 'birthday_today',
+							'date_notified'     => bp_core_current_time(),
+							'is_new'            => 1,
+							'allow_duplicate'   => true,
 						)
 					);
+
+					if ( ! $id ) {
+						$failed = true;
+					}
 				}
 			}
-		}
 
-		$recipients = array_values( array_filter( array_map( 'absint', (array) $recipients ) ) );
-
-		// Each recipient must be someone BuddyPress lets see this birthday: the same rule the widget
-		// uses, so a level an add-on registers is honoured too. The friendships of the whole batch
-		// are read in one query first, so the per-recipient check runs from cache.
-		if ( $recipients && $friends_active && method_exists( 'BP_Friends_Friendship', 'update_bp_friends_cache' ) ) {
-			BP_Friends_Friendship::update_bp_friends_cache( $user_id, $recipients );
-		}
-		$recipients = array_values(
-			array_filter(
-				$recipients,
-				static function ( $recipient_id ) use ( $visibility, $user_id ) {
-					return BP_Birthdays_Helpers::visibility_allows( $visibility, $user_id, $recipient_id );
-				}
-			)
-		);
-
-		if ( empty( $recipients ) ) {
-			return true;
-		}
-
-		// GDPR: a member who opted out gets no birthday notifications either.
-		// One meta query primes the cache for the whole batch.
-		update_meta_cache( 'user', $recipients );
-		$recipients = array_filter(
-			$recipients,
-			static function ( $recipient_id ) {
-				return ! BP_Birthdays_Helpers::is_user_opted_out( $recipient_id );
+			if ( $failed ) {
+				// The cursor stays, so the hourly retry rewrites this chunk and skips what is saved.
+				$this->log( sprintf( 'BP Birthdays: a birthday notification for member %d could not be saved; it will be retried.', $user_id ) );
+				return false;
 			}
-		);
 
-		// BuddyPress refuses (returns false) to add a notification when the same member still has an
-		// unread one for the same item and action, which is what a birthday is every year, so a
-		// member who never opened last year's would silently miss this year's. Duplicates are
-		// allowed and today's are skipped here instead, one query for the whole batch.
-		$start_utc = BP_Birthdays_Helpers::today()->setTimezone( new DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
-		$existing  = BP_Notifications_Notification::get(
-			array(
-				'item_id'           => $user_id,
-				'component_name'    => 'birthdays',
-				'component_action'  => 'birthday_today',
-				'is_new'            => 'both',
-				'per_page'          => false,
-				'date_query'        => array( array( 'after' => $start_utc, 'inclusive' => true ) ),
-			)
-		);
-		$have      = array_map( 'intval', wp_list_pluck( (array) $existing, 'user_id' ) );
-		$failed    = false;
+			if ( count( $chunk ) < $size ) {
+				unset( $states[ $key ] );
+				$states ? update_option( self::NOTIFY_STATE_OPTION, $states, false ) : delete_option( self::NOTIFY_STATE_OPTION );
+				return true;
+			}
 
-		foreach ( array_diff( $recipients, $have ) as $recipient_id ) {
-			$id = bp_notifications_add_notification(
-				array(
-					'user_id'           => $recipient_id,
-					'item_id'           => $user_id,
-					'secondary_item_id' => 0,
-					'component_name'    => 'birthdays',
-					'component_action'  => 'birthday_today',
-					'date_notified'     => bp_core_current_time(),
-					'is_new'            => 1,
-					'allow_duplicate'   => true,
-				)
+			$states[ $key ] = array(
+				'cursor'  => $last_id,
+				'updated' => time(),
 			);
+			update_option( self::NOTIFY_STATE_OPTION, $states, false );
+			$this->queue_notification_chunk( $day, $user_id );
 
-			// A row BuddyPress could not save leaves the channel unrecorded, so the hourly retry
-			// writes it, and the skip above keeps recipients that did get theirs from getting two.
-			if ( ! $id ) {
-				$failed = true;
+			return 'pending';
+		} finally {
+			delete_option( $lock );
+		}
+	}
+
+	/**
+	 * Queue the next chunk: Action Scheduler when present, WP-Cron otherwise.
+	 *
+	 * @param string $day     Day (Y-m-d).
+	 * @param int    $user_id Birthday member.
+	 */
+	private function queue_notification_chunk( $day, $user_id ) {
+		$args = array( $day, (int) $user_id );
+
+		if ( function_exists( 'as_enqueue_async_action' ) && function_exists( 'as_has_scheduled_action' ) ) {
+			if ( ! as_has_scheduled_action( self::NOTIFY_CHUNK_HOOK, $args, self::AS_GROUP ) ) {
+				as_enqueue_async_action( self::NOTIFY_CHUNK_HOOK, $args, self::AS_GROUP );
+			}
+			return;
+		}
+
+		if ( ! wp_next_scheduled( self::NOTIFY_CHUNK_HOOK, $args ) ) {
+			wp_schedule_single_event( time() + 10, self::NOTIFY_CHUNK_HOOK, $args );
+		}
+	}
+
+	/**
+	 * Scheduled action: write the next chunk of a member's birthday notifications.
+	 *
+	 * @param string $day     Day (Y-m-d).
+	 * @param int    $user_id Birthday member.
+	 */
+	public function run_notification_chunk( $day, $user_id ) {
+		$day     = (string) $day;
+		$user_id = absint( $user_id );
+		$field   = BP_Birthdays_Helpers::get_birthday_field_id();
+
+		if ( ! $user_id || ! $field || ! function_exists( 'xprofile_get_field_visibility_level' ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $day ) ) {
+			return;
+		}
+
+		$result = $this->notify_chunk( $day, $user_id, xprofile_get_field_visibility_level( $field, $user_id ) );
+
+		if ( true === $result ) {
+			$tracking = get_option( self::SENT_TRACKING_OPTION, array() );
+			if ( isset( $tracking[ $day ][ $user_id ] ) && is_array( $tracking[ $day ][ $user_id ] ) ) {
+				$tracking[ $day ][ $user_id ]['notification'] = time();
+				update_option( self::SENT_TRACKING_OPTION, $tracking, false );
+			}
+		} elseif ( false === $result ) {
+			// BuddyPress could not save a row: try this chunk again in an hour.
+			wp_schedule_single_event( time() + HOUR_IN_SECONDS, self::NOTIFY_CHUNK_HOOK, array( $day, $user_id ) );
+		}
+	}
+
+	/**
+	 * Tell the admin on the plugin's screen when a notification fan-out has stopped part way.
+	 */
+	public function notice_unfinished_fanout() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		if ( ! $screen || false === strpos( (string) $screen->id, 'bp-birthday-settings' ) || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$states = get_option( self::NOTIFY_STATE_OPTION, array() );
+		$stuck  = 0;
+		foreach ( (array) $states as $state ) {
+			if ( isset( $state['updated'] ) && time() - (int) $state['updated'] > 6 * HOUR_IN_SECONDS ) {
+				++$stuck;
 			}
 		}
 
-		if ( $failed ) {
-			$this->log( sprintf( 'BP Birthdays: a birthday notification for member %d could not be saved; it will be retried.', $user_id ) );
-			return false;
+		if ( $stuck ) {
+			echo '<div class="notice notice-warning"><p>' . esc_html(
+				sprintf(
+					/* translators: %d: number of birthdays */
+					_n(
+						'The notifications for %d birthday have not finished sending. They resume on the next scheduled run; check that WP-Cron or Action Scheduler is running.',
+						'The notifications for %d birthdays have not finished sending. They resume on the next scheduled run; check that WP-Cron or Action Scheduler is running.',
+						$stuck,
+						'buddypress-birthdays'
+					),
+					$stuck
+				)
+			) . '</p></div>';
 		}
-
-		return true;
 	}
 
 	/**

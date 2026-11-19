@@ -47,7 +47,7 @@ When nothing matches, the widget and shortcode show "No upcoming birthdays." ins
 
 - Confirm the relevant BuddyPress component (Activity or Notifications) is active.
 - Confirm the matching option is enabled on the Activity or Notifications tab.
-- For notifications with Notify Friends Only off, recipients are capped (default 500). Raise or remove the cap with the `bb_birthdays_notification_recipient_limit` filter if you expect more.
+- On a large site the notifications for one birthday arrive in chunks of 500 members, one scheduled action each. If the Birthdays settings page says some have not finished sending, check that WP-Cron or Action Scheduler is running; the sending resumes by itself.
 
 ## Front-end styles or scripts look stale after an update
 

@@ -127,6 +127,11 @@ register_activation_hook( __FILE__, 'bb_birthdays_activate' );
 function bb_birthdays_deactivate() {
 	// Unschedule every event on the hook, including a queued retry run.
 	wp_unschedule_hook( 'bp_birthdays_daily_check' );
+	wp_unschedule_hook( 'bp_birthdays_notify_chunk' );
+	if ( function_exists( 'as_unschedule_all_actions' ) ) {
+		as_unschedule_all_actions( '', array(), 'buddypress-birthdays' );
+	}
+	delete_option( 'bp_birthdays_notify_state' );
 }
 register_deactivation_hook( __FILE__, 'bb_birthdays_deactivate' );
 

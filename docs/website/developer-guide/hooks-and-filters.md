@@ -44,7 +44,7 @@ Absolute hard cap (the SQL LIMIT) on one candidate batch. Default 200. Clamped t
 
 ### bb_birthdays_notification_recipient_limit
 
-Cap on how many recipients a single birthday notification fans out to when Notify Friends Only is off. Default 500. Use 0 or -1 for unbounded. Truncation is logged. Receives the birthday user ID as a second argument.
+Size of one chunk of a birthday notification fan-out. Every eligible member is notified; the first chunk is written when the daily check runs and each further chunk is its own scheduled action (Action Scheduler when present, WP-Cron otherwise). Default 500; a value below 1 uses 500. Receives the birthday user ID as a second argument.
 
 ## Privacy
 

@@ -39,7 +39,7 @@ When Notifications are enabled, members receive an in-app BuddyPress notificatio
 
 Default text: `It's {name}'s birthday today!`
 
-When Notify Friends Only is off, the number of recipients per birthday is capped (default 500) to protect large sites. Adjust or remove the cap with the `bb_birthdays_notification_recipient_limit` filter.
+When Notify Friends Only is off, every member who may see the birthday is notified. On large sites the notifications are written in chunks of 500 members, one scheduled action per chunk, so a birthday can take a few minutes to reach everyone. Change the chunk size with the `bb_birthdays_notification_recipient_limit` filter.
 
 ## Admin summary email
 
