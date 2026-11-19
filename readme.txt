@@ -285,6 +285,7 @@ Birthday notifications now respect profile privacy and opt-outs, failed emails a
 * Fix      - A birthday field's BuddyPress visibility now follows BuddyPress itself for every level, including levels added by other plugins; a level the plugin does not know stays hidden.
 * Fix      - Today, upcoming dates and ages follow the site's timezone, so a birthday no longer shows a day early or late, and cached lists roll over at the site's midnight even with a long Cache Duration.
 * Fix      - Members whose account is not yet activated are skipped before the list is paged, so pages are no longer short.
+* Fix      - A run of private or opted-out birthdays at the front of the list no longer leaves the widget short: candidates are read in growing batches, at most 10, until the list is full.
 * Fix      - Clearing the birthday cache works on object cache backends that cannot flush a single group.
 * Fix      - A birthday notification is no longer silently dropped when a member still has last year's unread one, and a notification BuddyPress cannot save is retried an hour later instead of being marked sent.
 * Fix      - Dark mode and the settings screens no longer use fixed colours for the plugin's admin badge text.

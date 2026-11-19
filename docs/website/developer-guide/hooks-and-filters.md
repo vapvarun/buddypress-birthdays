@@ -36,11 +36,11 @@ add_filter( 'bbirthdays_get_name_to_display', function ( $display, $user_info ) 
 
 ### bb_birthdays_widget_candidate_multiplier
 
-Multiplier applied to the display count to size the SQL candidate pool (pool = display count x multiplier), before the cap. Default 4. Clamped to a minimum of 1. Receives the widget instance as a second argument.
+Multiplier applied to the display count to size the first SQL candidate batch (batch = display count x multiplier), before the cap. If members in a batch are private or opted out, the widget reads further batches, each twice the size of the last, up to the cap and at most 10 batches. Default 4. Clamped to a minimum of 1. Receives the widget instance as a second argument.
 
 ### bb_birthdays_widget_candidate_cap
 
-Absolute hard cap (the SQL LIMIT) on the widget candidate pool. Default 200. Clamped to a minimum of 1. Receives the widget instance as a second argument.
+Absolute hard cap (the SQL LIMIT) on one candidate batch. Default 200. Clamped to a minimum of 1. Receives the widget instance as a second argument.
 
 ### bb_birthdays_notification_recipient_limit
 

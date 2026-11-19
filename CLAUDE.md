@@ -55,6 +55,7 @@ Single stored option `bp_birthdays_settings` (group `bp_birthdays_settings_group
 
 ## Known scale risks (see manifest static_analysis.notes)
 - BB-2: cron `get_todays_birthdays` uses non-sargable `DATE_FORMAT(value,'%m-%d')` full scan of `bp_xprofile_data`.
+- BB-3b: RESOLVED 2.5.1 - candidates are read soonest-first in doubling batches (display x4, doubling, capped at `bb_birthdays_widget_candidate_cap`, max `MAX_BATCHES` = 10) until the visible list is full, so hidden members at the front cannot starve it. Worst case (everyone hidden) is 10 bounded batches.
 - BB-3: RESOLVED 2026-07-03 — all widget paths (all members, friends, followers) now trim to a bounded SQL candidate pool (`bb_birthdays_widget_candidate_multiplier`/`_cap` filters, default cap 200) ordered by upcoming-birthday proximity, with batch-primed values (no per-user N+1). The `DATE_FORMAT` predicate is still non-sargable but bounded by `field_id` + `LIMIT`.
 - BB-4: BP-notification non-friends fan-out capped at 500 (filter `bb_birthdays_notification_recipient_limit`, truncation logged under WP_DEBUG).
 

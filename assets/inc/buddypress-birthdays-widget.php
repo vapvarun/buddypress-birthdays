@@ -15,6 +15,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Widget_Buddypress_Birthdays extends WP_Widget {
 
 	/**
+	 * Most candidate batches one render reads while it looks for enough visible birthdays.
+	 */
+	const MAX_BATCHES = 10;
+
+	/**
+	 * Friend or following ids of the viewer, read once per render (null until read).
+	 *
+	 * @var int[]|null
+	 */
+	private $connection_ids = null;
+
+	/**
 	 * Batch-primed map of raw birthday values, keyed "field_id:user_id".
 	 *
 	 * Populated by prime_birthday_values() so the per-member render loop can
@@ -384,10 +396,47 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 * @return array An array of users with their birthday details, sorted by the next birthday.
 	 */
 	public function bbirthdays_get_array( $data ) {
+		$needed = isset( $data['birthdays_to_display'] ) ? max( 1, (int) $data['birthdays_to_display'] ) : 5;
+		$found  = array();
+		$offset = 0;
+
+		$this->connection_ids = null;
+
+		// Candidates come soonest-first in batches that double (the display count x4, up to the
+		// candidate cap), so a list of private or opted-out members at the front cannot hide the
+		// visible ones behind them. Stops when the list is full, the members run out, or after
+		// MAX_BATCHES batches.
+		for ( $batch = 0; $batch < self::MAX_BATCHES; $batch++ ) {
+			$size   = $this->get_candidate_limit( $data, $batch );
+			$result = $this->fetch_birthday_batch( $data, $offset, $size );
+			$found  = $found + $result['birthdays'];
+			$offset += $size;
+
+			if ( count( $found ) >= $needed || $result['candidates'] < $size ) {
+				break;
+			}
+		}
+
+		return $this->sort_birthdays( $found );
+	}
+
+	/**
+	 * One batch of birthdays: the next $size candidates by upcoming date, filtered for
+	 * visibility, opt-out and activation.
+	 *
+	 * @param array $data   Widget instance settings.
+	 * @param int   $offset Candidates already read in earlier batches.
+	 * @param int   $size   Candidates to read.
+	 * @return array{candidates:int,birthdays:array} Candidates read, and birthdays keyed by user id.
+	 */
+	private function fetch_birthday_batch( $data, $offset, $size ) {
 		$members = array();
 
-		// Step 1: Initialize members based on the specified criteria.
-		if ( isset( $data['show_birthdays_of'] ) && 'friends' === $data['show_birthdays_of'] && bp_is_active( 'friends' ) ) {
+		// Step 1: Initialize members based on the specified criteria. Friends and followings are
+		// read once per render, whatever the batch.
+		if ( null !== $this->connection_ids ) {
+			$members = $this->connection_ids;
+		} elseif ( isset( $data['show_birthdays_of'] ) && 'friends' === $data['show_birthdays_of'] && bp_is_active( 'friends' ) ) {
 			$members = friends_get_friend_user_ids( get_current_user_id() );
 		} elseif ( isset( $data['show_birthdays_of'] ) && 'followers' === $data['show_birthdays_of'] ) {
 			if ( function_exists( 'bp_follow_get_following' ) ) {
@@ -440,7 +489,7 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 				 * still leave enough to fill the display. Result + order are
 				 * preserved for realistic sizes; the cap is filterable.
 				 */
-				$candidate_limit = $this->get_candidate_limit( $data );
+				$candidate_limit = $size;
 
 				// Use standard DateTime with WordPress timezone for the window.
 				$wp_timezone = BP_Birthdays_Helpers::display_timezone();
@@ -498,13 +547,13 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 
 					// field_id is indexed; the DATE_FORMAT predicate only runs on
 					// this field's rows. ORDER BY + LIMIT bound the result set.
-					$query      = "SELECT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND {$date_where} ORDER BY {$order_by_sql} LIMIT %d";
-					$query_args = array_merge( array( $field_id ), $date_where_args, $order_by_args, array( $candidate_limit ) );
+					$query      = "SELECT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND {$date_where} ORDER BY {$order_by_sql} LIMIT %d OFFSET %d";
+					$query_args = array_merge( array( $field_id ), $date_where_args, $order_by_args, array( $candidate_limit, $offset ) );
 				} else {
 					// No range limit: instead of fetching every member, order by
 					// upcoming-birthday proximity and pull only the bounded pool.
-					$query      = "SELECT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' ORDER BY {$order_by_sql} LIMIT %d";
-					$query_args = array_merge( array( $field_id ), $order_by_args, array( $candidate_limit ) );
+					$query      = "SELECT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' ORDER BY {$order_by_sql} LIMIT %d OFFSET %d";
+					$query_args = array_merge( array( $field_id ), $order_by_args, array( $candidate_limit, $offset ) );
 				}
 
 				$users_with_birthday = $wpdb->get_col(
@@ -527,10 +576,15 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		 * share one bound.
 		 */
 		if ( isset( $data['show_birthdays_of'] ) && in_array( $data['show_birthdays_of'], array( 'friends', 'followers' ), true ) ) {
+			if ( null === $this->connection_ids ) {
+				$this->connection_ids = array_values( array_filter( array_map( 'absint', (array) $members ) ) );
+			}
 			$members = $this->bound_members_by_upcoming_birthday(
-				array_values( array_filter( array_map( 'absint', (array) $members ) ) ),
+				$this->connection_ids,
 				isset( $data['birthday_field_name'] ) ? absint( $data['birthday_field_name'] ) : 0,
-				$data
+				$data,
+				$size,
+				$offset
 			);
 		}
 
@@ -538,9 +592,10 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$field_id          = isset( $data['birthday_field_name'] ) ? $data['birthday_field_name'] : '';
 
 		if ( empty( $field_id ) ) {
-			return $members_birthdays;
+			return array( 'candidates' => 0, 'birthdays' => $members_birthdays );
 		}
 
+		$candidates      = count( $members );
 		$wp_timezone     = BP_Birthdays_Helpers::display_timezone();
 		$today           = BP_Birthdays_Helpers::today();
 		$current_user_id = get_current_user_id();
@@ -658,6 +713,16 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			}
 		}
 
+		return array( 'candidates' => $candidates, 'birthdays' => $members_birthdays );
+	}
+
+	/**
+	 * Order birthdays: today first, then by the next celebration day.
+	 *
+	 * @param array $members_birthdays Birthdays keyed by user id.
+	 * @return array
+	 */
+	private function sort_birthdays( array $members_birthdays ) {
 		// Sort by next celebration date - today first, then chronological by next birthday.
 		// Members are put in user id order first; uasort() is stable, so same-day
 		// birthdays keep that order and every page load lists them identically.
@@ -876,10 +941,11 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 * birthday is soonest. Pool = display_count * multiplier (headroom for
 	 * rows later dropped by visibility/activation/self-exclusion), hard-capped.
 	 *
-	 * @param array $data Widget instance settings.
+	 * @param array $data  Widget instance settings.
+	 * @param int   $batch Zero-based batch number; each batch doubles the previous one.
 	 * @return int Candidate pool size (>= 1).
 	 */
-	private function get_candidate_limit( $data ) {
+	private function get_candidate_limit( $data, $batch = 0 ) {
 		$display_count = isset( $data['birthdays_to_display'] ) ? absint( $data['birthdays_to_display'] ) : 5;
 		if ( $display_count < 1 ) {
 			$display_count = 5;
@@ -915,7 +981,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 			$candidate_cap = 1;
 		}
 
-		return min( $candidate_cap, max( $display_count, $display_count * $candidate_multiplier ) );
+		// Each further batch reads twice as many candidates as the one before, up to the cap.
+		return min( $candidate_cap, max( $display_count, $display_count * $candidate_multiplier ) * ( 2 ** max( 0, (int) $batch ) ) );
 	}
 
 	/**
@@ -931,12 +998,16 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 	 * @param array $data     Widget instance settings.
 	 * @return int[] Bounded list of user ids.
 	 */
-	private function bound_members_by_upcoming_birthday( array $members, $field_id, $data ) {
+	private function bound_members_by_upcoming_birthday( array $members, $field_id, $data, $size, $offset ) {
 		$field_id        = absint( $field_id );
-		$candidate_limit = $this->get_candidate_limit( $data );
+		$candidate_limit = $size;
 
-		if ( ! $field_id || count( $members ) <= $candidate_limit ) {
+		if ( ! $field_id || ( 0 === $offset && count( $members ) <= $candidate_limit ) ) {
 			return $members;
+		}
+
+		if ( count( $members ) <= $offset ) {
+			return array();
 		}
 
 		global $wpdb;
@@ -955,8 +1026,8 @@ class Widget_Buddypress_Birthdays extends WP_Widget {
 		$in_placeholders = implode( ',', array_fill( 0, count( $members ), '%d' ) );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $in_placeholders is a generated list of %d tokens; every dynamic value is bound via $query_args.
-		$query      = "SELECT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND user_id IN ($in_placeholders) ORDER BY {$order_by_sql} LIMIT %d";
-		$query_args = array_merge( array( $field_id ), $members, array( $mysql_date_format, $start_md, $mysql_date_format, $candidate_limit ) );
+		$query      = "SELECT user_id FROM {$wpdb->prefix}bp_xprofile_data WHERE field_id = %d AND value != '' AND user_id IN ($in_placeholders) ORDER BY {$order_by_sql} LIMIT %d OFFSET %d";
+		$query_args = array_merge( array( $field_id ), $members, array( $mysql_date_format, $start_md, $mysql_date_format, $candidate_limit, $offset ) );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bounded per-render trim; results feed the widget's own object cache.
 		$bounded = $wpdb->get_col(
