@@ -5,7 +5,7 @@ msgstr ""
 "Project-Id-Version: Wbcom Designs - Birthday Widget for BuddyPress 2.5.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/birthday-widget-"
 "for-buddypress\n"
-"POT-Creation-Date: 2026-11-19T07:48:42+00:00\n"
+"POT-Creation-Date: 2026-11-19T08:41:09+00:00\n"
 "PO-Revision-Date: 2026-11-15T11:04:22+00:00\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -44,12 +44,12 @@ msgid "https://wbcomdesigns.com/"
 msgstr "https://wbcomdesigns.com/"
 
 #: admin/class-bp-birthdays-admin.php:69
-#: includes/class-bp-birthdays-notifications.php:882
+#: includes/class-bp-birthdays-notifications.php:904
 msgid "Today is {name}'s birthday! Send your wishes!"
 msgstr "Heute ist {name}s Geburtstag! Schreib einen Glückwunsch!"
 
 #: admin/class-bp-birthdays-admin.php:73
-#: includes/class-bp-birthdays-notifications.php:1265
+#: includes/class-bp-birthdays-notifications.php:1370
 msgid "It's {name}'s birthday today!"
 msgstr "Heute ist {name}s Geburtstag!"
 
@@ -304,7 +304,7 @@ msgid "WB Plugins"
 msgstr "WB Plugins"
 
 #: includes/admin/class-bp-birthdays-admin-panel.php:158
-#: includes/admin/views/layout.php:59
+#: includes/admin/views/layout.php:82
 msgid "Birthdays"
 msgstr "Geburtstage"
 
@@ -468,35 +468,47 @@ msgstr ""
 "Zeige kommende Mitgliedergeburtstage in einem Widget oder Shortcode mit "
 "optionalen Geburtstags-E-Mails, Aktivitätsbeiträgen und Benachrichtigungen."
 
-#: includes/admin/views/layout.php:60
+#. translators: %d: number of birthdays
+#: includes/admin/views/layout.php:51
+#, php-format
+msgid ""
+"The notifications for %d birthday have not finished sending. They resume on "
+"the next scheduled run; check that WP-Cron or Action Scheduler is running."
+msgid_plural ""
+"The notifications for %d birthdays have not finished sending. They resume on "
+"the next scheduled run; check that WP-Cron or Action Scheduler is running."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/views/layout.php:83
 msgid "Plugin"
 msgstr "Plugin"
 
-#: includes/admin/views/layout.php:63
+#: includes/admin/views/layout.php:86
 msgid "Birthdays navigation"
 msgstr "Geburtstags-Navigation"
 
-#: includes/admin/views/layout.php:67
+#: includes/admin/views/layout.php:90
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: includes/admin/views/layout.php:68
+#: includes/admin/views/layout.php:91
 msgid "More Tools"
 msgstr "Weitere Tools"
 
-#: includes/admin/views/layout.php:89
+#: includes/admin/views/layout.php:112
 msgid "Resources"
 msgstr "Ressourcen"
 
-#: includes/admin/views/layout.php:92
+#: includes/admin/views/layout.php:115
 msgid "Documentation"
 msgstr "Dokumentation"
 
-#: includes/admin/views/layout.php:94
+#: includes/admin/views/layout.php:117
 msgid "(opens in a new tab)"
 msgstr "(öffnet sich in einem neuen Tab)"
 
-#: includes/admin/views/layout.php:111
+#: includes/admin/views/layout.php:134
 msgid "Save Settings"
 msgstr "Einstellungen speichern"
 
@@ -965,42 +977,42 @@ msgstr "Skorpion"
 msgid "Sagittarius"
 msgstr "Schütze"
 
-#: includes/class-bp-birthdays-notifications.php:157
-#: includes/class-bp-birthdays-notifications.php:159
+#: includes/class-bp-birthdays-notifications.php:156
+#: includes/class-bp-birthdays-notifications.php:158
 msgid "Birthday Celebrations"
 msgstr "Geburtstagsfeierlichkeiten"
 
 #. translators: %1$s: User display name with link.
-#: includes/class-bp-birthdays-notifications.php:184
+#: includes/class-bp-birthdays-notifications.php:183
 #, php-format
 msgid "%1$s posted a birthday celebration"
 msgstr "%1$s hat eine Geburtstagsfeierlichkeit gepostet"
 
-#: includes/class-bp-birthdays-notifications.php:200
+#: includes/class-bp-birthdays-notifications.php:199
 msgid "[{{{site.name}}}] Happy Birthday, {{{recipient.name}}}!"
 msgstr "[{{{site.name}}}] Alles Gute zum Geburtstag, {{{recipient.name}}}!"
 
-#: includes/class-bp-birthdays-notifications.php:206
+#: includes/class-bp-birthdays-notifications.php:205
 msgid "[{{{site.name}}}] {{birthdays.count}} Birthday(s) Today"
 msgstr "[{{{site.name}}}] {{birthdays.count}} Geburtstag(e) heute"
 
-#: includes/class-bp-birthdays-notifications.php:222
+#: includes/class-bp-birthdays-notifications.php:221
 msgid "Site admin receives a daily summary of member birthdays."
 msgstr ""
 "Website-Admin erhält eine tägliche Zusammenfassung der Mitgliedergeburtstage."
 
-#: includes/class-bp-birthdays-notifications.php:223
+#: includes/class-bp-birthdays-notifications.php:222
 msgid "A member receives a birthday greeting from the site."
 msgstr "Ein Mitglied erhält einen Geburtstagsgruß von der Website."
 
-#: includes/class-bp-birthdays-notifications.php:250
-#: includes/class-bp-birthdays-notifications.php:272
-#: includes/class-bp-birthdays-notifications.php:818
+#: includes/class-bp-birthdays-notifications.php:249
+#: includes/class-bp-birthdays-notifications.php:271
+#: includes/class-bp-birthdays-notifications.php:840
 msgid "Happy Birthday!"
 msgstr "Alles Gute zum Geburtstag!"
 
-#: includes/class-bp-birthdays-notifications.php:252
-#: includes/class-bp-birthdays-notifications.php:274
+#: includes/class-bp-birthdays-notifications.php:251
+#: includes/class-bp-birthdays-notifications.php:273
 msgid ""
 "Wishing you a fantastic birthday filled with joy, laughter, and wonderful "
 "moments! The entire {{{site.name}}} community sends you warm birthday wishes "
@@ -1010,7 +1022,7 @@ msgstr ""
 "wunderbarer Momente! Die gesamte {{{site.name}}}-Gemeinde sendet dir "
 "herzliche Geburtstagsgrüße an deinem besonderen Tag."
 
-#: includes/class-bp-birthdays-notifications.php:254
+#: includes/class-bp-birthdays-notifications.php:253
 msgid ""
 "Cheers to turning <strong>{{{birthday.age}}}</strong>! May this new year of "
 "life bring you happiness and success."
@@ -1018,26 +1030,26 @@ msgstr ""
 "Prost zum Eintritt in dein <strong>{{{birthday.age}}}</strong>. Lebensjahr! "
 "Möge das neue Jahr dir Glück und Erfolg bringen."
 
-#: includes/class-bp-birthdays-notifications.php:256
+#: includes/class-bp-birthdays-notifications.php:255
 msgid "Visit your profile to see birthday wishes from your friends:"
 msgstr "Besuche dein Profil, um Geburtstagsgrüße von deinen Freunden zu sehen:"
 
-#: includes/class-bp-birthdays-notifications.php:258
+#: includes/class-bp-birthdays-notifications.php:257
 msgid "View My Profile"
 msgstr "Mein Profil anzeigen"
 
-#: includes/class-bp-birthdays-notifications.php:260
-#: includes/class-bp-birthdays-notifications.php:280
-#: includes/class-bp-birthdays-notifications.php:832
+#: includes/class-bp-birthdays-notifications.php:259
+#: includes/class-bp-birthdays-notifications.php:279
+#: includes/class-bp-birthdays-notifications.php:854
 msgid "Best wishes,"
 msgstr "Herzliche Grüße,"
 
-#: includes/class-bp-birthdays-notifications.php:261
-#: includes/class-bp-birthdays-notifications.php:281
+#: includes/class-bp-birthdays-notifications.php:260
+#: includes/class-bp-birthdays-notifications.php:280
 msgid "The {{{site.name}}} Team"
 msgstr "Das {{{site.name}}}-Team"
 
-#: includes/class-bp-birthdays-notifications.php:276
+#: includes/class-bp-birthdays-notifications.php:275
 msgid ""
 "Cheers to turning {{{birthday.age}}}! May this new year of life bring you "
 "happiness and success."
@@ -1045,52 +1057,52 @@ msgstr ""
 "Prost zum Eintritt in dein {{{birthday.age}}}. Lebensjahr! Möge das neue "
 "Jahr dir Glück und Erfolg bringen."
 
-#: includes/class-bp-birthdays-notifications.php:278
+#: includes/class-bp-birthdays-notifications.php:277
 msgid "Visit your profile: {{{recipient.url}}}"
 msgstr "Besuche dein Profil: {{{recipient.url}}}"
 
-#: includes/class-bp-birthdays-notifications.php:292
-#: includes/class-bp-birthdays-notifications.php:312
+#: includes/class-bp-birthdays-notifications.php:291
+#: includes/class-bp-birthdays-notifications.php:311
 msgid "Hi Admin,"
 msgstr "Hallo Admin,"
 
-#: includes/class-bp-birthdays-notifications.php:294
-#: includes/class-bp-birthdays-notifications.php:314
+#: includes/class-bp-birthdays-notifications.php:293
+#: includes/class-bp-birthdays-notifications.php:313
 msgid "Here are the members celebrating their birthday today:"
 msgstr "Hier sind die Mitglieder, die heute Geburtstag feiern:"
 
-#: includes/class-bp-birthdays-notifications.php:298
-#: includes/class-bp-birthdays-notifications.php:318
+#: includes/class-bp-birthdays-notifications.php:297
+#: includes/class-bp-birthdays-notifications.php:317
 msgid ""
 "Consider sending them a personal birthday wish to make their day special!"
 msgstr ""
 "Erwäge, ihnen einen persönlichen Geburtstagsgruß zu senden, um ihren Tag "
 "besonders zu machen!"
 
-#: includes/class-bp-birthdays-notifications.php:300
-#: includes/class-bp-birthdays-notifications.php:320
+#: includes/class-bp-birthdays-notifications.php:299
+#: includes/class-bp-birthdays-notifications.php:319
 msgid "Best,"
 msgstr "Herzliche Grüße,"
 
-#: includes/class-bp-birthdays-notifications.php:301
-#: includes/class-bp-birthdays-notifications.php:321
+#: includes/class-bp-birthdays-notifications.php:300
+#: includes/class-bp-birthdays-notifications.php:320
 msgid "{{site.name}} Birthday System"
 msgstr "{{site.name}}-Geburtstagssystem"
 
 #. translators: %s: site name
-#: includes/class-bp-birthdays-notifications.php:808
+#: includes/class-bp-birthdays-notifications.php:830
 #, php-format
 msgid "[%s] Happy Birthday!"
 msgstr "[%s] Alles Gute zum Geburtstag!"
 
 #. translators: %s: user name
-#: includes/class-bp-birthdays-notifications.php:814
+#: includes/class-bp-birthdays-notifications.php:836
 #, php-format
 msgid "Hi %s,"
 msgstr "Hallo %s,"
 
 #. translators: %s: site name
-#: includes/class-bp-birthdays-notifications.php:822
+#: includes/class-bp-birthdays-notifications.php:844
 #, php-format
 msgid ""
 "Wishing you a fantastic birthday! The entire %s community sends you warm "
@@ -1100,52 +1112,40 @@ msgstr ""
 "sendet dir herzliche Geburtstagsgrüße."
 
 #. translators: %d: age
-#: includes/class-bp-birthdays-notifications.php:828
+#: includes/class-bp-birthdays-notifications.php:850
 #, php-format
 msgid "Cheers to turning %d!"
 msgstr "Prost zum Eintritt in dein %d. Lebensjahr!"
 
 #. translators: %s: site name
-#: includes/class-bp-birthdays-notifications.php:835
+#: includes/class-bp-birthdays-notifications.php:857
 #, php-format
 msgid "The %s Team"
 msgstr "Das %s-Team"
 
-#. translators: %d: number of birthdays
-#: includes/class-bp-birthdays-notifications.php:1204
-#, php-format
-msgid ""
-"The notifications for %d birthday have not finished sending. They resume on "
-"the next scheduled run; check that WP-Cron or Action Scheduler is running."
-msgid_plural ""
-"The notifications for %d birthdays have not finished sending. They resume on "
-"the next scheduled run; check that WP-Cron or Action Scheduler is running."
-msgstr[0] ""
-msgstr[1] ""
-
-#: includes/class-bp-birthdays-notifications.php:1259
+#: includes/class-bp-birthdays-notifications.php:1364
 msgid "Someone"
 msgstr "Jemand"
 
 #. translators: %d: Age the person is turning.
-#: includes/class-bp-birthdays-notifications.php:1354
+#: includes/class-bp-birthdays-notifications.php:1459
 #, php-format
 msgid "(Turning %d)"
 msgstr "(Wird %d)"
 
 #. translators: 1: Member display name, 2: Age the member is turning.
-#: includes/class-bp-birthdays-notifications.php:1363
+#: includes/class-bp-birthdays-notifications.php:1468
 #, php-format
 msgid "%1$s (Turning %2$d)"
 msgstr "%1$s (wird %2$d Jahre alt)"
 
 #. translators: %1$d: birthday count, %2$s: site name
-#: includes/class-bp-birthdays-notifications.php:1393
+#: includes/class-bp-birthdays-notifications.php:1498
 #, php-format
 msgid "[%2$s] %1$d Birthday(s) Today"
 msgstr "[%2$s] %1$d Geburtstag(e) heute"
 
-#: includes/class-bp-birthdays-notifications.php:1398
+#: includes/class-bp-birthdays-notifications.php:1503
 msgid "Today's Birthdays"
 msgstr "Heutige Geburtstage"
 

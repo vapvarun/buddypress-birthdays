@@ -118,7 +118,6 @@ class BP_Birthdays_Notifications {
 
 		// Later chunks of a large notification fan-out, one scheduled action each.
 		add_action( self::NOTIFY_CHUNK_HOOK, array( $this, 'run_notification_chunk' ), 10, 2 );
-		add_action( 'admin_notices', array( $this, 'notice_unfinished_fanout' ) );
 
 		// Register BP notification component.
 		add_action( 'bp_setup_globals', array( $this, 'register_notification_component' ) );
@@ -516,6 +515,8 @@ class BP_Birthdays_Notifications {
 	 *                     daily event: see resolve_target_date().
 	 */
 	public function process_daily_birthdays( $date = '' ) {
+		$this->resume_unfinished_fanouts();
+
 		$target    = $this->resolve_target_date( $date );
 		$day       = $target->format( 'Y-m-d' );
 		$birthdays = $this->get_todays_birthdays( $target );
@@ -535,10 +536,27 @@ class BP_Birthdays_Notifications {
 		);
 		$failed   = false;
 
+		// A request that dies part way (a fatal, a killed worker) must not lose the rest of the
+		// day: arm the hourly retry first, and keep each member's progress as it is made. A clean
+		// finish disarms the retry below.
+		$yesterday = current_datetime()->modify( '-1 day' )->format( 'Y-m-d' );
+		$armed     = $day >= $yesterday && ! wp_next_scheduled( self::CRON_HOOK, array( $day ) );
+		if ( $armed ) {
+			wp_schedule_single_event( time() + HOUR_IN_SECONDS, self::CRON_HOOK, array( $day ) );
+		}
+
 		foreach ( $birthdays as $user_id => $birthday_data ) {
 			$done = isset( $sent_tracking[ $user_id ] ) ? $sent_tracking[ $user_id ] : array();
 			if ( ! is_array( $done ) ) {
 				continue; // Pre-2.5.1 row: this member was fully processed.
+			}
+
+			// The member's row exists before any channel runs, so a chunk action that finishes the
+			// notifications later (or after a crash) always has a row to mark.
+			if ( ! isset( $sent_tracking[ $user_id ] ) ) {
+				$sent_tracking[ $user_id ] = $done;
+				$tracking[ $day ]          = $sent_tracking;
+				update_option( self::SENT_TRACKING_OPTION, $tracking, false );
 			}
 
 			foreach ( $channels as $channel => $method ) {
@@ -556,6 +574,11 @@ class BP_Birthdays_Notifications {
 
 				if ( $sent ) {
 					$done[ $channel ] = time();
+
+					// Saved channel by channel: a request that dies after the email must not send it again.
+					$sent_tracking[ $user_id ] = $done;
+					$tracking[ $day ]          = $sent_tracking;
+					update_option( self::SENT_TRACKING_OPTION, $tracking, false );
 				} else {
 					$failed = true;
 				}
@@ -589,11 +612,10 @@ class BP_Birthdays_Notifications {
 		$tracking[ $day ] = $sent_tracking;
 		update_option( self::SENT_TRACKING_OPTION, $tracking, false );
 
-		// Retries stop once the day is older than yesterday, the same window
-		// the tracking keeps (get_sent_tracking()).
-		$yesterday = current_datetime()->modify( '-1 day' )->format( 'Y-m-d' );
-		if ( $failed && $day >= $yesterday && ! wp_next_scheduled( self::CRON_HOOK, array( $day ) ) ) {
-			wp_schedule_single_event( time() + HOUR_IN_SECONDS, self::CRON_HOOK, array( $day ) );
+		// Retries stop once the day is older than yesterday, the same window the tracking keeps
+		// (get_sent_tracking()). A clean finish removes the retry armed above.
+		if ( ! $failed && $armed ) {
+			wp_clear_scheduled_hook( self::CRON_HOOK, array( $day ) );
 		}
 	}
 
@@ -987,8 +1009,11 @@ class BP_Birthdays_Notifications {
 
 		$lock = 'bp_birthdays_lock_' . md5( $day . ':' . $user_id );
 		if ( ! add_option( $lock, time(), '', false ) ) {
-			// Another run holds this member. A lock older than 10 minutes is a crashed run's.
-			if ( time() - (int) get_option( $lock ) < 10 * MINUTE_IN_SECONDS ) {
+			// Another run holds this member. A lock older than 3 minutes is a crashed run's (a chunk
+			// takes seconds): take it over. Otherwise come back once it would have expired.
+			$age = time() - (int) get_option( $lock );
+			if ( $age < 3 * MINUTE_IN_SECONDS ) {
+				$this->queue_notification_chunk( $day, $user_id, 3 * MINUTE_IN_SECONDS - $age + 30 );
 				return 'pending';
 			}
 			update_option( $lock, time(), false );
@@ -1034,10 +1059,23 @@ class BP_Birthdays_Notifications {
 			}
 
 			$last_id = $chunk ? max( $chunk ) : $cursor;
+			$more    = count( $chunk ) >= $size;
 
-			// Each recipient must be someone BuddyPress lets see this birthday: the same rule the
-			// widget uses, so a level an add-on registers is honoured too. The batch's friendships
-			// are read in one query first, so the per-recipient check runs from cache.
+			// A full chunk means more may follow. Record the fan-out and queue a safety attempt
+			// BEFORE the rows are written, so a fatal or a killed request part way leaves a pending
+			// action that takes over the stale lock and carries on from the saved cursor.
+			if ( $more ) {
+				$states[ $key ] = array(
+					'cursor'  => $cursor,
+					'updated' => time(),
+				);
+				update_option( self::NOTIFY_STATE_OPTION, $states, false );
+				$this->queue_notification_chunk( $day, $user_id, 4 * MINUTE_IN_SECONDS );
+			}
+
+			// The users of this chunk in one query: BuddyPress and other plugins read them per row.
+			cache_users( $chunk );
+
 			// One meta query for the chunk: the visibility rules, add-ons hooked into them, and the
 			// opt-out below all read user meta.
 			update_meta_cache( 'user', $chunk );
@@ -1106,14 +1144,16 @@ class BP_Birthdays_Notifications {
 			}
 
 			if ( $failed ) {
-				// The cursor stays, so the hourly retry rewrites this chunk and skips what is saved.
+				// The cursor stays and the safety attempt is already queued: it rewrites this chunk
+				// and skips what is saved.
 				$this->log( sprintf( 'BP Birthdays: a birthday notification for member %d could not be saved; it will be retried.', $user_id ) );
 				return false;
 			}
 
-			if ( count( $chunk ) < $size ) {
+			if ( ! $more ) {
 				unset( $states[ $key ] );
 				$states ? update_option( self::NOTIFY_STATE_OPTION, $states, false ) : delete_option( self::NOTIFY_STATE_OPTION );
+				$this->clear_notification_chunk( $day, $user_id );
 				return true;
 			}
 
@@ -1131,23 +1171,99 @@ class BP_Birthdays_Notifications {
 	}
 
 	/**
-	 * Queue the next chunk: Action Scheduler when present, WP-Cron otherwise.
+	 * Queue a chunk: Action Scheduler when present, WP-Cron otherwise.
+	 *
+	 * Replaces any pending attempt for the same birthday, so there is at most one. Only
+	 * PENDING actions count: the action that is running right now must not hide its successor.
 	 *
 	 * @param string $day     Day (Y-m-d).
 	 * @param int    $user_id Birthday member.
+	 * @param int    $delay   Seconds to wait; 0 runs it at the next opportunity.
 	 */
-	private function queue_notification_chunk( $day, $user_id ) {
+	private function queue_notification_chunk( $day, $user_id, $delay = 0 ) {
 		$args = array( $day, (int) $user_id );
 
-		if ( function_exists( 'as_enqueue_async_action' ) && function_exists( 'as_has_scheduled_action' ) ) {
-			if ( ! as_has_scheduled_action( self::NOTIFY_CHUNK_HOOK, $args, self::AS_GROUP ) ) {
+		$this->clear_notification_chunk( $day, $user_id );
+
+		if ( function_exists( 'as_schedule_single_action' ) ) {
+			if ( $delay > 0 ) {
+				as_schedule_single_action( time() + $delay, self::NOTIFY_CHUNK_HOOK, $args, self::AS_GROUP );
+			} else {
 				as_enqueue_async_action( self::NOTIFY_CHUNK_HOOK, $args, self::AS_GROUP );
 			}
 			return;
 		}
 
-		if ( ! wp_next_scheduled( self::NOTIFY_CHUNK_HOOK, $args ) ) {
-			wp_schedule_single_event( time() + 10, self::NOTIFY_CHUNK_HOOK, $args );
+		wp_schedule_single_event( time() + max( 10, $delay ), self::NOTIFY_CHUNK_HOOK, $args );
+	}
+
+	/**
+	 * Drop the pending attempts of a birthday's fan-out (not the one that is running).
+	 *
+	 * @param string $day     Day (Y-m-d).
+	 * @param int    $user_id Birthday member.
+	 */
+	private function clear_notification_chunk( $day, $user_id ) {
+		$args = array( $day, (int) $user_id );
+
+		if ( function_exists( 'as_unschedule_all_actions' ) ) {
+			as_unschedule_all_actions( self::NOTIFY_CHUNK_HOOK, $args, self::AS_GROUP );
+		}
+
+		wp_clear_scheduled_hook( self::NOTIFY_CHUNK_HOOK, $args );
+	}
+
+	/**
+	 * Whether a chunk of this birthday is waiting to run.
+	 *
+	 * @param string $day     Day (Y-m-d).
+	 * @param int    $user_id Birthday member.
+	 * @return bool
+	 */
+	private function has_pending_notification_chunk( $day, $user_id ) {
+		$args = array( $day, (int) $user_id );
+
+		if ( wp_next_scheduled( self::NOTIFY_CHUNK_HOOK, $args ) ) {
+			return true;
+		}
+
+		if ( function_exists( 'as_get_scheduled_actions' ) ) {
+			$ids = as_get_scheduled_actions(
+				array(
+					'hook'     => self::NOTIFY_CHUNK_HOOK,
+					'args'     => $args,
+					'group'    => self::AS_GROUP,
+					'status'   => 'pending',
+					'per_page' => 1,
+				),
+				'ids'
+			);
+
+			return ! empty( $ids );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Self-heal: restart any fan-out that has stopped without a queued chunk.
+	 *
+	 * Runs with the daily check and its hourly retry. A fan-out whose last chunk started more
+	 * than ten minutes ago and has nothing pending (a lost action, a crash after the safety
+	 * attempt ran) gets a new attempt from its saved cursor.
+	 */
+	private function resume_unfinished_fanouts() {
+		$states = get_option( self::NOTIFY_STATE_OPTION, array() );
+
+		foreach ( (array) $states as $key => $state ) {
+			$parts = explode( ':', (string) $key );
+			if ( 2 !== count( $parts ) || ! isset( $state['updated'] ) || time() - (int) $state['updated'] < 10 * MINUTE_IN_SECONDS ) {
+				continue;
+			}
+
+			if ( ! $this->has_pending_notification_chunk( $parts[0], (int) $parts[1] ) ) {
+				$this->queue_notification_chunk( $parts[0], (int) $parts[1] );
+			}
 		}
 	}
 
@@ -1166,6 +1282,12 @@ class BP_Birthdays_Notifications {
 			return;
 		}
 
+		// Only a fan-out that is still recorded needs a chunk; a finished one has nothing left.
+		$states = get_option( self::NOTIFY_STATE_OPTION, array() );
+		if ( ! isset( $states[ $day . ':' . $user_id ] ) ) {
+			return;
+		}
+
 		$result = $this->notify_chunk( $day, $user_id, xprofile_get_field_visibility_level( $field, $user_id ) );
 
 		if ( true === $result ) {
@@ -1174,43 +1296,26 @@ class BP_Birthdays_Notifications {
 				$tracking[ $day ][ $user_id ]['notification'] = time();
 				update_option( self::SENT_TRACKING_OPTION, $tracking, false );
 			}
-		} elseif ( false === $result ) {
-			// BuddyPress could not save a row: try this chunk again in an hour.
-			wp_schedule_single_event( time() + HOUR_IN_SECONDS, self::NOTIFY_CHUNK_HOOK, array( $day, $user_id ) );
 		}
 	}
 
 	/**
-	 * Tell the admin on the plugin's screen when a notification fan-out has stopped part way.
+	 * How many birthdays' notification fan-outs have stopped part way for over 6 hours.
+	 *
+	 * The settings page shows a warning when this is above zero.
+	 *
+	 * @return int
 	 */
-	public function notice_unfinished_fanout() {
-		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-		if ( ! $screen || false === strpos( (string) $screen->id, 'bp-birthday-settings' ) || ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
+	public function count_stuck_fanouts() {
+		$stuck = 0;
 
-		$states = get_option( self::NOTIFY_STATE_OPTION, array() );
-		$stuck  = 0;
-		foreach ( (array) $states as $state ) {
+		foreach ( (array) get_option( self::NOTIFY_STATE_OPTION, array() ) as $state ) {
 			if ( isset( $state['updated'] ) && time() - (int) $state['updated'] > 6 * HOUR_IN_SECONDS ) {
 				++$stuck;
 			}
 		}
 
-		if ( $stuck ) {
-			echo '<div class="notice notice-warning"><p>' . esc_html(
-				sprintf(
-					/* translators: %d: number of birthdays */
-					_n(
-						'The notifications for %d birthday have not finished sending. They resume on the next scheduled run; check that WP-Cron or Action Scheduler is running.',
-						'The notifications for %d birthdays have not finished sending. They resume on the next scheduled run; check that WP-Cron or Action Scheduler is running.',
-						$stuck,
-						'buddypress-birthdays'
-					),
-					$stuck
-				)
-			) . '</p></div>';
-		}
+		return $stuck;
 	}
 
 	/**

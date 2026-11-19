@@ -39,6 +39,29 @@ $bbd_version = defined( 'BIRTHDAY_WIDGET_VERSION' ) ? BIRTHDAY_WIDGET_VERSION : 
 	</header>
 
 	<?php
+	// Rendered here, not through admin_notices: this screen removes the other plugins' notices.
+	$bbd_stuck = class_exists( 'BP_Birthdays_Notifications' ) ? BP_Birthdays_Notifications::get_instance()->count_stuck_fanouts() : 0;
+	if ( $bbd_stuck ) :
+		?>
+		<div class="bbd-notice bbd-notice--warn" role="status">
+			<?php
+			echo esc_html(
+				sprintf(
+					/* translators: %d: number of birthdays */
+					_n(
+						'The notifications for %d birthday have not finished sending. They resume on the next scheduled run; check that WP-Cron or Action Scheduler is running.',
+						'The notifications for %d birthdays have not finished sending. They resume on the next scheduled run; check that WP-Cron or Action Scheduler is running.',
+						$bbd_stuck,
+						'buddypress-birthdays'
+					),
+					$bbd_stuck
+				)
+			);
+			?>
+		</div>
+	<?php endif; ?>
+
+	<?php
 	/*
 	 * Without this marker, core's common.js re-parents every .notice to
 	 * sit right after the first <h1> it finds, which slots the "Settings

@@ -10,6 +10,8 @@ parameters:
     ignoreErrors:
         - '#Function buddypress not found\.#'
         - '#Function bp_\w+ not found\.#'
+        # Action Scheduler: used only when present (function_exists guard), no stubs installed.
+        - '#Function as_\w+ not found\.#'
         - '#Constant BIRTHDAY_WIDGET_PLUGIN_(URL|PATH) not found\.#'
         - '#has invalid type BP_XProfile_ProfileData\.#'
         - '#has invalid type BP_Follow\.#'
