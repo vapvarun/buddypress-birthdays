@@ -16,7 +16,7 @@ Without a date field, every plugin surface renders empty.
 ## Install the plugin
 
 1. Upload the plugin files to `/wp-content/plugins/buddypress-birthdays/`, or install the ZIP through Plugins > Add New > Upload Plugin.
-2. Activate the plugin through the Plugins menu.
+2. Activate the plugin through the Plugins menu. A single activation opens the plugin's settings page; bulk, network and WP-CLI activations do not.
 3. Go to WB Plugins > Birthdays to configure display, email, activity, notification and display options.
 
 If BuddyPress is not active, the plugin shows an admin notice and deactivates itself.

@@ -15,7 +15,7 @@ Birthdays are read from a BuddyPress Extended Profile date field, so the plugin 
 
 ## Requirements
 
-- WordPress 6.5 or higher (tested up to 7.0).
+- WordPress 6.5 or higher.
 - PHP 8.1 or higher.
 - BuddyPress active, with at least one Extended Profile field of type Date Selector (datebox) or Birthdate.
 

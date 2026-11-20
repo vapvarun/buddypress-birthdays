@@ -1,5 +1,9 @@
 # Troubleshooting
 
+## The widget, shortcode and settings page are missing
+
+- The plugin needs the BuddyPress Extended Profiles component. When it is off, the widget, shortcode, notifications and settings page are not registered and an admin notice explains why. Turn the component on under Settings > BuddyPress > Components.
+
 ## No birthdays are showing
 
 When nothing matches, the widget and shortcode show "No upcoming birthdays." inside the card. If you see that line:
