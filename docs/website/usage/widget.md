@@ -20,6 +20,8 @@ If no date profile field exists yet, the widget form shows a setup notice with a
 | Birthdays per page | How many birthdays per page in the paginated list. | 10 |
 | Select Emoji | None, cake, balloon, or party. | Balloon |
 
+The widget follows your theme's sidebar widget styling: the theme's title style, 50px rounded avatars, larger tap targets, and rows that stay side by side on phones. Its styles and scripts load only on pages that show the widget or the shortcode.
+
 ## Display modes
 
 - All Members: everyone on the site with a birthday set. Available to logged-out visitors for public birthday fields.

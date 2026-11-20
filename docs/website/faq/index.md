@@ -2,7 +2,7 @@
 
 ## Where do birthdays come from?
 
-From a BuddyPress Extended Profile field of type Date Selector (datebox) or Birthdate. Create one at Users > Profile Fields and select it in the widget or shortcode. If you do not pick one in the shortcode, the plugin uses the first date field it finds.
+From a BuddyPress Extended Profile field of type Date Selector (datebox) or Birthdate. Create one at Users > Profile Fields and select it in the widget or shortcode. If you do not pick one in the shortcode, the plugin uses the Default Birthday Field from WB Plugins > Birthdays > General, or the first date field it finds when that is empty.
 
 ## Can I show birthdays in a page or post?
 

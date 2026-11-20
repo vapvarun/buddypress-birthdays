@@ -21,7 +21,7 @@ There are eleven attributes.
 | `show_birthdays_of` | Which members to show. `friends` needs the Friends component; `followers` needs BP Follow. | `all`, `friends`, `followers` | all |
 | `display_name_type` | Which name to show. | `user_name`, `nick_name`, `first_name` | user_name |
 | `emoji` | Emoji shown next to each name. | `none`, `cake`, `balloon`, `party` | balloon |
-| `field_name` | The numeric ID of the xProfile date field. Despite the name, this expects a number, for example `field_name="12"`. Leave it out and the plugin auto-discovers the first Date Selector or Birthdate field. | numeric field ID | Empty (auto-discover) |
+| `field_name` | The numeric ID of the xProfile date field. Despite the name, this expects a number, for example `field_name="12"`. Leave it out and the plugin uses the Default Birthday Field from the General tab, or the first Date Selector or Birthdate field when none is set. | numeric field ID | Empty (Default Birthday Field) |
 | `birthdays_per_page` | How many birthdays per page in the paginated list. | number | 10 |
 
 ## Example
@@ -33,5 +33,5 @@ There are eleven attributes.
 ## Notes
 
 - The confetti animation and zodiac sign are global Display settings, not shortcode attributes. The shortcode reads the same saved options.
-- When `field_name` is empty, the handler picks the first Date Selector or Birthdate profile field it finds.
+- When `field_name` is empty, the shortcode uses the Default Birthday Field from the General tab, or the first Date Selector or Birthdate profile field when that is not set.
 - Assets load automatically wherever the shortcode is used.

@@ -21,7 +21,7 @@ The greeting uses standard BuddyPress email tokens:
 - `{{{birthday.age}}}` - the age the member is turning.
 - `{{{recipient.url}}}` - a link to the member's profile.
 
-If BuddyPress email delivery is unavailable, the plugin falls back to a plain `wp_mail` send.
+If BuddyPress cannot send the email, the plugin falls back to a plain `wp_mail` send. A send that still fails is written to the PHP error log and retried an hour later.
 
 ## Activity feed post
 

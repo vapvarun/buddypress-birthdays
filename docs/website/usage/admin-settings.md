@@ -8,14 +8,14 @@ The admin page has seven tabs: Overview, General, Email, Activity, Notifications
 
 ### Overview
 
-A read-only dashboard confirming the plugin found a birthday profile field and showing the current configuration. Activity posts and notifications show as Off while their BuddyPress component is inactive, because nothing is sent then. Start here after activation.
+A read-only dashboard confirming the plugin found a birthday profile field and showing the current configuration. Activity posts and notifications show as Off while their BuddyPress component is inactive, because nothing is sent then. Each feature that is off, including the admin summary email, has a Turn on link to its settings tab, and the dashboard warns when the saved birthday field no longer exists. Activating the plugin from the Plugins screen opens this page.
 
 ### General
 
 | Setting | What it does | Default |
 |---|---|---|
-| Default Birthday Field | The xProfile date field used by the cron notifications, the shortcode fallback, and as the widget default. Lists only Date Selector and Birthdate fields. | Empty |
-| Cache Duration | Widget object-cache lifetime in minutes, clamped to 1 to 1440. | 30 |
+| Default Birthday Field | The xProfile date field used by the daily emails and notifications, by the shortcode when `field_name` is not set, and by widgets saved without a field. Lists only Date Selector and Birthdate fields; a field that is not a date field is ignored and the first date field is used. | Empty (first date field) |
+| Cache Duration | Widget object-cache lifetime in minutes, kept between 1 and 1440. | 30 |
 
 ### Email
 
@@ -38,7 +38,7 @@ A read-only dashboard confirming the plugin found a birthday profile field and s
 | Setting | What it does | Default |
 |---|---|---|
 | Enable Notifications | Send BuddyPress in-app notifications about birthdays. | Off |
-| Notify Friends Only | Restrict notifications to the birthday member's friends. | Off |
+| Notify Friends Only | Restrict notifications to the birthday member's friends. Needs the Friends component; the tab warns when it is off. | Off |
 | Notification Text | The notification template. Placeholder: `{name}`. | It's {name}'s birthday today! |
 
 ### Display
