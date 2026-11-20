@@ -4,7 +4,7 @@ Show your members' upcoming birthdays in a widget or shortcode, and greet them o
 
 [![WordPress](https://img.shields.io/badge/WordPress-6.5%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-purple.svg)](https://php.net/)
-[![License](https://img.shields.io/badge/License-GPLv3-green.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![License](https://img.shields.io/badge/License-GPLv3-green.svg)](https://opensource.org/license/gpl-3-0)
 
 ## What it does
 
@@ -77,4 +77,4 @@ Need help? [Contact Wbcom Designs](https://wbcomdesigns.com/contact/) for suppor
 
 ## License
 
-GPLv3 or later. See the [license text](https://www.gnu.org/licenses/gpl-3.0.html).
+GPLv3 or later. See the [license text](https://opensource.org/license/gpl-3-0).
