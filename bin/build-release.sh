@@ -79,10 +79,13 @@ with zipfile.ZipFile(out,"w",zipfile.ZIP_DEFLATED,compresslevel=9) as z:
         d.sort()
         for n in sorted(f): z.write(os.path.join(r,n))' "$ROOT/dist/${SLUG}-${VERSION}.zip" "$SLUG" )
 zip="$ROOT/dist/${SLUG}-${VERSION}.zip"
+# pipefail off for the lock block: unzip piped into head / grep -q exits 141 (SIGPIPE) on larger zips.
+set +o pipefail
 # --- WordPress.org folder lock (Wbcom standard - do not edit) ----------------------
 top=$(unzip -Z1 "$zip" | head -1 | cut -d/ -f1)
 [ "$top" = "$slug" ] || { echo "Zip folder '$top' is not the WordPress.org slug '$slug'"; exit 1; }
 unzip -Z1 "$zip" | grep -qx "$slug/$main" || { echo "Main file $slug/$main missing from zip"; exit 1; }
 [ "$(LC_ALL=C grep -a -c '<?php' "$zip" || true)" = 0 ] || { echo "Zip has plain-text PHP (upload firewall)"; exit 1; }
 # -----------------------------------------------------------------------------------
+set -o pipefail
 echo "Created dist/${SLUG}-${VERSION}.zip"
