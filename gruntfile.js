@@ -7,77 +7,6 @@ module.exports = function (grunt) {
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
 
-        // Clean dist folder
-        clean: {
-            dist: ['dist'],
-            temp: ['dist/buddypress-birthdays']
-        },
-
-        // Copy files to dist folder
-        copy: {
-            dist: {
-                files: [{
-                    expand: true,
-                    src: [
-                        '**',
-                        '!node_modules/**',
-                        '!audit/**',
-                        '!dist/**',
-                        '!.git/**',
-                        '!.git*',
-                        '!.gitignore',
-                        '!Gruntfile.js',
-                        '!gruntfile.js',
-                        '!package.json',
-                        '!package-lock.json',
-                        '!composer.json',
-                        '!composer.lock',
-                        '!phpcs.xml',
-                        '!phpcs.xml.dist',
-                        '!.phpcs.xml',
-                        '!phpunit.xml',
-                        '!phpunit.xml.dist',
-                        '!tests/**',
-                        '!bin/**',
-                        '!CLAUDE.md',
-                        '!*.md',
-                        '!**/*.md',
-                        '!docs/**',
-                        '!marketing/**',
-                        '!*.map',
-                        '!*.log',
-                        '!*.sql',
-                        '!.DS_Store',
-                        '!Thumbs.db',
-                        '!.project',
-                        '!.idea/**',
-                        '!.vscode/**',
-                        '!vendor/**',
-                        '!*.swp',
-                        '!*.swo',
-                        '!*~'
-                    ],
-                    dest: 'dist/buddypress-birthdays/'
-                }]
-            }
-        },
-
-        // Create zip file
-        compress: {
-            dist: {
-                options: {
-                    archive: 'dist/buddypress-birthdays-<%= pkg.version %>.zip',
-                    mode: 'zip'
-                },
-                files: [{
-                    expand: true,
-                    cwd: 'dist/',
-                    src: ['buddypress-birthdays/**'],
-                    dest: ''
-                }]
-            }
-        },
-
         // Check text domain
         checktextdomain: {
             options: {
@@ -195,18 +124,12 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-wp-i18n');
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-cssmin');
-    grunt.loadNpmTasks('grunt-contrib-clean');
-    grunt.loadNpmTasks('grunt-contrib-copy');
-    grunt.loadNpmTasks('grunt-contrib-compress');
     grunt.loadNpmTasks('grunt-checktextdomain');
     grunt.loadNpmTasks('grunt-shell');
 
-    // Register tasks
+    // Register tasks. The release zip is built by bin/build-release.sh only (folder = WordPress.org slug).
     grunt.registerTask('minify', ['cssmin:assets', 'cssmin:admin', 'uglify:assets', 'uglify:admin']);
     grunt.registerTask('i18n', ['checktextdomain', 'makepot']);
     grunt.registerTask('build', ['checktextdomain', 'minify']);
-    grunt.registerTask('release', ['clean:dist', 'build', 'copy:dist', 'compress:dist', 'clean:temp']);
-    grunt.registerTask('zip', ['release']);
-    grunt.registerTask('dist', ['release']);
     grunt.registerTask('default', ['checktextdomain', 'makepot']);
 };

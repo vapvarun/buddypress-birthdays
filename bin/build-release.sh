@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the distributable zip: dist/buddypress-birthdays-<version>.zip, from `git archive HEAD`
+# Build the distributable zip: dist/birthday-widget-for-buddypress-<version>.zip (folder = WordPress.org slug), from `git archive HEAD`
 # in a scratch copy (commit first: uncommitted edits are not in the zip).
 # .distignore is applied root-anchored here, never as rsync excludes: an unanchored name would
 # also strip nested folders, and macOS openrsync ignores "/path" anchors.
@@ -7,8 +7,10 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
-SLUG="buddypress-birthdays"
-VERSION=$(grep -m1 -E '^\s*\*?\s*Version:' "$SLUG.php" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+slug=birthday-widget-for-buddypress   # WordPress.org slug = zip folder. Locked by CI (wporg-folder-lock.yml).
+SLUG="$slug"
+main=buddypress-birthdays.php
+VERSION=$(grep -m1 -E '^\s*\*?\s*Version:' "$main" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 [ -n "$VERSION" ] || { echo "Could not read Version from the plugin header"; exit 1; }
 echo "Building $SLUG v$VERSION from HEAD $(git rev-parse --short HEAD)"
 [ -z "$(git status --porcelain -- . ':!dist')" ] || echo "WARNING: uncommitted changes are NOT in this zip"
@@ -69,5 +71,19 @@ PY
 
 mkdir -p dist
 rm -f "dist/${SLUG}-${VERSION}.zip"
-( cd "$SCRATCH" && zip -rq "$ROOT/dist/${SLUG}-${VERSION}.zip" "$SLUG" )
+# Deflate every entry: a PHP file stored uncompressed trips the store's upload firewall.
+( cd "$SCRATCH" && python3 -I -c 'import os,sys,zipfile
+out,top=sys.argv[1],sys.argv[2]
+with zipfile.ZipFile(out,"w",zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+    for r,d,f in os.walk(top):
+        d.sort()
+        for n in sorted(f): z.write(os.path.join(r,n))' "$ROOT/dist/${SLUG}-${VERSION}.zip" "$SLUG" )
+zip="$ROOT/dist/${SLUG}-${VERSION}.zip"
+# --- WordPress.org folder lock (Wbcom standard - do not edit) ----------------------
+entries=$(unzip -Z1 "$zip")   # read the whole list once: no early-exit pipe, safe under pipefail
+top=${entries%%/*}
+[ "$top" = "$slug" ] || { echo "Zip folder '$top' is not the WordPress.org slug '$slug'"; exit 1; }
+grep -qx "$slug/$main" <<<"$entries" || { echo "Main file $slug/$main missing from zip"; exit 1; }
+[ "$(LC_ALL=C grep -a -c '<?php' "$zip" || true)" = 0 ] || { echo "Zip has plain-text PHP (upload firewall)"; exit 1; }
+# -----------------------------------------------------------------------------------
 echo "Created dist/${SLUG}-${VERSION}.zip"
